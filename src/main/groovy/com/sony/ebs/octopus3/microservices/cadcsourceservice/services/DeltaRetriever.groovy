@@ -28,9 +28,12 @@ class DeltaRetriever {
     String importSheetUrl
 
     rx.Observable<String> retrieveDelta(String publication, String locale, String since, String cadcUrl) {
-        String relUrl = deltaUrlBuilder.createUrl(publication, locale, since)
-        def url = "$cadcUrl$relUrl"
-        httpClient.getFromCadc(url)
+        observableHelper.createObservable({
+            String relUrl = deltaUrlBuilder.createUrl(publication, locale, since)
+            "$cadcUrl$relUrl"
+        }).flatMap {
+            httpClient.getFromCadc(it)
+        }
     }
 
     rx.Observable<Delta> parseDelta(String publication, String locale, String content) {
@@ -47,11 +50,11 @@ class DeltaRetriever {
         }
     }
 
-    rx.Observable<List> importProducts(Delta delta) {
+    rx.Observable<String> importProducts(Delta delta, boolean synch) {
         log.info "starting import for $delta"
         rx.Observable.zip(
                 delta?.urlMap?.collect { product, sheetUrl ->
-                    def importUrl = "$importSheetUrl?product=$product&url=$sheetUrl"
+                    def importUrl = "$importSheetUrl?synch=$synch&product=$product&url=$sheetUrl"
                     httpClient.getLocal(importUrl).onErrorReturn({
                         log.error "error in $product", it
                         "error in $product"
@@ -64,18 +67,15 @@ class DeltaRetriever {
         }
     }
 
-    void deltaFlow(String publication, String locale, String since, String cadcUrl) {
+    rx.Observable<String> deltaFlow(String publication, String locale, String since, String cadcUrl, boolean synch) {
         retrieveDelta(publication, locale, since, cadcUrl)
                 .flatMap({ String result ->
             parseDelta(publication, locale, result)
         }).flatMap({ Delta delta ->
-            importProducts(delta)
+            importProducts(delta, synch)
         }).doOnError({
             log.error "error in delta import", it
-        }).subscribe({
-            log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
         })
-        log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
     }
 
 }

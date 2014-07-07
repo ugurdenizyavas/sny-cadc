@@ -58,14 +58,14 @@ Given(~"Cadc sheet (.*)") { name ->
 }
 
 When(~"I import sheet (.*)") { product ->
-    get("import/sheet?product=$product&url=http://localhost:12306/cadc/sheet/$product")
+    get("import/sheet?synch=true&product=$product&url=http://localhost:12306/cadc/sheet/$product")
 }
 
 Then(~"sheet (.*) should be imported") { product ->
     def json = parseJson(response)
     assert json?.product == product
     assert json?.url == "http://localhost:12306/cadc/sheet/$product"
-    assert json?.message == "sheet import started"
+    assert json?.message == "sheet import finished"
 }
 
 When(~"I save sheet (.*)") { product ->
@@ -98,7 +98,7 @@ Given(~"Cadc returns (.*) products for locale (.*)") { int count, String locale 
 }
 
 When(~"I request delta of publication (.*) and locale (.*) since (.*)") { publication, locale, since ->
-    get("import/delta/publication/$publication/locale/$locale?since=$since&cadcUrl=http://localhost:12306/skus")
+    get("import/delta/publication/$publication/locale/$locale?synch=true&since=$since&cadcUrl=http://localhost:12306/skus")
 }
 
 Then(~"(.*) products should be imported with publication (.*) and locale (.*) since (.*)") { int count, publication, locale, since ->
@@ -107,6 +107,6 @@ Then(~"(.*) products should be imported with publication (.*) and locale (.*) si
     assert json.locale == locale
     assert json.since == since
     assert json.cadcUrl == "http://localhost:12306/skus"
-    assert json.message == "delta import started"
+    assert json.message == "delta import finished"
 }
 

@@ -19,13 +19,25 @@ class SheetFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            def product = request.queryParams['product']
-            def url = request.queryParams['url']
+            String product = request.queryParams['product']
+            String url = request.queryParams['url']
+            boolean synch = request.queryParams['synch']
 
-            sheetRetriever.sheetFlow(product, url)
+            if (synch) {
+                sheetRetriever.sheetFlow(product, url).subscribe {
+                    log.info "sheet import finished for product $product, url $url"
+                    response.status(202)
+                    render json(status: 202, message: "sheet import finished", product: product, url: url)
+                }
+            } else {
+                sheetRetriever.sheetFlow(product, url).subscribe {
+                    log.info "sheet import finished for product $product, url $url"
+                }
+                log.info "sheet import started for product $product, url $url"
+                response.status(202)
+                render json(status: 202, message: "sheet import started", product: product, url: url)
+            }
 
-            response.status(202)
-            render json(status: 202, message: "sheet import started", product: product, url: url)
         }
     }
 

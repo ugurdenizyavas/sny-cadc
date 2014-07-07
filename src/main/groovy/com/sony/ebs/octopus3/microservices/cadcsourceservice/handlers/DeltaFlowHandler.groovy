@@ -19,15 +19,26 @@ class DeltaFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            def publication = pathTokens['publication']
-            def locale = pathTokens['locale']
-            def since = request.queryParams['since']
-            def cadcUrl = request.queryParams['cadcUrl']
+            String publication = pathTokens['publication']
+            String locale = pathTokens['locale']
+            String since = request.queryParams['since']
+            String cadcUrl = request.queryParams['cadcUrl']
+            boolean synch = request.queryParams['synch']
 
-            deltaRetriever.deltaFlow(publication, locale, since, cadcUrl)
-
-            response.status(202)
-            render json(status: 202, message: "delta import started", publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+            if (synch) {
+                deltaRetriever.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({
+                    log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
+                    response.status(202)
+                    render json(status: 202, message: "delta import finished", publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+                })
+            } else {
+                deltaRetriever.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({
+                    log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
+                })
+                log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
+                response.status(202)
+                render json(status: 202, message: "delta import started", publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+            }
         }
     }
 
