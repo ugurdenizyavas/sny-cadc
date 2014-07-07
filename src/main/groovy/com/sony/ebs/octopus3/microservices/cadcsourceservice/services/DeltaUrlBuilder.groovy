@@ -9,8 +9,6 @@ import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.ResourceLoader
 import org.springframework.stereotype.Component
 
-import java.text.SimpleDateFormat
-
 @Slf4j
 @Component
 public class DeltaUrlBuilder {
@@ -19,12 +17,6 @@ public class DeltaUrlBuilder {
     String storageFolder
 
     ResourceLoader resourceLoader = new DefaultResourceLoader()
-
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-HH:mm")
-
-    def pattern = ~/[0-9]{4}[0-9]{2}[0-9]{2}-[0-9]{2}:[0-9]{2}/
-
-    String FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'%2B'01:00"
 
     String createUrl(String publication, String locale, String sincePrm) {
         String since = createSinceValue(publication, locale, sincePrm)

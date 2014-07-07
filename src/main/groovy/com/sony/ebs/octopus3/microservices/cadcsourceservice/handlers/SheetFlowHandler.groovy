@@ -19,8 +19,8 @@ class SheetFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            def url = request.queryParams['url']
             def product = request.queryParams['product']
+            def url = request.queryParams['url']
 
             sheetRetriever.sheetFlow(product, url)
 

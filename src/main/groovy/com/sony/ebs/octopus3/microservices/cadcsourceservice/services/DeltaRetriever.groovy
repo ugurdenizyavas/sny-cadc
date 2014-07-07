@@ -9,8 +9,6 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
-import java.util.concurrent.ExecutorService
-
 @Slf4j
 @Component
 @org.springframework.context.annotation.Lazy
@@ -21,8 +19,7 @@ class DeltaRetriever {
     HttpClient httpClient
 
     @Autowired
-    @Qualifier("executorService")
-    ExecutorService executorService
+    ObservableHelper observableHelper
 
     @Autowired
     DeltaUrlBuilder deltaUrlBuilder
@@ -37,25 +34,17 @@ class DeltaRetriever {
     }
 
     rx.Observable<Delta> parseDelta(String publication, String locale, String content) {
-        rx.Observable.create({ observer ->
-            // Schedulers.io().createWorker().schedule({
-            executorService.submit {
-                try {
-                    def result = new JsonSlurper().parseText(content)
-                    def urlMap = [:]
-                    result.skus[locale].each {
-                        def product = deltaUrlBuilder.getProductFromUrl(it)
-                        urlMap[product] = it
-                    }
-                    def delta = new Delta(publication: publication, locale: locale, urlMap: urlMap)
-                    log.info "parsed delta: $delta"
-                    observer.onNext(delta)
-                    observer.onCompleted()
-                } catch (all) {
-                    observer.onError all
-                }
+        observableHelper.createObservable {
+            def result = new JsonSlurper().parseText(content)
+            def urlMap = [:]
+            result.skus[locale].each {
+                def product = deltaUrlBuilder.getProductFromUrl(it)
+                urlMap[product] = it
             }
-        } as rx.Observable.OnSubscribe)
+            def delta = new Delta(publication: publication, locale: locale, urlMap: urlMap)
+            log.info "parsed delta: $delta"
+            delta
+        }
     }
 
     rx.Observable<List> importProducts(Delta delta) {

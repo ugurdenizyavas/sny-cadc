@@ -4,14 +4,13 @@ import com.ning.http.client.AsyncHttpClient
 import com.ning.http.client.AsyncHttpClientConfig
 import com.ning.http.client.ProxyServer
 import com.ning.http.client.Realm
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.ObservableHelper
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 
 import javax.annotation.PostConstruct
-import java.util.concurrent.ExecutorService
 
 @Slf4j
 @Component("ningHttpClient")
@@ -28,8 +27,7 @@ class NingHttpClient implements HttpClient {
     AsyncHttpClient httpClientNoProxy
 
     @Autowired
-    @Qualifier("executorService")
-    ExecutorService executorService
+    ObservableHelper observableHelper
 
     @PostConstruct
     void init() {
@@ -79,17 +77,9 @@ class NingHttpClient implements HttpClient {
     }
 
     rx.Observable<String> getObservableNing(RequestType requestType, String url, String data = null) {
-        rx.Observable.create({ observer ->
-            executorService.submit {
-                try {
-                    def result = getByNing(requestType, url, data)
-                    observer.onNext(result)
-                    observer.onCompleted()
-                } catch (all) {
-                    observer.onError all
-                }
-            }
-        } as rx.Observable.OnSubscribe)
+        observableHelper.createObservable {
+            getByNing(requestType, url, data)
+        }
     }
 
     @Override
