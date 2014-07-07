@@ -50,24 +50,31 @@ class DeltaRetriever {
         }
     }
 
-    rx.Observable<String> importProducts(Delta delta, boolean synch) {
+    rx.Observable importSingleProduct(product, sheetUrl, synch) {
+        def importUrl = "$importSheetUrl?synch=$synch&product=$product&url=$sheetUrl"
+        httpClient.getLocal(importUrl).flatMap({
+            rx.Observable.from([success: true, product: product])
+        }).onErrorReturn({
+            log.error "error in $product", it
+            [success: false, product: product]
+        })
+    }
+
+    rx.Observable<Map> importProducts(Delta delta, boolean synch) {
         log.info "starting import for $delta"
         rx.Observable.zip(
                 delta?.urlMap?.collect { product, sheetUrl ->
-                    def importUrl = "$importSheetUrl?synch=$synch&product=$product&url=$sheetUrl"
-                    httpClient.getLocal(importUrl).onErrorReturn({
-                        log.error "error in $product", it
-                        "error in $product"
-                    })
+                    importSingleProduct(product, sheetUrl, synch)
                 }
         ) { result ->
-            def message = "import finished for ${result.size()} products"
-            log.info message
-            return message
+            def error = [], success = []
+            result.each { it.success ? success << it.product : error << it.product }
+            log.info "import finished with result $result"
+            return [error: error, success: success]
         }
     }
 
-    rx.Observable<String> deltaFlow(String publication, String locale, String since, String cadcUrl, boolean synch) {
+    rx.Observable<Map> deltaFlow(String publication, String locale, String since, String cadcUrl, boolean synch) {
         retrieveDelta(publication, locale, since, cadcUrl)
                 .flatMap({ String result ->
             parseDelta(publication, locale, result)

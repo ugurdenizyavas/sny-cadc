@@ -25,14 +25,14 @@ class DeltaFlowHandler extends GroovyHandler {
             String cadcUrl = request.queryParams['cadcUrl']
             boolean synch = Boolean.parseBoolean(request.queryParams['synch'])
 
-            def finish = { message ->
+            def finish = { message, results = [:] ->
                 log.info "$message for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
                 response.status(202)
-                render json(status: 202, message: message, publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+                render json(status: 202, message: message, publication: publication, locale: locale, since: since, cadcUrl: cadcUrl, results: results)
             }
             if (synch) {
                 deltaRetriever.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({
-                    finish "delta import finished"
+                    finish "delta import finished", it
                 })
             } else {
                 deltaRetriever.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({

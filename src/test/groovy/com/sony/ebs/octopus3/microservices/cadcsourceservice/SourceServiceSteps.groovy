@@ -1,4 +1,3 @@
-
 package com.sony.ebs.octopus3.microservices.cadcsourceservice
 
 import com.github.dreamhead.moco.HttpServer
@@ -108,5 +107,7 @@ Then(~"(.*) products should be imported with publication (.*) and locale (.*) si
     assert json.since == since
     assert json.cadcUrl == "http://localhost:12306/skus"
     assert json.message == "delta import finished"
+    assert json.results?.success?.sort() == (1..count).collect { "p$it" }
+    assert json.results?.error == []
 }
 
