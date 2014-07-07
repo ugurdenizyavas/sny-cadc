@@ -14,16 +14,18 @@ class DeltaRetrieverTest {
     @Before
     void before() {
         def executorService = new ThreadPoolExecutor(5, 10, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>())
-        deltaRetriever = new DeltaRetriever(executorService: executorService)
+        deltaRetriever = new DeltaRetriever(executorService: executorService, deltaUrlBuilder: new DeltaUrlBuilder())
     }
 
     @Test
     void "parse delta"() {
-        def text = '{"skus":{"en_GB":["a", "b"]}}'
+        def text = '{"skus":{"en_GB":["http://h/sku/a", "http://h/sku/b"]}}'
         def delta = deltaRetriever.parseDelta("SCORE", "en_GB", text).toBlocking().single()
         assert delta.publication == 'SCORE'
         assert delta.locale == 'en_GB'
-        assert delta.urls == ['a', 'b']
+        assert delta.urlMap.size() == 2
+        assert delta.urlMap.a == 'http://h/sku/a'
+        assert delta.urlMap.b == 'http://h/sku/b'
     }
 
 }

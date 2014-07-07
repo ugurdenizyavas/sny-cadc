@@ -42,7 +42,12 @@ class DeltaRetriever {
             executorService.submit {
                 try {
                     def result = new JsonSlurper().parseText(content)
-                    def delta = new Delta(publication: publication, locale: locale, urls: result.skus[locale])
+                    def urlMap = [:]
+                    result.skus[locale].each {
+                        def product = deltaUrlBuilder.getProductFromUrl(it)
+                        urlMap[product] = it
+                    }
+                    def delta = new Delta(publication: publication, locale: locale, urlMap: urlMap)
                     log.info "parsed delta: $delta"
                     observer.onNext(delta)
                     observer.onCompleted()
@@ -55,25 +60,33 @@ class DeltaRetriever {
 
     rx.Observable<List> importProducts(Delta delta) {
         log.info "starting import for $delta"
-        def jsonSlurper = new JsonSlurper()
         rx.Observable.zip(
-                delta?.urls?.collect { sheetUrl ->
-                    def importUrl = "$importSheetUrl?url=$sheetUrl"
-                    httpClient.getLocal(importUrl)
+                delta?.urlMap?.collect { product, sheetUrl ->
+                    def importUrl = "$importSheetUrl?product=$product&url=$sheetUrl"
+                    httpClient.getLocal(importUrl).onErrorReturn({
+                        log.error "error in $product", it
+                        "error in $product"
+                    })
                 }
         ) { result ->
-            log.info "done ${result.size()}: ${result.join(',')}"
-            return result.collect { jsonSlurper.parseText(it)?.product }
+            def message = "import finished for ${result.size()} products"
+            log.info message
+            return message
         }
     }
 
-    rx.Observable<List> deltaFlow(String publication, String locale, String since, String cadcUrl) {
+    void deltaFlow(String publication, String locale, String since, String cadcUrl) {
         retrieveDelta(publication, locale, since, cadcUrl)
                 .flatMap({ String result ->
             parseDelta(publication, locale, result)
         }).flatMap({ Delta delta ->
             importProducts(delta)
+        }).doOnError({
+            log.error "error in delta import", it
+        }).subscribe({
+            log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
         })
+        log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
     }
 
 }

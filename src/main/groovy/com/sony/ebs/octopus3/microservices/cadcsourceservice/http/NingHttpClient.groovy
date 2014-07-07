@@ -68,14 +68,14 @@ class NingHttpClient implements HttpClient {
         }
         def response = f.get()
 
-        log.info "finished $requestType for $url"
-        if (response.statusCode != 200) {
+        if (response.statusCode != 200 && response.statusCode != 202) {
             def message = "error getting $url with http status code $response.statusCode"
             log.error message
             throw new Exception(message)
+        } else {
+            log.info "finished $requestType for $url with status code $response.statusCode"
+            return response.responseBody
         }
-
-        response.responseBody
     }
 
     rx.Observable<String> getObservableNing(RequestType requestType, String url, String data = null) {

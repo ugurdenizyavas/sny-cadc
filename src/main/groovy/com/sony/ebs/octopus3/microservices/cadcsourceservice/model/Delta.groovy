@@ -6,5 +6,5 @@ import groovy.transform.ToString
 class Delta {
     String publication
     String locale
-    List urls = []
+    Map urlMap = [:]
 }

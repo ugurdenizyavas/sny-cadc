@@ -18,7 +18,9 @@ class SaveFlowHandler extends GroovyHandler {
             def text = request.body.text
             log.debug "saving: $text"
             log.info "product $product saved"
-            render json([product: product, message: "product saved"])
+
+            response.status(202)
+            render json(status: 202, message: "product saved", product: product)
         }
     }
 

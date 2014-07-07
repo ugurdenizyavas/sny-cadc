@@ -58,7 +58,7 @@ Given(~"Cadc sheet (.*)") { name ->
 }
 
 When(~"I import sheet (.*)") { product ->
-    get("import/sheet?url=http://localhost:12306/cadc/sheet/$product")
+    get("import/sheet?product=$product&url=http://localhost:12306/cadc/sheet/$product")
 }
 
 Then(~"sheet (.*) should be imported") { product ->

@@ -22,9 +22,6 @@ class SheetRetriever {
     @Qualifier("executorService")
     ExecutorService executorService
 
-    @Autowired
-    DeltaUrlBuilder deltaUrlBuilder
-
     @Value('${octopus3.sourceservice.saveRepoUrl}')
     String saveRepoUrl
 
@@ -39,11 +36,16 @@ class SheetRetriever {
         }
     }
 
-    rx.Observable<String> sheetFlow(String product, String sheetUrl) {
+    void sheetFlow(String product, String sheetUrl) {
         retrieveSheet(sheetUrl)
                 .flatMap({ String sheetContent ->
             postSheet(product, sheetContent)
-        })
+        }).doOnError({
+            log.error "error in sheet flow for url $sheetUrl", it
+        }).subscribe {
+            log.info "sheet import finished for product $product, url $sheetUrl"
+        }
+        log.info "sheet import started for product $product, url $sheetUrl"
     }
 
 }

@@ -1,6 +1,5 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaUrlBuilder
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetRetriever
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,22 +16,17 @@ class SheetFlowHandler extends GroovyHandler {
     @Autowired
     SheetRetriever sheetRetriever
 
-    @Autowired
-    DeltaUrlBuilder deltaUrlBuilder
-
     @Override
     protected void handle(GroovyContext context) {
         context.with {
             def url = request.queryParams['url']
+            def product = request.queryParams['product']
 
-            String product = deltaUrlBuilder.getProductFromUrl(url)
-            sheetRetriever.sheetFlow(product, url).subscribe {
-                log.info "sheet import finished for product $product, url $url"
-            }
-            log.info "sheet import started for product $product, url $url"
-            render json([product: product, url: url, message: "sheet import started"])
+            sheetRetriever.sheetFlow(product, url)
+
+            response.status(202)
+            render json(status: 202, message: "sheet import started", product: product, url: url)
         }
     }
-
 
 }

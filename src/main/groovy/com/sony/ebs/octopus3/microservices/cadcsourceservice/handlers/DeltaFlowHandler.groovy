@@ -24,11 +24,10 @@ class DeltaFlowHandler extends GroovyHandler {
             def since = request.queryParams['since']
             def cadcUrl = request.queryParams['cadcUrl']
 
-            deltaRetriever.deltaFlow(publication, locale, since, cadcUrl).subscribe({ List products ->
-                log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl with products $products"
-            })
-            log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
-            render json([publication: publication, locale: locale, since: since, cadcUrl: cadcUrl, message: "delta import started"])
+            deltaRetriever.deltaFlow(publication, locale, since, cadcUrl)
+
+            response.status(202)
+            render json(status: 202, message: "delta import started", publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
         }
     }
 
