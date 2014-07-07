@@ -23,7 +23,7 @@ class DeltaFlowHandler extends GroovyHandler {
             String locale = pathTokens['locale']
             String since = request.queryParams['since']
             String cadcUrl = request.queryParams['cadcUrl']
-            boolean synch = request.queryParams['synch']
+            boolean synch = Boolean.parseBoolean(request.queryParams['synch'])
 
             def finish = { message ->
                 log.info "$message for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"

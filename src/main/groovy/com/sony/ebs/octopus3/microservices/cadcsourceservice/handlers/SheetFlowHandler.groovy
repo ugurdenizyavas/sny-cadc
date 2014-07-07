@@ -21,7 +21,7 @@ class SheetFlowHandler extends GroovyHandler {
         context.with {
             String product = request.queryParams['product']
             String url = request.queryParams['url']
-            boolean synch = request.queryParams['synch']
+            boolean synch = Boolean.parseBoolean(request.queryParams['synch'])
 
             def finish = { message ->
                 log.info "$message for product $product, url $url"
