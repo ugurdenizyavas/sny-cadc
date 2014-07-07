@@ -23,19 +23,20 @@ class SheetFlowHandler extends GroovyHandler {
             String url = request.queryParams['url']
             boolean synch = request.queryParams['synch']
 
+            def finish = { message ->
+                log.info "$message for product $product, url $url"
+                response.status(202)
+                render json(status: 202, message: message, product: product, url: url)
+            }
             if (synch) {
                 sheetRetriever.sheetFlow(product, url).subscribe {
-                    log.info "sheet import finished for product $product, url $url"
-                    response.status(202)
-                    render json(status: 202, message: "sheet import finished", product: product, url: url)
+                    finish "sheet import finished"
                 }
             } else {
                 sheetRetriever.sheetFlow(product, url).subscribe {
                     log.info "sheet import finished for product $product, url $url"
                 }
-                log.info "sheet import started for product $product, url $url"
-                response.status(202)
-                render json(status: 202, message: "sheet import started", product: product, url: url)
+                finish "sheet import started"
             }
 
         }
