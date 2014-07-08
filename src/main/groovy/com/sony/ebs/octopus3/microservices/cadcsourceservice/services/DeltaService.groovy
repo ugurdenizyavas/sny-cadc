@@ -27,7 +27,7 @@ class DeltaService {
     @Value('${octopus3.sourceservice.importSheetUrl}')
     String importSheetUrl
 
-    rx.Observable<String> retrieveDelta(String publication, String locale, String since, String cadcUrl) {
+    private rx.Observable<String> retrieveDelta(String publication, String locale, String since, String cadcUrl) {
         observableHelper.createObservable({
             String relUrl = deltaUrlBuilder.createUrl(publication, locale, since)
             "$cadcUrl$relUrl"
@@ -36,7 +36,7 @@ class DeltaService {
         }
     }
 
-    rx.Observable<Delta> parseDelta(String publication, String locale, String content) {
+    private rx.Observable<Delta> parseDelta(String publication, String locale, String content) {
         observableHelper.createObservable {
             def result = new JsonSlurper().parseText(content)
             def urlMap = [:]
@@ -50,7 +50,7 @@ class DeltaService {
         }
     }
 
-    rx.Observable<String> importSingleProduct(product, sheetUrl) {
+    private rx.Observable<String> importSingleProduct(product, sheetUrl) {
         def importUrl = "$importSheetUrl?product=$product&url=$sheetUrl"
         httpClient.getLocal(importUrl).flatMap({
             rx.Observable.from("success for $product")
@@ -60,7 +60,7 @@ class DeltaService {
         })
     }
 
-    rx.Observable<String> importProducts(Delta delta) {
+    private rx.Observable<String> importProducts(Delta delta) {
         log.info "starting import for $delta"
         rx.Observable.zip(
                 delta?.urlMap?.collect { product, sheetUrl ->
