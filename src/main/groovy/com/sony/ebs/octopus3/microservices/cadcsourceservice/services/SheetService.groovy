@@ -5,12 +5,12 @@ import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 
 @Slf4j
-@Component
+@Service
 @org.springframework.context.annotation.Lazy
-class SheetRetriever {
+class SheetService {
 
     @Autowired
     @Qualifier("ningHttpClient")

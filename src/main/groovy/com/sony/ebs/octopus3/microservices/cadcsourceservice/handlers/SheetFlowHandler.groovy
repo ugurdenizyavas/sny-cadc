@@ -1,6 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetRetriever
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -14,7 +14,7 @@ import static ratpack.jackson.Jackson.json
 class SheetFlowHandler extends GroovyHandler {
 
     @Autowired
-    SheetRetriever sheetRetriever
+    SheetService sheetService
 
     @Override
     protected void handle(GroovyContext context) {
@@ -29,11 +29,11 @@ class SheetFlowHandler extends GroovyHandler {
                 render json(status: 202, message: message, product: product, url: url)
             }
             if (synch) {
-                sheetRetriever.sheetFlow(product, url).subscribe {
+                sheetService.sheetFlow(product, url).subscribe {
                     finish "sheet import finished"
                 }
             } else {
-                sheetRetriever.sheetFlow(product, url).subscribe {
+                sheetService.sheetFlow(product, url).subscribe {
                     log.info "sheet import finished for product $product, url $url"
                 }
                 finish "sheet import started"

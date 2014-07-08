@@ -1,7 +1,7 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import groovy.util.logging.Slf4j
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 
 import javax.annotation.PostConstruct
 import java.util.concurrent.ExecutorService
@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
 @Slf4j
-@Component
+@Service
 class ObservableHelper {
 
     ExecutorService executorService

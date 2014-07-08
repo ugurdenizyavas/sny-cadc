@@ -7,10 +7,10 @@ import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.core.io.ResourceLoader
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 
 @Slf4j
-@Component
+@Service
 public class DeltaUrlBuilder {
 
     @Value('${octopus3.sourceservice.storageFolder}')

@@ -1,6 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaRetriever
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -14,7 +14,7 @@ import static ratpack.jackson.Jackson.json
 class DeltaFlowHandler extends GroovyHandler {
 
     @Autowired
-    DeltaRetriever deltaRetriever
+    DeltaService deltaService
 
     @Override
     protected void handle(GroovyContext context) {
@@ -31,11 +31,11 @@ class DeltaFlowHandler extends GroovyHandler {
                 render json(status: 202, message: message, publication: publication, locale: locale, since: since, cadcUrl: cadcUrl, results: results)
             }
             if (synch) {
-                deltaRetriever.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({
+                deltaService.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({
                     finish "delta import finished", it
                 })
             } else {
-                deltaRetriever.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({
+                deltaService.deltaFlow(publication, locale, since, cadcUrl, synch).subscribe({
                     log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
                 })
                 finish "delta import started"
