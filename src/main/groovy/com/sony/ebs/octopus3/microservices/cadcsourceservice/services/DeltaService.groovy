@@ -50,17 +50,17 @@ class DeltaService {
         }
     }
 
-    rx.Observable importSingleProduct(product, sheetUrl) {
+    rx.Observable<String> importSingleProduct(product, sheetUrl) {
         def importUrl = "$importSheetUrl?product=$product&url=$sheetUrl"
         httpClient.getLocal(importUrl).flatMap({
-            rx.Observable.from([success: true, product: product])
+            rx.Observable.from("success for $product")
         }).onErrorReturn({
             log.error "error in $product", it
-            [success: false, product: product]
+            "error in $product"
         })
     }
 
-    rx.Observable<Map> importProducts(Delta delta) {
+    rx.Observable<String> importProducts(Delta delta) {
         log.info "starting import for $delta"
         rx.Observable.zip(
                 delta?.urlMap?.collect { product, sheetUrl ->
@@ -68,13 +68,11 @@ class DeltaService {
                 }
         ) { result ->
             log.info "import finished with result $result"
-            def error = [], success = []
-            result.each { it.success ? success << it.product : error << it.product }
-            return [error: error, success: success]
+            "$result"
         }
     }
 
-    rx.Observable<Map> deltaFlow(String publication, String locale, String since, String cadcUrl) {
+    rx.Observable<String> deltaFlow(String publication, String locale, String since, String cadcUrl) {
         retrieveDelta(publication, locale, since, cadcUrl)
                 .flatMap({ String result ->
             parseDelta(publication, locale, result)
