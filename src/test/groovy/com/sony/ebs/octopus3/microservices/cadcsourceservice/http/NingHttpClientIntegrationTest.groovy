@@ -1,13 +1,10 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.http
 
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.ObservableHelper
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.junit.Before
 import org.junit.Test
-
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 
 @Slf4j
 class NingHttpClientIntegrationTest {
@@ -29,11 +26,11 @@ class NingHttpClientIntegrationTest {
                 authenticationPassword: "2khj0xwb",
                 authenticationHosts: "origin.uat-cadc-loader-lb.sony.eu, b, c"
         )
-        def executorService = new ThreadPoolExecutor(5, 10, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>())
+        def observableHelper = new ObservableHelper()
+        observableHelper.init()
 
-        ningHttpClient = new NingHttpClient(httpClientConfig: httpClientConfig, executorService: executorService)
+        ningHttpClient = new NingHttpClient(httpClientConfig: httpClientConfig, observableHelper: observableHelper)
         ningHttpClient.init()
-
     }
 
     def validate(String result) {
