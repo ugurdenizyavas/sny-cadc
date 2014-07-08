@@ -25,7 +25,7 @@ class DeltaFlowHandler extends GroovyHandler {
             String cadcUrl = request.queryParams['cadcUrl']
 
             deltaService.deltaFlow(publication, locale, since, cadcUrl).subscribe({ result ->
-                log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl: $result"
+                log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl, reuslt: $result"
             })
             log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
             response.status(202)
