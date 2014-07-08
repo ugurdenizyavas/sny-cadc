@@ -57,14 +57,14 @@ Given(~"Cadc sheet (.*)") { name ->
 }
 
 When(~"I import sheet (.*)") { product ->
-    get("import/sheet?synch=true&product=$product&url=http://localhost:12306/cadc/sheet/$product")
+    get("import/sheet?product=$product&url=http://localhost:12306/cadc/sheet/$product")
 }
 
 Then(~"sheet (.*) should be imported") { product ->
     def json = parseJson(response)
     assert json?.product == product
     assert json?.url == "http://localhost:12306/cadc/sheet/$product"
-    assert json?.message == "sheet import finished"
+    assert json?.message == "sheet import started"
 }
 
 When(~"I save sheet (.*)") { product ->
@@ -77,50 +77,35 @@ Then(~"sheet (.*) should be saved") { product ->
     assert json?.message == "product saved"
 }
 
-Given(~"Cadc returns (.*) products for locale (.*)") { int count, String locale ->
+def cadcService = { HttpServer server, String locale, int numOfSheets, int numOfErrors ->
     def str = new JsonBuilder({
         startDate 's1'
         endDate 'e1'
         skus {
-            "$locale"((1..count).collect { "http://localhost:12306/cadc/sheet/p$it" })
+            "$locale"((1..numOfSheets).collect { "http://localhost:12306/cadc/sheet/p$it" })
         }
     }).toString()
     server.request(by(uri("/skus/changes/$locale"))).response(str)
 
-    def callSheet = { HttpServer s1, int c1 ->
-        c1.times {
-            def name = "p${it + 1}"
-            s1.request(by(uri("/cadc/sheet/$name"))).response("sheet${it + 1}")
-        }
+    (numOfSheets - numOfErrors).times {
+        def name = "p${it + 1}"
+        server.request(by(uri("/cadc/sheet/$name"))).response("sheet${it + 1}")
     }
-    callSheet(server, count)
 }
 
-When(~"I request delta of publication (.*) and locale (.*) since (.*) synchronously") { publication, locale, since ->
-    get("import/delta/publication/$publication/locale/$locale?synch=true&since=$since&cadcUrl=http://localhost:12306/skus")
+Given(~"Cadc returns (.*) products for locale (.*) successfully") { int numOfSheets, String locale ->
+    cadcService(server, locale, numOfSheets, 0)
 }
 
-When(~"I request delta of publication (.*) and locale (.*) since (.*) asynchronously") { publication, locale, since ->
-    get("import/delta/publication/$publication/locale/$locale?synch=false&since=$since&cadcUrl=http://localhost:12306/skus")
+When(~"I request delta of publication (.*) locale (.*) since (.*)") { publication, locale, since ->
+    get("import/delta/publication/$publication/locale/$locale?since=$since&cadcUrl=http://localhost:12306/skus")
 }
 
-Then(~"(.*) products should be synchronously imported with publication (.*) and locale (.*) since (.*)") { int count, publication, locale, since ->
-    def json = parseJson(response)
-    assert json.publication == publication
-    assert json.locale == locale
-    assert json.since == since
-    assert json.cadcUrl == "http://localhost:12306/skus"
-    assert json.message == "delta import finished"
-    assert json.results?.success?.sort() == (1..count).collect { "p$it" }
-    assert json.results?.error == []
-}
-
-Then(~"(.*) products should be asynchronously imported with publication (.*) and locale (.*) since (.*)") { int count, publication, locale, since ->
+Then(~"Products should be imported with publication (.*) locale (.*) since (.*)") { publication, locale, since ->
     def json = parseJson(response)
     assert json.publication == publication
     assert json.locale == locale
     assert json.since == since
     assert json.cadcUrl == "http://localhost:12306/skus"
     assert json.message == "delta import started"
-    assert !json.results
 }

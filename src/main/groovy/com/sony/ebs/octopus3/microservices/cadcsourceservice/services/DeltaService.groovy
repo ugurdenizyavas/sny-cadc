@@ -50,8 +50,8 @@ class DeltaService {
         }
     }
 
-    rx.Observable importSingleProduct(product, sheetUrl, synch) {
-        def importUrl = "$importSheetUrl?synch=$synch&product=$product&url=$sheetUrl"
+    rx.Observable importSingleProduct(product, sheetUrl) {
+        def importUrl = "$importSheetUrl?product=$product&url=$sheetUrl"
         httpClient.getLocal(importUrl).flatMap({
             rx.Observable.from([success: true, product: product])
         }).onErrorReturn({
@@ -60,11 +60,11 @@ class DeltaService {
         })
     }
 
-    rx.Observable<Map> importProducts(Delta delta, boolean synch) {
+    rx.Observable<Map> importProducts(Delta delta) {
         log.info "starting import for $delta"
         rx.Observable.zip(
                 delta?.urlMap?.collect { product, sheetUrl ->
-                    importSingleProduct(product, sheetUrl, synch)
+                    importSingleProduct(product, sheetUrl)
                 }
         ) { result ->
             log.info "import finished with result $result"
@@ -74,12 +74,12 @@ class DeltaService {
         }
     }
 
-    rx.Observable<Map> deltaFlow(String publication, String locale, String since, String cadcUrl, boolean synch) {
+    rx.Observable<Map> deltaFlow(String publication, String locale, String since, String cadcUrl) {
         retrieveDelta(publication, locale, since, cadcUrl)
                 .flatMap({ String result ->
             parseDelta(publication, locale, result)
         }).flatMap({ Delta delta ->
-            importProducts(delta, synch)
+            importProducts(delta)
         }).doOnError({
             log.error "error in delta import", it
         })
