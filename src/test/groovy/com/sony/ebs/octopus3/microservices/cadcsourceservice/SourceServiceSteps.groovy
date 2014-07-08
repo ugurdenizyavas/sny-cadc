@@ -96,11 +96,15 @@ Given(~"Cadc returns (.*) products for locale (.*)") { int count, String locale 
     callSheet(server, count)
 }
 
-When(~"I request delta of publication (.*) and locale (.*) since (.*)") { publication, locale, since ->
+When(~"I request delta of publication (.*) and locale (.*) since (.*) synchronously") { publication, locale, since ->
     get("import/delta/publication/$publication/locale/$locale?synch=true&since=$since&cadcUrl=http://localhost:12306/skus")
 }
 
-Then(~"(.*) products should be imported with publication (.*) and locale (.*) since (.*)") { int count, publication, locale, since ->
+When(~"I request delta of publication (.*) and locale (.*) since (.*) asynchronously") { publication, locale, since ->
+    get("import/delta/publication/$publication/locale/$locale?synch=false&since=$since&cadcUrl=http://localhost:12306/skus")
+}
+
+Then(~"(.*) products should be synchronously imported with publication (.*) and locale (.*) since (.*)") { int count, publication, locale, since ->
     def json = parseJson(response)
     assert json.publication == publication
     assert json.locale == locale
@@ -111,3 +115,12 @@ Then(~"(.*) products should be imported with publication (.*) and locale (.*) si
     assert json.results?.error == []
 }
 
+Then(~"(.*) products should be asynchronously imported with publication (.*) and locale (.*) since (.*)") { int count, publication, locale, since ->
+    def json = parseJson(response)
+    assert json.publication == publication
+    assert json.locale == locale
+    assert json.since == since
+    assert json.cadcUrl == "http://localhost:12306/skus"
+    assert json.message == "delta import started"
+    assert !json.results
+}

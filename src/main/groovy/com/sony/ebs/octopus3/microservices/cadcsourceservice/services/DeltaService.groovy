@@ -67,9 +67,9 @@ class DeltaService {
                     importSingleProduct(product, sheetUrl, synch)
                 }
         ) { result ->
+            log.info "import finished with result $result"
             def error = [], success = []
             result.each { it.success ? success << it.product : error << it.product }
-            log.info "import finished with result $result"
             return [error: error, success: success]
         }
     }
