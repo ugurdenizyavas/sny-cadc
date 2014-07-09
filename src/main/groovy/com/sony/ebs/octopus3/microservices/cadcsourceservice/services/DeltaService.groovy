@@ -1,7 +1,10 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
+import com.sony.ebs.octopus3.commons.urn.URN
+import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.UrnType
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -41,8 +44,9 @@ class DeltaService {
             def result = new JsonSlurper().parseText(content)
             def urlMap = [:]
             result.skus[locale].each {
-                def product = deltaUrlBuilder.getProductFromUrl(it)
-                urlMap[product] = it
+                def sku = deltaUrlBuilder.getSkuFromUrl(it)
+                URN urn = new URNImpl(UrnType.global_sku.toString(), [publication, locale, sku])
+                urlMap[urn] = it
             }
             def delta = new Delta(publication: publication, locale: locale, urlMap: urlMap)
             log.info "parsed delta: $delta"
@@ -50,21 +54,21 @@ class DeltaService {
         }
     }
 
-    private rx.Observable<String> importSingleProduct(product, sheetUrl) {
-        def importUrl = "$importSheetUrl?product=$product&url=$sheetUrl"
+    private rx.Observable<String> importSingleSheet(URN urn, String sheetUrl) {
+        def importUrl = "$importSheetUrl/$urn?url=$sheetUrl"
         httpClient.getLocal(importUrl).flatMap({
-            rx.Observable.from("success for $product")
+            rx.Observable.from("success for $urn")
         }).onErrorReturn({
-            log.error "error in $product", it
-            "error in $product"
+            log.error "error in $urn", it
+            "error in $urn"
         })
     }
 
-    private rx.Observable<String> importProducts(Delta delta) {
+    private rx.Observable<String> importSheets(Delta delta) {
         log.info "starting import for $delta"
         rx.Observable.zip(
-                delta?.urlMap?.collect { product, sheetUrl ->
-                    importSingleProduct(product, sheetUrl)
+                delta?.urlMap?.collect { urn, sheetUrl ->
+                    importSingleSheet(urn, sheetUrl)
                 }
         ) { result ->
             log.info "import finished with result $result"
@@ -77,7 +81,7 @@ class DeltaService {
                 .flatMap({ String result ->
             parseDelta(publication, locale, result)
         }).flatMap({ Delta delta ->
-            importProducts(delta)
+            importSheets(delta)
         }).doOnError({
             log.error "error in delta import", it
         })

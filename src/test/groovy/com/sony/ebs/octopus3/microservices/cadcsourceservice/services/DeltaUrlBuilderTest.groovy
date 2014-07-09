@@ -53,32 +53,32 @@ class DeltaUrlBuilderTest {
     }
 
     @Test
-    void "get product for null"() {
-        assert deltaUrlBuilder.getProductFromUrl(null) == null
+    void "get sku for null"() {
+        assert deltaUrlBuilder.getSkuFromUrl(null) == null
     }
 
     @Test
-    void "get product for empty str"() {
-        assert deltaUrlBuilder.getProductFromUrl("") == null
+    void "get sku for empty str"() {
+        assert deltaUrlBuilder.getSkuFromUrl("") == null
     }
 
     @Test
-    void "get product for no slash"() {
-        assert deltaUrlBuilder.getProductFromUrl("aa") == null
+    void "get sku for no slash"() {
+        assert deltaUrlBuilder.getSkuFromUrl("aa") == null
     }
 
     @Test
-    void "get product for no product"() {
-        assert deltaUrlBuilder.getProductFromUrl("/") == null
+    void "get sku for no sku"() {
+        assert deltaUrlBuilder.getSkuFromUrl("/") == null
     }
 
     @Test
-    void "get product for only product"() {
-        assert deltaUrlBuilder.getProductFromUrl("/x1.c") == "x1.c"
+    void "get sku for only sku"() {
+        assert deltaUrlBuilder.getSkuFromUrl("/x1.c") == "x1.c"
     }
 
     @Test
-    void "get product for prefix and product"() {
-        assert deltaUrlBuilder.getProductFromUrl("aa/x1.c") == "x1.c"
+    void "get sku for prefix and sku"() {
+        assert deltaUrlBuilder.getSkuFromUrl("aa/x1.c") == "x1.c"
     }
 }

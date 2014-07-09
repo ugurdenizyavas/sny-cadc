@@ -29,13 +29,13 @@ class DeltaFlowHandlerTest {
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }
         invocation.with {
-            status.code == 202
-            rendered(DefaultJsonRender).object.message == "delta import started"
-            rendered(DefaultJsonRender).object.publication == "SCORE"
-            rendered(DefaultJsonRender).object.locale == "en_GB"
-            rendered(DefaultJsonRender).object.since == "2014"
-            rendered(DefaultJsonRender).object.cadcUrl == "http://cadc/skus"
-            rendered(DefaultJsonRender).object.status == 202
+            assert status.code == 202
+            assert rendered(DefaultJsonRender).object.message == "delta import started"
+            assert rendered(DefaultJsonRender).object.publication == "SCORE"
+            assert rendered(DefaultJsonRender).object.locale == "en_GB"
+            assert rendered(DefaultJsonRender).object.since == "2014"
+            assert rendered(DefaultJsonRender).object.cadcUrl == "http://cadc/skus"
+            assert rendered(DefaultJsonRender).object.status == 202
         }
     }
 
@@ -46,12 +46,12 @@ class DeltaFlowHandlerTest {
             uri "/?cadcUrl=http://cadc/skus"
         }
         invocation.with {
-            status.code == 400
-            rendered(DefaultJsonRender).object.message == "one of product, url parameters missing"
-            rendered(DefaultJsonRender).object.publication == null
-            rendered(DefaultJsonRender).object.locale == "en_GB"
-            rendered(DefaultJsonRender).object.cadcUrl == "http://cadc/skus"
-            rendered(DefaultJsonRender).object.status == 400
+            assert status.code == 400
+            assert rendered(DefaultJsonRender).object.message == "one of publication, locale, cadcUrl parameters missing"
+            assert rendered(DefaultJsonRender).object.publication == null
+            assert rendered(DefaultJsonRender).object.locale == "en_GB"
+            assert rendered(DefaultJsonRender).object.cadcUrl == "http://cadc/skus"
+            assert rendered(DefaultJsonRender).object.status == 400
         }
     }
 

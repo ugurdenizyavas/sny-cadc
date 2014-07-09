@@ -47,7 +47,7 @@ public class DeltaUrlBuilder {
         since
     }
 
-    String getProductFromUrl(String url) {
+    String getSkuFromUrl(String url) {
         url?.lastIndexOf('/') >= 0 && !url?.endsWith("/") ? url.substring(url.lastIndexOf('/') + 1) : null
     }
 

@@ -19,10 +19,10 @@ class DeltaFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            String publication = pathTokens['publication']
-            String locale = pathTokens['locale']
-            String since = request.queryParams['since']
-            String cadcUrl = request.queryParams['cadcUrl']
+            String publication = pathTokens.publication
+            String locale = pathTokens.locale
+            String since = request.queryParams.since
+            String cadcUrl = request.queryParams.cadcUrl
 
             if (!publication || !locale || !cadcUrl) {
                 def message = "one of publication, locale, cadcUrl parameters missing"

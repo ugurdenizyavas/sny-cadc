@@ -21,10 +21,10 @@ class DeltaServiceTest {
         def mockDeltaUrlBuilder = new MockFor(DeltaUrlBuilder)
         mockDeltaUrlBuilder.demand.with {
             createUrl(1) { publication, locale, since -> "/delta" }
-            getProductFromUrl(2) { String url ->
-                def product = url.endsWith("a") ? "a" : "b"
-                assert url == "http://cadc/$product"
-                product
+            getSkuFromUrl(2) { String url ->
+                def sku = url.endsWith("a") ? "a" : "b"
+                assert url == "http://cadc/$sku"
+                sku
             }
         }
         deltaService.deltaUrlBuilder = mockDeltaUrlBuilder.proxyInstance()
@@ -36,15 +36,15 @@ class DeltaServiceTest {
                 rx.Observable.from('{"skus":{"en_GB":["http://cadc/a", "http://cadc/b"]}}')
             }
             getLocal(2) { String url ->
-                def product = url.endsWith("a") ? "a" : "b"
-                assert url == "http://import?product=$product&url=http://cadc/$product"
-                rx.Observable.from("$product$product")
+                def sku = url.endsWith("a") ? "a" : "b"
+                assert url == "http://import/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku"
+                rx.Observable.from("$sku$sku")
             }
         }
         deltaService.httpClient = mockHttpClient.proxyInstance()
 
         def result = deltaService.deltaFlow("SCORE", "en_GB", "2014", "http://cadc").toBlocking().single()
-        assert result == "[success for a, success for b]"
+        assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
     }
 
 }

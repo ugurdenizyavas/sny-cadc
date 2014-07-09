@@ -56,25 +56,25 @@ Given(~"Cadc sheet (.*)") { name ->
     server.request(by(uri("/cadc/sheet/$name"))).response("sheet $name")
 }
 
-When(~"I import sheet (.*)") { product ->
-    get("import/sheet?product=$product&url=http://localhost:12306/cadc/sheet/$product")
+When(~"I import sheet (.*)") { sku ->
+    get("import/sheet/urn:global_sku:score:en_gb:$sku?url=http://localhost:12306/cadc/sheet/$sku")
 }
 
-Then(~"sheet (.*) should be imported") { product ->
+Then(~"sheet (.*) should be imported") { sku ->
     def json = parseJson(response)
-    assert json?.product == product
-    assert json?.url == "http://localhost:12306/cadc/sheet/$product"
+    assert json?.urn == "urn:global_sku:score:en_gb:$sku"
+    assert json?.url == "http://localhost:12306/cadc/sheet/$sku"
     assert json?.message == "sheet import started"
 }
 
-When(~"I save sheet (.*)") { product ->
-    post("save/repo?product=$product")
+When(~"I save sheet (.*)") { sku ->
+    post("save/repo/urn:global_sku:score:en_gb:$sku")
 }
 
-Then(~"sheet (.*) should be saved") { product ->
+Then(~"sheet (.*) should be saved") { sku ->
     def json = parseJson(response)
-    assert json?.product == product
-    assert json?.message == "product saved"
+    assert json?.urn == "urn:global_sku:score:en_gb:$sku"
+    assert json?.message == "sheet saved"
 }
 
 def cadcService = { HttpServer server, String locale, int numOfSheets, int numOfErrors ->
@@ -93,7 +93,7 @@ def cadcService = { HttpServer server, String locale, int numOfSheets, int numOf
     }
 }
 
-Given(~"Cadc returns (.*) products for locale (.*) successfully") { int numOfSheets, String locale ->
+Given(~"Cadc returns (.*) sheets for locale (.*) successfully") { int numOfSheets, String locale ->
     cadcService(server, locale, numOfSheets, 0)
 }
 
@@ -101,7 +101,7 @@ When(~"I request delta of publication (.*) locale (.*) since (.*)") { publicatio
     get("import/delta/publication/$publication/locale/$locale?since=$since&cadcUrl=http://localhost:12306/skus")
 }
 
-Then(~"Products should be imported with publication (.*) locale (.*) since (.*)") { publication, locale, since ->
+Then(~"Sheets should be imported with publication (.*) locale (.*) since (.*)") { publication, locale, since ->
     def json = parseJson(response)
     assert json.publication == publication
     assert json.locale == locale

@@ -14,13 +14,14 @@ class SaveFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            def product = request.queryParams['product']
-            def text = request.body.text
+            String urn = pathTokens.urn
+            String text = request.body.text
+
             log.debug "saving: $text"
-            log.info "product $product saved"
+            log.info "$urn saved"
 
             response.status(202)
-            render json(status: 202, message: "product saved", product: product)
+            render json(status: 202, message: "sheet saved", urn: urn)
         }
     }
 

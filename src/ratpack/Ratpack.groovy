@@ -36,9 +36,9 @@ ratpack {
     }
 
     handlers {
-        post("save/repo", saveFlowHandler)
+        post("save/repo/:urn", saveFlowHandler)
 
-        get("import/sheet", sheetFlowHandler)
+        get("import/sheet/:urn", sheetFlowHandler)
 
         get("import/delta/publication/:publication/locale/:locale", deltaFlowHandler)
     }

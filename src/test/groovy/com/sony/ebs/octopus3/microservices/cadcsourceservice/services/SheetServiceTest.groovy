@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
+import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
 import groovy.mock.interceptor.MockFor
 import org.junit.Before
@@ -17,12 +18,16 @@ class SheetServiceTest {
 
     @Test
     void "post sheet"() {
-        String SHEET_URL = 'http://cadc/p', PRODUCT = 'p', SHEET_RESULT = 'eee', SAVE_RESULT = 'aaa'
-        String POST_URL = "$SAVE_REPO_URL?product=$PRODUCT"
+        String SHEET_URL = 'http://cadc/p', SKU = 'p', SHEET_RESULT = 'eee', SAVE_RESULT = 'aaa'
+        String URN = "urn:global_sku:score:en_gb:p"
+        String POST_URL = "$SAVE_REPO_URL/$URN"
 
         def mock = new MockFor(HttpClient)
         mock.demand.with {
-            getFromCadc(1) { rx.Observable.from(SHEET_RESULT) }
+            getFromCadc(1) {
+                assert it == SHEET_URL
+                rx.Observable.from(SHEET_RESULT)
+            }
             postLocal(1) { url, data ->
                 assert url == POST_URL
                 assert data == SHEET_RESULT
@@ -31,7 +36,7 @@ class SheetServiceTest {
         }
         sheetService.httpClient = mock.proxyInstance()
 
-        def result = sheetService.sheetFlow(PRODUCT, SHEET_URL).toBlocking().single()
+        def result = sheetService.sheetFlow(new URNImpl(URN), SHEET_URL).toBlocking().single()
         assert result == SAVE_RESULT
     }
 
