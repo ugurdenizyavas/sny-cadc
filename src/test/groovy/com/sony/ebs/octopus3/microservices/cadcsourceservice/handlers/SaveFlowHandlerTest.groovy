@@ -14,14 +14,15 @@ class SaveFlowHandlerTest {
         def saveFlowHandler = new SaveFlowHandler()
         def invocation = handle(saveFlowHandler) {
             pathBinding([urn: URN])
-            uri "/"
+            uri "/?processId=123"
             body "aaa", "application/json"
         }
         invocation.with {
             assert status.code == 202
+            assert rendered(DefaultJsonRender).object.status == 202
             assert rendered(DefaultJsonRender).object.message == "sheet saved"
             assert rendered(DefaultJsonRender).object.urn == URN
-            assert rendered(DefaultJsonRender).object.status == 202
+            assert rendered(DefaultJsonRender).object.processId == "123"
         }
     }
 }
