@@ -16,12 +16,13 @@ class SaveFlowHandler extends GroovyHandler {
         context.with {
             String urn = pathTokens.urn
             String text = request.body.text
+            String processIdStr = request.queryParams.processId
 
             log.debug "saving: $text"
-            log.info "$urn saved"
+            log.info "$urn for procesId $processIdStr saved"
 
             response.status(202)
-            render json(status: 202, message: "sheet saved", urn: urn)
+            render json(status: 202, message: "sheet saved", urn: urn, processId: processIdStr)
         }
     }
 
