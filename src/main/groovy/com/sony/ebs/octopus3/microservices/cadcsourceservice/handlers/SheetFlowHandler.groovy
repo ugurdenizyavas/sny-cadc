@@ -21,13 +21,19 @@ class SheetFlowHandler extends GroovyHandler {
         context.with {
             String product = request.queryParams['product']
             String url = request.queryParams['url']
-
-            sheetService.sheetFlow(product, url).subscribe {
-                log.info "sheet import finished for product $product, url $url"
+            if (!product || !url) {
+                def message = "one of product, url parameters missing"
+                log.error message
+                response.status(400)
+                render json(status: 400, message: message, product: product, url: url)
+            } else {
+                sheetService.sheetFlow(product, url).subscribe {
+                    log.info "sheet import finished for product $product, url $url"
+                }
+                log.info "import started for product $product, url $url"
+                response.status(202)
+                render json(status: 202, message: "sheet import started", product: product, url: url)
             }
-            log.info "import started for product $product, url $url"
-            response.status(202)
-            render json(status: 202, message: "sheet import started", product: product, url: url)
         }
     }
 

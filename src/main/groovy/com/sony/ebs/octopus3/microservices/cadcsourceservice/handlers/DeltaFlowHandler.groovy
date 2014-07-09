@@ -24,12 +24,19 @@ class DeltaFlowHandler extends GroovyHandler {
             String since = request.queryParams['since']
             String cadcUrl = request.queryParams['cadcUrl']
 
-            deltaService.deltaFlow(publication, locale, since, cadcUrl).subscribe({ result ->
-                log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl, reuslt: $result"
-            })
-            log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
-            response.status(202)
-            render json(status: 202, message: "delta import started", publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+            if (!publication || !locale || !cadcUrl) {
+                def message = "one of publication, locale, cadcUrl parameters missing"
+                log.error message
+                response.status(400)
+                render json(status: 400, message: message, publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+            } else {
+                deltaService.deltaFlow(publication, locale, since, cadcUrl).subscribe({ result ->
+                    log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl, reuslt: $result"
+                })
+                log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
+                response.status(202)
+                render json(status: 202, message: "delta import started", publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+            }
         }
     }
 

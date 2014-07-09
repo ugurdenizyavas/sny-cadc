@@ -33,4 +33,19 @@ class SheetFlowHandlerTest {
             rendered(DefaultJsonRender).object.status == 202
         }
     }
+
+    @Test
+    void "missing parameter"() {
+        def invocation = handle(new SheetFlowHandler()) {
+            uri "/?product=a"
+        }
+        invocation.with {
+            status.code == 400
+            rendered(DefaultJsonRender).object.message == "one of product, url parameters missing"
+            rendered(DefaultJsonRender).object.product == "a"
+            rendered(DefaultJsonRender).object.url == null
+            rendered(DefaultJsonRender).object.status == 400
+        }
+    }
+
 }

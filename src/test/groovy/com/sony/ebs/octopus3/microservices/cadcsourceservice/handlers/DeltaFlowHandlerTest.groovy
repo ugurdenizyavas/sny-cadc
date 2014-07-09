@@ -38,4 +38,21 @@ class DeltaFlowHandlerTest {
             rendered(DefaultJsonRender).object.status == 202
         }
     }
+
+    @Test
+    void "missing parameter"() {
+        def invocation = handle(new DeltaFlowHandler()) {
+            pathBinding([locale: "en_GB"])
+            uri "/?cadcUrl=http://cadc/skus"
+        }
+        invocation.with {
+            status.code == 400
+            rendered(DefaultJsonRender).object.message == "one of product, url parameters missing"
+            rendered(DefaultJsonRender).object.publication == null
+            rendered(DefaultJsonRender).object.locale == "en_GB"
+            rendered(DefaultJsonRender).object.cadcUrl == "http://cadc/skus"
+            rendered(DefaultJsonRender).object.status == 400
+        }
+    }
+
 }
