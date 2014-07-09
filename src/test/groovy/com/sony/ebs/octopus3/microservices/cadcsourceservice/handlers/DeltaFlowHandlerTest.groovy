@@ -14,6 +14,10 @@ class DeltaFlowHandlerTest {
         def mock = new MockFor(DeltaService)
         mock.demand.with {
             deltaFlow(1) { String publication, String locale, String since, String cadcUrl ->
+                assert publication == "SCORE"
+                assert locale == "en_GB"
+                assert since == "2014"
+                assert cadcUrl == "http://cadc/skus"
                 rx.Observable.from("xxx")
             }
         }
@@ -22,14 +26,14 @@ class DeltaFlowHandlerTest {
 
         def invocation = handle(deltaFlowHandler) {
             pathBinding([publication: "SCORE", locale: "en_GB"])
-            uri "/?cadcUrl=http://cadc/skus&since=s1"
+            uri "/?cadcUrl=http://cadc/skus&since=2014"
         }
         invocation.with {
             status.code == 202
             rendered(DefaultJsonRender).object.message == "delta import started"
             rendered(DefaultJsonRender).object.publication == "SCORE"
             rendered(DefaultJsonRender).object.locale == "en_GB"
-            rendered(DefaultJsonRender).object.since == "s1"
+            rendered(DefaultJsonRender).object.since == "2014"
             rendered(DefaultJsonRender).object.cadcUrl == "http://cadc/skus"
             rendered(DefaultJsonRender).object.status == 202
         }
