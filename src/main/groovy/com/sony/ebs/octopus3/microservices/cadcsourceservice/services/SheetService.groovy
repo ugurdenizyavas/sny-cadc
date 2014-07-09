@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
+import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
 import groovy.util.logging.Slf4j
@@ -19,10 +20,11 @@ class SheetService {
     @Value('${octopus3.sourceservice.saveRepoUrl}')
     String saveRepoUrl
 
-    rx.Observable<String> sheetFlow(URN urn, String sheetUrl) {
+    rx.Observable<String> sheetFlow(URN urn, String sheetUrl, ProcessId processId) {
         httpClient.getFromCadc(sheetUrl)
                 .flatMap({ String sheetContent ->
             String postUrl = "$saveRepoUrl/$urn"
+            if (processId) postUrl += "?processId=$processId.id"
             httpClient.postLocal(postUrl, sheetContent)
         }).doOnError({
             log.error "error in sheet flow for url $sheetUrl", it

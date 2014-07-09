@@ -4,8 +4,10 @@ import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.Observable
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
+@Ignore
 @Slf4j
 class NingHttpClientIntegrationTest {
 

@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
+import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
@@ -53,8 +54,8 @@ class DeltaService {
         }
     }
 
-    private rx.Observable<String> importSingleSheet(URN urn, String sheetUrl) {
-        def importUrl = "$importSheetUrl/$urn?url=$sheetUrl"
+    private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
+        def importUrl = "$importSheetUrl/$urn?url=$sheetUrl&processId=$processId.id"
         httpClient.getLocal(importUrl).flatMap({
             rx.Observable.from("success for $urn")
         }).onErrorReturn({
@@ -63,11 +64,11 @@ class DeltaService {
         })
     }
 
-    private rx.Observable<String> importSheets(Delta delta) {
+    private rx.Observable<String> importSheets(ProcessId processId, Delta delta) {
         log.info "starting import for $delta"
         rx.Observable.zip(
-                delta?.urlMap?.collect { urn, sheetUrl ->
-                    importSingleSheet(urn, sheetUrl)
+                delta?.urlMap?.collect { URN urn, String sheetUrl ->
+                    importSingleSheet(processId, urn, sheetUrl)
                 }
         ) { result ->
             log.info "import finished with result $result"
@@ -75,12 +76,12 @@ class DeltaService {
         }
     }
 
-    rx.Observable<String> deltaFlow(String publication, String locale, String since, String cadcUrl) {
+    rx.Observable<String> deltaFlow(ProcessId processId, String publication, String locale, String since, String cadcUrl) {
         retrieveDelta(publication, locale, since, cadcUrl)
                 .flatMap({ String result ->
             parseDelta(publication, locale, result)
         }).flatMap({ Delta delta ->
-            importSheets(delta)
+            importSheets(processId, delta)
         }).doOnError({
             log.error "error in delta import", it
         })

@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import groovy.mock.interceptor.MockFor
 import org.junit.Test
@@ -13,7 +14,8 @@ class DeltaFlowHandlerTest {
     void "main flow"() {
         def mock = new MockFor(DeltaService)
         mock.demand.with {
-            deltaFlow(1) { String publication, String locale, String since, String cadcUrl ->
+            deltaFlow(1) { ProcessId processId, String publication, String locale, String since, String cadcUrl ->
+                assert processId != null
                 assert publication == "SCORE"
                 assert locale == "en_GB"
                 assert since == "2014"
@@ -36,6 +38,7 @@ class DeltaFlowHandlerTest {
             assert rendered(DefaultJsonRender).object.since == "2014"
             assert rendered(DefaultJsonRender).object.cadcUrl == "http://cadc/skus"
             assert rendered(DefaultJsonRender).object.status == 202
+            assert rendered(DefaultJsonRender).object.processId != null
         }
     }
 
