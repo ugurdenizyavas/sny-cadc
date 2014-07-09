@@ -21,13 +21,10 @@ class DeltaServiceTest {
         def mockDeltaUrlBuilder = new MockFor(DeltaUrlBuilder)
         mockDeltaUrlBuilder.demand.with {
             createUrl(1) { publication, locale, since -> "/delta" }
-            getProductFromUrl(1) {
-                assert it == "http://cadc/a"
-                "a"
-            }
-            getProductFromUrl(1) {
-                assert it == "http://cadc/b"
-                "b"
+            getProductFromUrl(2) { String url ->
+                def product = url.endsWith("a") ? "a" : "b"
+                assert url == "http://cadc/$product"
+                product
             }
         }
         deltaService.deltaUrlBuilder = mockDeltaUrlBuilder.proxyInstance()
@@ -38,13 +35,10 @@ class DeltaServiceTest {
                 assert it == "http://cadc/delta"
                 rx.Observable.from('{"skus":{"en_GB":["http://cadc/a", "http://cadc/b"]}}')
             }
-            getLocal(1) {
-                assert it == "http://import?product=a&url=http://cadc/a"
-                rx.Observable.from("aa")
-            }
-            getLocal(1) {
-                assert it == "http://import?product=b&url=http://cadc/b"
-                rx.Observable.from("bb")
+            getLocal(2) { String url ->
+                def product = url.endsWith("a") ? "a" : "b"
+                assert url == "http://import?product=$product&url=http://cadc/$product"
+                rx.Observable.from("$product$product")
             }
         }
         deltaService.httpClient = mockHttpClient.proxyInstance()
