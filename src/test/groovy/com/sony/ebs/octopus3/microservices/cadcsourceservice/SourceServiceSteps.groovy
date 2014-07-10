@@ -124,7 +124,7 @@ When(~"I import delta with invalid (.*) parameter") { paramName ->
     }
 }
 
-Then(~"Delta import should give (.*) parameter error") { paramName ->
+Then(~"Import should give (.*) parameter error") { paramName ->
     validateError(response, "$paramName parameter is invalid")
 }
 
@@ -150,9 +150,5 @@ When(~"I import sheet with invalid (.*) parameter") { paramName ->
     } else if (paramName == "url") {
         get("import/sheet/urn:global_sku:score:en_gb:a?url=/sheet/a")
     }
-}
-
-Then(~"Sheet import should give (.*) parameter error") { paramName ->
-    validateError(response, "a valid $paramName parameter is required")
 }
 

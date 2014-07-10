@@ -13,19 +13,19 @@ Feature: Delta
 
   Scenario: Delta flow invalid publication parameter
     When I import delta with invalid publication parameter
-    Then Delta import should give publication parameter error
+    Then Import should give publication parameter error
 
   Scenario: Delta flow invalid locale parameter
     When I import delta with invalid locale parameter
-    Then Delta import should give locale parameter error
+    Then Import should give locale parameter error
 
   Scenario: Delta flow invalid cadcUrl parameter
     When I import delta with invalid cadcUrl parameter
-    Then Delta import should give cadcUrl parameter error
+    Then Import should give cadcUrl parameter error
 
   Scenario: Delta flow invalid since parameter
     When I import delta with invalid since parameter
-    Then Delta import should give since parameter error
+    Then Import should give since parameter error
 
   Scenario: Sheet flow correct
     Given Cadc sheet z1.ceh
@@ -34,9 +34,8 @@ Feature: Delta
 
   Scenario: Sheet flow invalid urn
     When I import sheet with invalid urn parameter
-    Then Sheet import should give urn parameter error
+    Then Import should give urn parameter error
 
   Scenario: Sheet flow invalid url
     When I import sheet with invalid url parameter
-    Then Sheet import should give url parameter error
-
+    Then Import should give url parameter error

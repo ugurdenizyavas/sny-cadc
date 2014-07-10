@@ -38,9 +38,9 @@ class SheetFlowHandler extends GroovyHandler {
             }
             URN urn = validator.createUrn(urnStr)
             if (!urn) {
-                sendError("a valid urn parameter is required")
+                sendError("urn parameter is invalid")
             } else if (!validator.validateUrl(url)) {
-                sendError("a valid url parameter is required")
+                sendError("url parameter is invalid")
             } else {
                 ProcessId processId = processIdStr ? new ProcessIdImpl(processIdStr) : null
                 sheetService.sheetFlow(urn, url, processId).subscribe {

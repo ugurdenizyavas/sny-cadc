@@ -56,7 +56,7 @@ class DeltaFlowHandlerTest {
     }
 
     @Test
-    void "publication parameter missing"() {
+    void "publication parameter is invalid"() {
         mockValidator.demand.with {
             validatePublication(1) { false }
         }
@@ -70,7 +70,7 @@ class DeltaFlowHandlerTest {
     }
 
     @Test
-    void "locale parameter missing"() {
+    void "locale parameter is invalid"() {
         mockValidator.demand.with {
             validatePublication(1) { true }
             validateLocale(1) { false }
@@ -86,7 +86,7 @@ class DeltaFlowHandlerTest {
     }
 
     @Test
-    void "invalid cadcUrl parameter"() {
+    void "cadcUrl parameter is invalid"() {
         mockValidator.demand.with {
             validatePublication(1) { true }
             validateLocale(1) { true }
@@ -102,7 +102,7 @@ class DeltaFlowHandlerTest {
     }
 
     @Test
-    void "invalid since parameter"() {
+    void "since parameter is invalid"() {
         mockValidator.demand.with {
             validatePublication(1) { true }
             validateLocale(1) { true }

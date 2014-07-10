@@ -66,7 +66,7 @@ class SheetFlowHandlerTest {
     }
 
     @Test
-    void "url parameter missing"() {
+    void "url parameter is invalid"() {
         def mockRequestValidator = new MockFor(RequestValidator)
         mockRequestValidator.demand.with {
             createUrn(1) { new URNImpl(URN) }
@@ -79,12 +79,12 @@ class SheetFlowHandlerTest {
         }).with {
             assert status.code == 400
             assert rendered(DefaultJsonRender).object.status == 400
-            assert rendered(DefaultJsonRender).object.message == "a valid url parameter is required"
+            assert rendered(DefaultJsonRender).object.message == "url parameter is invalid"
         }
     }
 
     @Test
-    void "urn parameter missing"() {
+    void "urn parameter is invalid"() {
         def mockRequestValidator = new MockFor(RequestValidator)
         mockRequestValidator.demand.with {
             createUrn(1) {
@@ -98,7 +98,7 @@ class SheetFlowHandlerTest {
         }).with {
             assert status.code == 400
             assert rendered(DefaultJsonRender).object.status == 400
-            assert rendered(DefaultJsonRender).object.message == "a valid urn parameter is required"
+            assert rendered(DefaultJsonRender).object.message == "urn parameter is invalid"
         }
     }
 }
