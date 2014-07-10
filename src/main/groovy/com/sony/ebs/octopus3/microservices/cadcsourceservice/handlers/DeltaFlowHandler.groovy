@@ -3,6 +3,8 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaUrlBuilder
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.DeltaFlowValidator
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -18,6 +20,9 @@ class DeltaFlowHandler extends GroovyHandler {
     @Autowired
     DeltaService deltaService
 
+    @Autowired
+    DeltaFlowValidator deltaFlowValidator
+
     @Override
     protected void handle(GroovyContext context) {
         context.with {
@@ -26,11 +31,19 @@ class DeltaFlowHandler extends GroovyHandler {
             String since = request.queryParams.since
             String cadcUrl = request.queryParams.cadcUrl
 
-            if (!publication || !locale || !cadcUrl) {
-                def message = "one of publication, locale, cadcUrl parameters missing"
+            def sendError = { String message ->
                 log.error message
                 response.status(400)
                 render json(status: 400, message: message, publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+            }
+            if (!publication) {
+                sendError("publication parameter is required")
+            } else if (!locale) {
+                sendError("locale parameter is required")
+            } else if (!deltaFlowValidator.validateUrl(cadcUrl)) {
+                sendError("invalid cadcUrl parameter")
+            } else if (!deltaFlowValidator.validateSinceValue(since)) {
+                sendError("invalid since parameter")
             } else {
                 ProcessId processId = new ProcessIdImpl()
                 deltaService.deltaFlow(processId, publication, locale, since, cadcUrl).subscribe({ result ->
