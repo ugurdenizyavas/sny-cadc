@@ -2,7 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.DeltaFlowValidator
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.mock.interceptor.MockFor
 import org.junit.Test
 import ratpack.jackson.internal.DefaultJsonRender
@@ -24,8 +24,9 @@ class DeltaFlowHandlerTest {
                 rx.Observable.from("xxx")
             }
         }
-        def mockDeltaFlowValidator = new MockFor(DeltaFlowValidator)
-        mockDeltaFlowValidator.demand.with {
+
+        def mockValidator = new MockFor(RequestValidator)
+        mockValidator.demand.with {
             validateUrl(1) {
                 assert it == "http://cadc/skus"
                 true
@@ -36,11 +37,10 @@ class DeltaFlowHandlerTest {
             }
         }
 
-        def invocation = handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), deltaFlowValidator: mockDeltaFlowValidator.proxyInstance())) {
+        handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/?cadcUrl=http://cadc/skus&since=2014"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 202
             assert rendered(DefaultJsonRender).object.message == "delta import started"
             assert rendered(DefaultJsonRender).object.publication == "SCORE"
@@ -54,11 +54,10 @@ class DeltaFlowHandlerTest {
 
     @Test
     void "publication parameter missing"() {
-        def invocation = handle(new DeltaFlowHandler()) {
+        handle(new DeltaFlowHandler(), {
             pathBinding([locale: "en_GB"])
             uri "/"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 400
             assert rendered(DefaultJsonRender).object.message == "publication parameter is required"
         }
@@ -66,11 +65,10 @@ class DeltaFlowHandlerTest {
 
     @Test
     void "locale parameter missing"() {
-        def invocation = handle(new DeltaFlowHandler()) {
+        handle(new DeltaFlowHandler(), {
             pathBinding([publication: "SCORE"])
             uri "/"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 400
             assert rendered(DefaultJsonRender).object.message == "locale parameter is required"
         }
@@ -78,32 +76,30 @@ class DeltaFlowHandlerTest {
 
     @Test
     void "invalid cadcUrl parameter"() {
-        def mockDeltaFlowValidator = new MockFor(DeltaFlowValidator)
-        mockDeltaFlowValidator.demand.with {
+        def mockValidator = new MockFor(RequestValidator)
+        mockValidator.demand.with {
             validateUrl(1) { false }
         }
-        def invocation = handle(new DeltaFlowHandler(deltaFlowValidator: mockDeltaFlowValidator.proxyInstance())) {
+        handle(new DeltaFlowHandler(validator: mockValidator.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 400
-            assert rendered(DefaultJsonRender).object.message == "invalid cadcUrl parameter"
+            assert rendered(DefaultJsonRender).object.message == "a valid cadcUrl parameter is required"
         }
     }
 
     @Test
     void "invalid since parameter"() {
-        def mockDeltaFlowValidator = new MockFor(DeltaFlowValidator)
-        mockDeltaFlowValidator.demand.with {
+        def mockValidator = new MockFor(RequestValidator)
+        mockValidator.demand.with {
             validateUrl(1) { true }
             validateSinceValue(1) { false }
         }
-        def invocation = handle(new DeltaFlowHandler(deltaFlowValidator: mockDeltaFlowValidator.proxyInstance())) {
+        handle(new DeltaFlowHandler(validator: mockValidator.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 400
             assert rendered(DefaultJsonRender).object.message == "invalid since parameter"
         }

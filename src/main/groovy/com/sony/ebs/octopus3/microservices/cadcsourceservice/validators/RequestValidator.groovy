@@ -1,13 +1,15 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.validators
 
 import com.sony.ebs.octopus3.commons.date.ISODateUtils
+import com.sony.ebs.octopus3.commons.urn.URN
+import com.sony.ebs.octopus3.commons.urn.URNImpl
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
 import org.springframework.stereotype.Component
 
 @Slf4j
 @Component
-class DeltaFlowValidator {
+class RequestValidator {
 
     /**
      * The since string should be a valid iso date if not of value 'all'
@@ -46,4 +48,19 @@ class DeltaFlowValidator {
         }
     }
 
+    /**
+     * The urn needs to be valid and should have a host
+     * @param url
+     * @return
+     */
+    URN createUrn(String urnStr) {
+        def urn
+        try {
+            urn = new URNImpl(urnStr)
+            log.debug "urn is $urn for $urnStr"
+        } catch (e) {
+            log.error "invalid urn value $urnStr", e
+        }
+        urn
+    }
 }

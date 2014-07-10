@@ -2,8 +2,10 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
+import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -19,6 +21,9 @@ class SheetFlowHandler extends GroovyHandler {
     @Autowired
     SheetService sheetService
 
+    @Autowired
+    RequestValidator validator
+
     @Override
     protected void handle(GroovyContext context) {
         context.with {
@@ -31,13 +36,14 @@ class SheetFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, message: message, urn: urnStr, url: url, processId: processIdStr)
             }
-            if (!urnStr) {
-                sendError("urn parameter is required")
-            } else if (!url) {
-                sendError("url parameter is required")
+            URN urn = validator.createUrn(urnStr)
+            if (!urn) {
+                sendError("a valid urn parameter is required")
+            } else if (!validator.validateUrl(url)) {
+                sendError("a valid url parameter is required")
             } else {
                 ProcessId processId = processIdStr ? new ProcessIdImpl(processIdStr) : null
-                sheetService.sheetFlow(new URNImpl(urnStr), url, processId).subscribe {
+                sheetService.sheetFlow(urn, url, processId).subscribe {
                     log.info "sheet import finished for urn $urnStr, url $url"
                 }
                 log.info "import started for urn $urnStr, url $url"

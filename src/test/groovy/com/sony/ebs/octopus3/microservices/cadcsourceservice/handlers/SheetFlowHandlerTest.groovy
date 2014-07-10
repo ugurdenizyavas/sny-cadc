@@ -3,7 +3,9 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.urn.URN
+import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.mock.interceptor.MockFor
 import org.junit.Test
 import ratpack.jackson.internal.DefaultJsonRender
@@ -12,7 +14,9 @@ import static ratpack.groovy.test.GroovyUnitTest.handle
 
 class SheetFlowHandlerTest {
 
-    final String URN = "urn:global_sku:score:en_gb:a"
+    final static String URN = "urn:global_sku:score:en_gb:a"
+    final static String SHEET_URL = "http://cadc/a"
+
 
     @Test
     void "sheet flow"() {
@@ -26,24 +30,36 @@ class SheetFlowHandlerTest {
     }
 
     void "run sheet flow"(ProcessId processId, String processIdPostfix) {
-        def mock = new MockFor(SheetService)
-        mock.demand.with {
+        def mockSheetService = new MockFor(SheetService)
+        mockSheetService.demand.with {
             sheetFlow(1) { URN urn, String sheetUrl, ProcessId pid ->
                 assert urn.toString() == URN
-                assert sheetUrl == "http://cadc/a"
+                assert sheetUrl == SHEET_URL
                 assert pid?.id == processId?.id
                 rx.Observable.from("aa")
             }
         }
 
-        handle(new SheetFlowHandler(sheetService: mock.proxyInstance()), {
+        def mockRequestValidator = new MockFor(RequestValidator)
+        mockRequestValidator.demand.with {
+            createUrn(1) {
+                assert it == URN
+                new URNImpl(URN)
+            }
+            validateUrl(1) {
+                assert it == SHEET_URL
+                true
+            }
+        }
+
+        handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
             pathBinding([urn: URN])
-            uri "/?url=http://cadc/a$processIdPostfix"
+            uri "/?url=$SHEET_URL$processIdPostfix"
         }).with {
             assert status.code == 202
             assert rendered(DefaultJsonRender).object.message == "sheet import started"
             assert rendered(DefaultJsonRender).object.urn == URN
-            assert rendered(DefaultJsonRender).object.url == "http://cadc/a"
+            assert rendered(DefaultJsonRender).object.url == SHEET_URL
             assert rendered(DefaultJsonRender).object.status == 202
             assert rendered(DefaultJsonRender).object.processId == processId?.id
         }
@@ -51,24 +67,38 @@ class SheetFlowHandlerTest {
 
     @Test
     void "url parameter missing"() {
-        handle(new SheetFlowHandler(), {
+        def mockRequestValidator = new MockFor(RequestValidator)
+        mockRequestValidator.demand.with {
+            createUrn(1) { new URNImpl(URN) }
+            validateUrl(1) { false }
+        }
+
+        handle(new SheetFlowHandler(validator: mockRequestValidator.proxyInstance()), {
             pathBinding([urn: URN])
             uri "/"
         }).with {
             assert status.code == 400
             assert rendered(DefaultJsonRender).object.status == 400
-            assert rendered(DefaultJsonRender).object.message == "url parameter is required"
+            assert rendered(DefaultJsonRender).object.message == "a valid url parameter is required"
         }
     }
 
     @Test
     void "urn parameter missing"() {
-        handle(new SheetFlowHandler(), {
+        def mockRequestValidator = new MockFor(RequestValidator)
+        mockRequestValidator.demand.with {
+            createUrn(1) {
+                assert it == null
+                null
+            }
+        }
+
+        handle(new SheetFlowHandler(validator: mockRequestValidator.proxyInstance()), {
             uri "/?url=//aa"
         }).with {
             assert status.code == 400
             assert rendered(DefaultJsonRender).object.status == 400
-            assert rendered(DefaultJsonRender).object.message == "urn parameter is required"
+            assert rendered(DefaultJsonRender).object.message == "a valid urn parameter is required"
         }
     }
 }

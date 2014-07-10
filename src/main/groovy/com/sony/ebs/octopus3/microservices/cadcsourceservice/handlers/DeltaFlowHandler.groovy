@@ -3,8 +3,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaUrlBuilder
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.DeltaFlowValidator
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -21,7 +20,7 @@ class DeltaFlowHandler extends GroovyHandler {
     DeltaService deltaService
 
     @Autowired
-    DeltaFlowValidator deltaFlowValidator
+    RequestValidator validator
 
     @Override
     protected void handle(GroovyContext context) {
@@ -40,9 +39,9 @@ class DeltaFlowHandler extends GroovyHandler {
                 sendError("publication parameter is required")
             } else if (!locale) {
                 sendError("locale parameter is required")
-            } else if (!deltaFlowValidator.validateUrl(cadcUrl)) {
-                sendError("invalid cadcUrl parameter")
-            } else if (!deltaFlowValidator.validateSinceValue(since)) {
+            } else if (!validator.validateUrl(cadcUrl)) {
+                sendError("a valid cadcUrl parameter is required")
+            } else if (!validator.validateSinceValue(since)) {
                 sendError("invalid since parameter")
             } else {
                 ProcessId processId = new ProcessIdImpl()

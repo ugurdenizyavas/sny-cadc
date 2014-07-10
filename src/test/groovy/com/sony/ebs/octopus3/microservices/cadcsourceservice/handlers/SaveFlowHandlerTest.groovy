@@ -11,13 +11,11 @@ class SaveFlowHandlerTest {
 
     @Test
     void "main flow"() {
-        def saveFlowHandler = new SaveFlowHandler()
-        def invocation = handle(saveFlowHandler) {
+        handle(new SaveFlowHandler(), {
             pathBinding([urn: URN])
             uri "/?processId=123"
             body "aaa", "application/json"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 202
             assert rendered(DefaultJsonRender).object.status == 202
             assert rendered(DefaultJsonRender).object.message == "sheet saved"
