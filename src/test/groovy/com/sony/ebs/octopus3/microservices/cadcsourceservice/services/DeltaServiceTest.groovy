@@ -3,7 +3,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
-import groovy.mock.interceptor.MockFor
+import groovy.mock.interceptor.StubFor
 import org.apache.http.client.utils.URIBuilder
 import org.junit.Before
 import org.junit.Test
@@ -21,7 +21,7 @@ class DeltaServiceTest {
 
     @Test
     void "delta flow"() {
-        def mockDeltaUrlBuilder = new MockFor(DeltaUrlBuilder)
+        def mockDeltaUrlBuilder = new StubFor(DeltaUrlBuilder)
         mockDeltaUrlBuilder.demand.with {
             createUrl(1) { publication, locale, since -> "/delta" }
             getSkuFromUrl(2) { String url ->
@@ -34,7 +34,7 @@ class DeltaServiceTest {
 
         ProcessId processId = new ProcessIdImpl()
 
-        def mockHttpClient = new MockFor(HttpClient)
+        def mockHttpClient = new StubFor(HttpClient)
         mockHttpClient.demand.with {
             getFromCadc(1) {
                 assert it == "http://cadc/delta"

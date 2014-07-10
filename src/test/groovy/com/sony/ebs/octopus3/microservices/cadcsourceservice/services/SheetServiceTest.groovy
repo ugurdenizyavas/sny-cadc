@@ -4,7 +4,7 @@ import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
-import groovy.mock.interceptor.MockFor
+import groovy.mock.interceptor.StubFor
 import org.junit.Before
 import org.junit.Test
 
@@ -34,7 +34,7 @@ class SheetServiceTest {
         String URN = "urn:global_sku:score:en_gb:p"
         String POST_URL = "$SAVE_REPO_URL/$URN$processIdPostfix"
 
-        def mock = new MockFor(HttpClient)
+        def mock = new StubFor(HttpClient)
         mock.demand.with {
             getFromCadc(1) {
                 assert it == SHEET_URL

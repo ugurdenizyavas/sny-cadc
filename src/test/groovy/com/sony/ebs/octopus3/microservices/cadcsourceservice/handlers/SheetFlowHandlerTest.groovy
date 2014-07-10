@@ -6,7 +6,7 @@ import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
-import groovy.mock.interceptor.MockFor
+import groovy.mock.interceptor.StubFor
 import org.junit.Test
 import ratpack.jackson.internal.DefaultJsonRender
 
@@ -30,7 +30,7 @@ class SheetFlowHandlerTest {
     }
 
     void "run sheet flow"(ProcessId processId, String processIdPostfix) {
-        def mockSheetService = new MockFor(SheetService)
+        def mockSheetService = new StubFor(SheetService)
         mockSheetService.demand.with {
             sheetFlow(1) { URN urn, String sheetUrl, ProcessId pid ->
                 assert urn.toString() == URN
@@ -40,7 +40,7 @@ class SheetFlowHandlerTest {
             }
         }
 
-        def mockRequestValidator = new MockFor(RequestValidator)
+        def mockRequestValidator = new StubFor(RequestValidator)
         mockRequestValidator.demand.with {
             createUrn(1) {
                 assert it == URN
@@ -67,7 +67,7 @@ class SheetFlowHandlerTest {
 
     @Test
     void "url parameter is invalid"() {
-        def mockRequestValidator = new MockFor(RequestValidator)
+        def mockRequestValidator = new StubFor(RequestValidator)
         mockRequestValidator.demand.with {
             createUrn(1) { new URNImpl(URN) }
             validateUrl(1) { false }
@@ -85,7 +85,7 @@ class SheetFlowHandlerTest {
 
     @Test
     void "urn parameter is invalid"() {
-        def mockRequestValidator = new MockFor(RequestValidator)
+        def mockRequestValidator = new StubFor(RequestValidator)
         mockRequestValidator.demand.with {
             createUrn(1) {
                 assert it == null

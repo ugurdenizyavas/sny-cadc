@@ -3,7 +3,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
-import groovy.mock.interceptor.MockFor
+import groovy.mock.interceptor.StubFor
 import org.junit.Before
 import org.junit.Test
 import ratpack.jackson.internal.DefaultJsonRender
@@ -12,12 +12,12 @@ import static ratpack.groovy.test.GroovyUnitTest.handle
 
 class DeltaFlowHandlerTest {
 
-    MockFor mockDeltaService, mockValidator
+    StubFor mockDeltaService, mockValidator
 
     @Before
     void before() {
-        mockDeltaService = new MockFor(DeltaService)
-        mockValidator = new MockFor(RequestValidator)
+        mockDeltaService = new StubFor(DeltaService)
+        mockValidator = new StubFor(RequestValidator)
     }
 
     @Test
