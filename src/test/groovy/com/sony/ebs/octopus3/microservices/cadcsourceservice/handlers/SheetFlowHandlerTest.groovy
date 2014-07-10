@@ -36,11 +36,10 @@ class SheetFlowHandlerTest {
             }
         }
 
-        def invocation = handle(new SheetFlowHandler(sheetService: mock.proxyInstance())) {
+        handle(new SheetFlowHandler(sheetService: mock.proxyInstance()), {
             pathBinding([urn: URN])
             uri "/?url=http://cadc/a$processIdPostfix"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 202
             assert rendered(DefaultJsonRender).object.message == "sheet import started"
             assert rendered(DefaultJsonRender).object.urn == URN
@@ -51,18 +50,25 @@ class SheetFlowHandlerTest {
     }
 
     @Test
-    void "missing parameter"() {
-        def invocation = handle(new SheetFlowHandler()) {
+    void "url parameter missing"() {
+        handle(new SheetFlowHandler(), {
             pathBinding([urn: URN])
             uri "/"
-        }
-        invocation.with {
+        }).with {
             assert status.code == 400
-            assert rendered(DefaultJsonRender).object.message == "one of urn, url parameters missing"
-            assert rendered(DefaultJsonRender).object.urn == URN
-            assert rendered(DefaultJsonRender).object.url == null
             assert rendered(DefaultJsonRender).object.status == 400
+            assert rendered(DefaultJsonRender).object.message == "url parameter is required"
         }
     }
 
+    @Test
+    void "urn parameter missing"() {
+        handle(new SheetFlowHandler(), {
+            uri "/?url=//aa"
+        }).with {
+            assert status.code == 400
+            assert rendered(DefaultJsonRender).object.status == 400
+            assert rendered(DefaultJsonRender).object.message == "urn parameter is required"
+        }
+    }
 }

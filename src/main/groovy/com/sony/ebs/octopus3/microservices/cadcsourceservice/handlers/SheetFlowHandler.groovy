@@ -25,13 +25,18 @@ class SheetFlowHandler extends GroovyHandler {
             String urnStr = pathTokens.urn
             String url = request.queryParams.url
             String processIdStr = request.queryParams.processId
-            if (!urnStr || !url) {
-                def message = "one of urn, url parameters missing"
+
+            def sendError = { String message ->
                 log.error message
                 response.status(400)
-                render json(status: 400, message: message, urn: urnStr, url: url, processId : processIdStr)
+                render json(status: 400, message: message, urn: urnStr, url: url, processId: processIdStr)
+            }
+            if (!urnStr) {
+                sendError("urn parameter is required")
+            } else if (!url) {
+                sendError("url parameter is required")
             } else {
-                ProcessId processId =  processIdStr ? new ProcessIdImpl(processIdStr) : null
+                ProcessId processId = processIdStr ? new ProcessIdImpl(processIdStr) : null
                 sheetService.sheetFlow(new URNImpl(urnStr), url, processId).subscribe {
                     log.info "sheet import finished for urn $urnStr, url $url"
                 }
