@@ -35,6 +35,13 @@ def parseJson = { Response response ->
     new JsonSlurper().parseText(text)
 }
 
+def validateError = { Response response, message ->
+    assert response.statusCode == 400
+    def json = parseJson(response)
+    assert json?.status == 400
+    assert json?.message == message
+}
+
 World {
     new LocalRatpackWorld()
 }
@@ -46,24 +53,6 @@ Before() {
 After() {
     runner.stop()
     aut.stop()
-}
-
-Then(~"the response should be (.*)") { String expected ->
-    assert expected == response.body.asString()
-}
-
-Given(~"Cadc sheet (.*)") { name ->
-    server.request(by(uri("/cadc/sheet/$name"))).response("sheet $name")
-}
-
-When(~"I save sheet (.*)") { sku ->
-    post("save/repo/urn:global_sku:score:en_gb:$sku")
-}
-
-Then(~"sheet (.*) should be saved") { sku ->
-    def json = parseJson(response)
-    assert json?.urn == "urn:global_sku:score:en_gb:$sku"
-    assert json?.message == "sheet saved"
 }
 
 def cadcService = { HttpServer server, String locale, int numOfSheets, int numOfErrors ->
@@ -82,9 +71,31 @@ def cadcService = { HttpServer server, String locale, int numOfSheets, int numOf
     }
 }
 
+Given(~"Cadc sheet (.*)") { name ->
+    server.request(by(uri("/cadc/sheet/$name"))).response("sheet $name")
+}
+
 Given(~"Cadc returns (.*) sheets for locale (.*) successfully") { int numOfSheets, String locale ->
     cadcService(server, locale, numOfSheets, 0)
 }
+
+/*
+* ******************** SAVE SERVICE *************************************************************
+* */
+
+When(~"I save sheet (.*)") { sku ->
+    post("save/repo/urn:global_sku:score:en_gb:$sku")
+}
+
+Then(~"sheet (.*) should be saved") { sku ->
+    def json = parseJson(response)
+    assert json?.urn == "urn:global_sku:score:en_gb:$sku"
+    assert json?.message == "sheet saved"
+}
+
+/*
+* ******************** DELTA IMPORT SERVICE ***********************************************************
+* */
 
 When(~"I request delta of publication (.*) locale (.*) since (.*)") { publication, locale, since ->
     get("import/delta/publication/$publication/locale/$locale?since=$since&cadcUrl=http://localhost:12306/skus")
@@ -101,11 +112,30 @@ Then(~"Sheets should be imported with publication (.*) locale (.*) since (.*)") 
     assert json.cadcUrl == "http://localhost:12306/skus"
 }
 
+When(~"I import delta with invalid (.*) parameter") { paramName ->
+    if (paramName == "publication") {
+        get("import/delta/publication/,,/locale/en_GB")
+    } else if (paramName == "locale") {
+        get("import/delta/publication/SCORE/locale/tr_")
+    } else if (paramName == "cadcUrl") {
+        get("import/delta/publication/SCORE/locale/en_GB?cadcUrl=/host/skus")
+    } else if (paramName == "since") {
+        get("import/delta/publication/SCORE/locale/en_GB?cadcUrl=http://host/skus&since=s1")
+    }
+}
+
+Then(~"Delta import should give (.*) parameter error") { paramName ->
+    validateError(response, "$paramName parameter is invalid")
+}
+
+/*
+* ******************** SHEET IMPORT SERVICE *************************************************************
+* */
 When(~"I import sheet (.*) correctly") { sku ->
     get("import/sheet/urn:global_sku:score:en_gb:$sku?url=http://localhost:12306/cadc/sheet/$sku")
 }
 
-Then(~"Sheet (.*) should be imported") { sku ->
+Then(~"Sheet import of (.*) should be successful") { sku ->
     assert response.statusCode == 202
     def json = parseJson(response)
     assert json.status == 202
@@ -114,24 +144,15 @@ Then(~"Sheet (.*) should be imported") { sku ->
     assert json?.url == "http://localhost:12306/cadc/sheet/$sku"
 }
 
-When(~"I import sheet (.*) with invalid urn") { sku ->
-    get("import/sheet/xx?url=http://a")
+When(~"I import sheet with invalid (.*) parameter") { paramName ->
+    if (paramName == "urn") {
+        get("import/sheet/a?url=http://sheet/a")
+    } else if (paramName == "url") {
+        get("import/sheet/urn:global_sku:score:en_gb:a?url=/sheet/a")
+    }
 }
 
-Then(~"Import should give urn parameter error") { ->
-    assert response.statusCode == 400
-    def json = parseJson(response)
-    assert json?.status == 400
-    assert json?.message == "a valid urn parameter is required"
+Then(~"Sheet import should give (.*) parameter error") { paramName ->
+    validateError(response, "a valid $paramName parameter is required")
 }
 
-When(~"I import sheet (.*) with invalid cadc url") { sku ->
-    get("import/sheet/urn:global_sku:score:en_gb:$sku?url=/sheet/$sku")
-}
-
-Then(~"Import should give cadc url parameter error") { ->
-    assert response.statusCode == 400
-    def json = parseJson(response)
-    assert json?.status == 400
-    assert json?.message == "a valid url parameter is required"
-}

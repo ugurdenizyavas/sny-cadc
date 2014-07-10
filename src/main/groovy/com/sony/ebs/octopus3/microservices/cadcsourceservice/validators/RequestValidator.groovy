@@ -4,6 +4,7 @@ import com.sony.ebs.octopus3.commons.date.ISODateUtils
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import groovy.util.logging.Slf4j
+import org.apache.commons.lang.LocaleUtils
 import org.apache.http.client.utils.URIBuilder
 import org.springframework.stereotype.Component
 
@@ -46,6 +47,27 @@ class RequestValidator {
         } else {
             false
         }
+    }
+
+    /**
+     * @param locale
+     * @return true if locale is valid
+     */
+    boolean validateLocale(String locale) {
+        try {
+            LocaleUtils.toLocale(locale)
+        } catch (e) {
+            log.error "invalid locale $locale", e
+            false
+        }
+    }
+
+    /**
+     * @param locale
+     * @return true if publication matches its regex
+     */
+    boolean validatePublication(String publication) {
+        publication ==~ /[a-zA-Z0-9\-\_]+/
     }
 
     /**

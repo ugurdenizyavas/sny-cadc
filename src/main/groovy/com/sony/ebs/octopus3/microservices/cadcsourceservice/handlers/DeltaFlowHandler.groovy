@@ -35,14 +35,14 @@ class DeltaFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, message: message, publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
             }
-            if (!publication) {
-                sendError("publication parameter is required")
-            } else if (!locale) {
-                sendError("locale parameter is required")
+            if (!validator.validatePublication(publication)) {
+                sendError("publication parameter is invalid")
+            } else if (!validator.validateLocale(locale)) {
+                sendError("locale parameter is invalid")
             } else if (!validator.validateUrl(cadcUrl)) {
-                sendError("a valid cadcUrl parameter is required")
+                sendError("cadcUrl parameter is invalid")
             } else if (!validator.validateSinceValue(since)) {
-                sendError("invalid since parameter")
+                sendError("since parameter is invalid")
             } else {
                 ProcessId processId = new ProcessIdImpl()
                 deltaService.deltaFlow(processId, publication, locale, since, cadcUrl).subscribe({ result ->

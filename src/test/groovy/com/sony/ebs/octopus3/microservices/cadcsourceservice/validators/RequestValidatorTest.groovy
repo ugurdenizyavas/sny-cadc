@@ -81,4 +81,45 @@ class RequestValidatorTest {
     void "create urn no prefix"() {
         assert !validator.createUrn("a")
     }
+
+    @Test
+    void "validate locale"() {
+        assert validator.validateLocale("tr_TR")
+    }
+
+    @Test
+    void "validate locale null"() {
+        assert !validator.validateLocale(null)
+    }
+
+    @Test
+    void "validate locale empty"() {
+        assert !validator.validateLocale("")
+    }
+
+    @Test
+    void "validate locale invalid"() {
+        assert !validator.validateLocale("tr_T")
+    }
+
+    @Test
+    void "validate publication"() {
+        assert validator.validatePublication("SCORE")
+    }
+
+    @Test
+    void "validate publication with dash"() {
+        assert validator.validatePublication("SCORE-EDITORIAL")
+    }
+
+    @Test
+    void "validate publication with underscore"() {
+        assert validator.validatePublication("SCORE_EDITORIAL")
+    }
+
+    @Test
+    void "validate publication alphanumeric"() {
+        assert validator.validatePublication("SONY1")
+    }
+
 }
