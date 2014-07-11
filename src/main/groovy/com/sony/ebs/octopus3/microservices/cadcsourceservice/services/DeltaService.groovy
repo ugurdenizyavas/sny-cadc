@@ -12,10 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import ratpack.exec.ExecControl
+
+import static ratpack.rx.RxRatpack.observe
 
 @Slf4j
 @Service
 class DeltaService {
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    ExecControl execControl
 
     @Autowired
     @Qualifier("ningHttpClient")
@@ -31,13 +38,13 @@ class DeltaService {
     String importSheetUrl
 
     private rx.Observable<String> retrieveDelta(String publication, String locale, String since, String cadcUrl) {
-        observableHelper.createObservable({
+        observe(execControl.blocking {
             String relUrl = deltaUrlBuilder.createUrl(publication, locale, since)
             "$cadcUrl$relUrl"
         }).flatMap({
             httpClient.getFromCadc(it)
         }).flatMap { String text ->
-            observableHelper.createObservable({
+            observe(execControl.blocking {
                 deltaUrlBuilder.storeDelta(publication, locale, text)
                 text
             })
@@ -45,7 +52,7 @@ class DeltaService {
     }
 
     private rx.Observable<Delta> parseDelta(String publication, String locale, String content) {
-        observableHelper.createObservable {
+        observe(execControl.blocking {
             def result = new JsonSlurper().parseText(content)
             def urlMap = [:]
             result.skus[locale].each {
@@ -56,7 +63,7 @@ class DeltaService {
             def delta = new Delta(publication: publication, locale: locale, urlMap: urlMap)
             log.info "parsed delta: $delta"
             delta
-        }
+        })
     }
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {

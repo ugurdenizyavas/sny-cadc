@@ -1,25 +1,26 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.http
 
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.ObservableHelper
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
+import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import ratpack.exec.ExecController
+import ratpack.launch.LaunchConfigBuilder
 
 @Ignore
 @Slf4j
 class NingHttpClientIntegrationTest {
 
-    HttpClientConfig httpClientConfig
-
+    ExecController execController
     NingHttpClient ningHttpClient
 
     String CADC_URL = "https://origin.uat-cadc-loader-lb.sony.eu/syndication/regional/skus/changes/en_GB?since=2014-06-25T00:00:00.000%2B01:00"
 
     @Before
     void before() {
-        httpClientConfig = new HttpClientConfig(
+        def httpClientConfig = new HttpClientConfig(
                 proxyHost: "43.194.159.10",
                 proxyPort: 10080,
                 proxyUser: "TRGAEbaseProxy",
@@ -28,11 +29,16 @@ class NingHttpClientIntegrationTest {
                 authenticationPassword: "2khj0xwb",
                 authenticationHosts: "origin.uat-cadc-loader-lb.sony.eu, b, c"
         )
-        def observableHelper = new ObservableHelper()
-        observableHelper.init()
 
-        ningHttpClient = new NingHttpClient(httpClientConfig: httpClientConfig, observableHelper: observableHelper)
+        execController = LaunchConfigBuilder.noBaseDir().build().execController
+
+        ningHttpClient = new NingHttpClient(httpClientConfig: httpClientConfig, execControl: execController.control)
         ningHttpClient.init()
+    }
+
+    @After
+    void after() {
+        if (execController) execController.close()
     }
 
     def validate(String result) {
@@ -45,8 +51,18 @@ class NingHttpClientIntegrationTest {
 
     @Test
     void "test ningHttpClient"() {
-        def result = ningHttpClient.getFromCadc(CADC_URL).toBlocking().single()
-        validate(result)
+        def finished = new Object()
+        execController.start {
+            ningHttpClient.getFromCadc(CADC_URL).subscribe { String result ->
+                synchronized (finished) {
+                    validate(result)
+                    finished.notifyAll()
+                }
+            }
+        }
+        synchronized (finished) {
+            finished.wait 10000
+        }
     }
 
 }

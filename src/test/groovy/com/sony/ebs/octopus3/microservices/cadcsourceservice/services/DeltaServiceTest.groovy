@@ -5,18 +5,26 @@ import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
 import groovy.mock.interceptor.StubFor
 import org.apache.http.client.utils.URIBuilder
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import ratpack.exec.ExecController
+import ratpack.launch.LaunchConfigBuilder
 
 class DeltaServiceTest {
 
     DeltaService deltaService
+    ExecController execController
 
     @Before
     void before() {
-        def observableHelper = new ObservableHelper()
-        observableHelper.init()
-        deltaService = new DeltaService(observableHelper: observableHelper, importSheetUrl: "http://import")
+        execController = LaunchConfigBuilder.noBaseDir().build().execController
+        deltaService = new DeltaService(execControl: execController.control, importSheetUrl: "http://import")
+    }
+
+    @After
+    void after() {
+        if (execController) execController.close()
     }
 
     @Test
@@ -50,8 +58,18 @@ class DeltaServiceTest {
         }
         deltaService.httpClient = mockHttpClient.proxyInstance()
 
-        def result = deltaService.deltaFlow(processId, "SCORE", "en_GB", "2014", "http://cadc").toBlocking().single()
-        assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
+        def finished = new Object()
+        execController.start {
+            deltaService.deltaFlow(processId, "SCORE", "en_GB", "2014", "http://cadc").subscribe { String result ->
+                synchronized (finished) {
+                    assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
+                    finished.notifyAll()
+                }
+            }
+        }
+        synchronized (finished) {
+            finished.wait 5000
+        }
     }
 
 }

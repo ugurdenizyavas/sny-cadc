@@ -26,6 +26,7 @@ ratpack {
         init {
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(SpringConfig.class)
             ctx.beanFactory.registerSingleton "launchConfig", launchConfig
+            ctx.beanFactory.registerSingleton "execControl", launchConfig.execController.control
 
             deltaFlowHandler = ctx.getBean(DeltaFlowHandler.class)
             sheetFlowHandler = ctx.getBean(SheetFlowHandler.class)
