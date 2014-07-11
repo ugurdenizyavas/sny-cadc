@@ -77,8 +77,14 @@ dependencies {
 
 }
 
-run { systemProperty('ENV', System.getProperty('ENV')) }
-test { systemProperty('ENV', System.getProperty('ENV')) }
+run {
+    systemProperty('ENV', System.getProperty('ENV'))
+    systemProperty('storage.root', System.getProperty('storage.root'))
+}
+test {
+    systemProperty('ENV', System.getProperty('ENV'))
+    systemProperty('storage.root', System.getProperty('storage.root'))
+}
 
 task cucumber() {
     dependsOn assemble

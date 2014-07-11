@@ -2,6 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import com.sony.ebs.octopus3.commons.date.ISODateUtils
 import com.sony.ebs.octopus3.commons.file.FileUtils
+import com.sony.ebs.octopus3.commons.urn.URN
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Value
@@ -53,6 +54,13 @@ public class DeltaCollaborator {
         log.info "starting storing $path"
         FileUtils.writeFile(path, text.getBytes("UTF-8"), true, true)
         log.info "finished storing $path"
+    }
+
+    void storeUrn(URN urn, String text) {
+        def path = Paths.get(storageFolder + urn.toPath())
+        log.info "starting storing $urn at $path"
+        FileUtils.writeFile(path, text.getBytes("UTF-8"), true, true)
+        log.info "finished storing $urn at $path"
     }
 
     String readDelta(String publication, String locale) {
