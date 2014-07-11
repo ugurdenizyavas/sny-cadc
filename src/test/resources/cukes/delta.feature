@@ -7,7 +7,7 @@ Feature: Delta
     Then sheet z1.ceh should be saved
 
   Scenario: Delta flow correct
-    Given Cadc returns 3 sheets for locale en_GB successfully
+    Given Cadc returns 3 sheets for publication SCORE locale en_GB successfully
     When I request delta of publication SCORE locale en_GB since 2014-06-20T20:30:00.000Z
     Then Sheets should be imported with publication SCORE locale en_GB since 2014-06-20T20:30:00.000Z
 

@@ -1,10 +1,7 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.IOUtils
 import org.junit.Before
 import org.junit.Test
-import org.springframework.core.io.DefaultResourceLoader
 
 class DeltaUrlBuilderTest {
 
@@ -12,11 +9,12 @@ class DeltaUrlBuilderTest {
 
     @Before
     void before() {
-        deltaUrlBuilder = new DeltaUrlBuilder(storageFolder: "classpath:datefiles")
+        deltaUrlBuilder = new DeltaUrlBuilder(storageFolder: "target/delta")
     }
 
     @Test
     void "create url"() {
+        deltaUrlBuilder.deleteDelta("GLOBAL", "en_GB")
         assert deltaUrlBuilder.createUrl("GLOBAL", "en_GB", null) == "/en_GB"
     }
 
@@ -32,6 +30,7 @@ class DeltaUrlBuilderTest {
 
     @Test
     void "create since with file"() {
+        deltaUrlBuilder.storeDelta("GLOBAL", "fr_FR", "xxx")
         assert deltaUrlBuilder.createUrl("GLOBAL", "fr_FR", null).contains("since=")
     }
 
@@ -67,10 +66,8 @@ class DeltaUrlBuilderTest {
 
     @Test
     void "store delta"() {
-        deltaUrlBuilder.storageFolder = "file:target/delta"
         deltaUrlBuilder.storeDelta("GLOBAL", "en_GB", "xxx")
-        def file = new DefaultResourceLoader().getResource("file:target/delta/GLOBAL/en_GB/_productlist")?.file
-        assert FileUtils.readFileToString(file) == "xxx"
+        assert deltaUrlBuilder.readDelta("GLOBAL", "en_GB") == "xxx"
     }
 
 }

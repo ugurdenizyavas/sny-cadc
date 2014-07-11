@@ -55,7 +55,7 @@ After() {
     aut.stop()
 }
 
-def cadcService = { HttpServer server, String locale, int numOfSheets, int numOfErrors ->
+def cadcService = { HttpServer server, String publication, String locale, int numOfSheets, int numOfErrors ->
     def str = new JsonBuilder({
         startDate 's1'
         endDate 'e1'
@@ -67,7 +67,7 @@ def cadcService = { HttpServer server, String locale, int numOfSheets, int numOf
 
     (numOfSheets - numOfErrors).times {
         def name = "p${it + 1}"
-        server.request(by(uri("/cadc/sheet/$name"))).response("sheet${it + 1}")
+        server.request(by(uri("/import/sheet/urn:global_sku:$publication:$locale:$name".toLowerCase()))).response("sheet${it + 1}")
     }
 }
 
@@ -75,8 +75,8 @@ Given(~"Cadc sheet (.*)") { name ->
     server.request(by(uri("/cadc/sheet/$name"))).response("sheet $name")
 }
 
-Given(~"Cadc returns (.*) sheets for locale (.*) successfully") { int numOfSheets, String locale ->
-    cadcService(server, locale, numOfSheets, 0)
+Given(~"Cadc returns (.*) sheets for publication (.*) locale (.*) successfully") { int numOfSheets, String publication, String locale ->
+    cadcService(server, publication, locale, numOfSheets, 0)
 }
 
 /*
