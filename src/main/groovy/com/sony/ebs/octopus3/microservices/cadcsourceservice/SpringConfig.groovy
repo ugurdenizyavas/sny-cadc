@@ -8,7 +8,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
 
 @Configuration
 @ComponentScan(value = "com.sony.ebs.octopus3.microservices.cadcsourceservice")
-@PropertySource(value = ['classpath:/default.properties', 'classpath:/${ENV}.properties'], ignoreResourceNotFound = true)
+@PropertySource(value = ['classpath:/default.properties', 'classpath:/${environment}.properties'], ignoreResourceNotFound = true)
 class SpringConfig {
 
     @Bean

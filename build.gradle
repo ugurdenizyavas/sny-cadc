@@ -78,12 +78,12 @@ dependencies {
 }
 
 run {
-    systemProperty('ENV', System.getProperty('ENV'))
-    systemProperty('storage.root', System.getProperty('storage.root'))
+    systemProperty('environment', System.getProperty('environment'))
+    systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir'))
 }
 test {
-    systemProperty('ENV', System.getProperty('ENV'))
-    systemProperty('storage.root', System.getProperty('storage.root'))
+    systemProperty('environment', System.getProperty('environment'))
+    systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir'))
 }
 
 task cucumber() {

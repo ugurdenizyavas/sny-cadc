@@ -18,7 +18,7 @@ import static com.github.dreamhead.moco.Moco.uri
 this.metaClass.mixin(Hooks)
 this.metaClass.mixin(EN)
 
-System.setProperty 'ENV', 'cucumber'
+System.setProperty 'environment', 'cucumber'
 System.setProperty 'ratpack.port', '12300'
 
 class LocalRatpackWorld {
