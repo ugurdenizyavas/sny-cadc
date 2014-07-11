@@ -1,3 +1,14 @@
+//======================================================================
+// PROJECT
+//======================================================================
+
+version = '1.0-SNAPSHOT'
+group = 'com.sony.ebs.octopus3'
+
+//======================================================================
+// REPOSITORIES
+//======================================================================
+
 buildscript {
     repositories {
         mavenLocal()
@@ -18,8 +29,23 @@ repositories {
     maven { url "http://repo.spring.io/libs-release" }
 }
 
+//======================================================================
+// PLUGINS
+//======================================================================
+
 apply plugin: "ratpack-groovy"
 apply plugin: "groovy"
+//apply plugin: "nexus"
+
+//======================================================================
+// CONFIGURATIONS
+//======================================================================
+
+ext.javaLanguageLevel = 1.7
+
+sourceCompatibility = "$javaLanguageLevel"
+targetCompatibility = "$javaLanguageLevel"
+defaultTasks 'clean', 'build'
 
 configurations {
     all {
@@ -29,6 +55,19 @@ configurations {
         extendsFrom testRuntime
     }
 }
+
+run {
+    systemProperty('environment', System.getProperty('environment'))
+    systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir'))
+}
+test {
+    systemProperty('environment', System.getProperty('environment'))
+    systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir'))
+}
+
+//======================================================================
+// DEPENDENCIES
+//======================================================================
 
 dependencies {
     compile 'com.sony.ebs.octopus3:octopus3-commons:1.0-SNAPSHOT'
@@ -77,14 +116,9 @@ dependencies {
 
 }
 
-run {
-    systemProperty('environment', System.getProperty('environment'))
-    systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir'))
-}
-test {
-    systemProperty('environment', System.getProperty('environment'))
-    systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir'))
-}
+//======================================================================
+// TASKS
+//======================================================================
 
 task cucumber() {
     dependsOn assemble
@@ -97,3 +131,18 @@ task cucumber() {
         }
     }
 }
+
+//======================================================================
+// DEPLOY ARTIFACTS
+//======================================================================
+
+/*
+nexus {
+    attachSources = true
+    attachTests = false
+    attachJavadoc = true
+    sign = false
+    repositoryUrl = "https://mvn.sony-europe.com/content/repositories/releases"
+    snapshotRepositoryUrl = "https://mvn.sony-europe.com/content/repositories/snapshots"
+}
+*/
