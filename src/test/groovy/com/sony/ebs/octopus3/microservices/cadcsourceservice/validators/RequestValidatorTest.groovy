@@ -48,6 +48,11 @@ class RequestValidatorTest {
     }
 
     @Test
+    void "validate since value all"() {
+        assert validator.validateSinceValue("All")
+    }
+
+    @Test
     void "validate since value valid"() {
         assert validator.validateSinceValue("2014-07-05T00:00:00.000Z")
     }

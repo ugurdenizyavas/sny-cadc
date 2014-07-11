@@ -21,6 +21,11 @@ class DeltaUrlBuilderTest {
     }
 
     @Test
+    void "create url with since value all"() {
+        assert deltaUrlBuilder.createUrl("GLOBAL", "en_GB", "All") == "/en_GB"
+    }
+
+    @Test
     void "create url with since"() {
         assert deltaUrlBuilder.createUrl("GLOBAL", "en_GB", "s1") == "/changes/en_GB?since=s1"
     }

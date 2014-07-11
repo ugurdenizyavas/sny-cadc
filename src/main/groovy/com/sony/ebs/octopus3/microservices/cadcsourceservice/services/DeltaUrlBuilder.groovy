@@ -20,7 +20,7 @@ public class DeltaUrlBuilder {
     ResourceLoader resourceLoader = new DefaultResourceLoader()
 
     String createUrl(String publication, String locale, String sincePrm) {
-        String since = sincePrm ?: createSinceFromFS(publication, locale)
+        String since = !sincePrm ? createSinceFromFS(publication, locale) : (!sincePrm.equalsIgnoreCase("all") ? sincePrm : null)
         String url = createUrlInner(locale, since)
         log.info "created $url for $publication $locale since:$sincePrm"
         url

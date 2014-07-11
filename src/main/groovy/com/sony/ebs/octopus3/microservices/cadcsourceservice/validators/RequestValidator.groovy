@@ -19,7 +19,7 @@ class RequestValidator {
      */
     boolean validateSinceValue(String since) {
         try {
-            since ? ISODateUtils.toISODate(since) : true
+            since && !since.equalsIgnoreCase("all") ? ISODateUtils.toISODate(since) : true
         } catch (e) {
             log.error "invalid since value $since", e
             false
