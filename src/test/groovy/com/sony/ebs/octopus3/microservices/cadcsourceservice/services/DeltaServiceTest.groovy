@@ -29,6 +29,7 @@ class DeltaServiceTest {
                 assert url == "http://cadc/$sku"
                 sku
             }
+            storeDelta(1) { publication, locale, text -> }
         }
         deltaService.deltaUrlBuilder = mockDeltaUrlBuilder.proxyInstance()
 

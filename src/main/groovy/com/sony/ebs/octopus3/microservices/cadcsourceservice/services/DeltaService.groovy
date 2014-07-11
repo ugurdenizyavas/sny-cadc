@@ -34,8 +34,13 @@ class DeltaService {
         observableHelper.createObservable({
             String relUrl = deltaUrlBuilder.createUrl(publication, locale, since)
             "$cadcUrl$relUrl"
-        }).flatMap {
+        }).flatMap({
             httpClient.getFromCadc(it)
+        }).flatMap { String text ->
+            observableHelper.createObservable({
+                deltaUrlBuilder.storeDelta(publication, locale, text)
+                text
+            })
         }
     }
 

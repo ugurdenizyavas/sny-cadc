@@ -38,11 +38,6 @@ class RequestValidatorTest {
     }
 
     @Test
-    void "validate since value all"() {
-        assert validator.validateSinceValue("All")
-    }
-
-    @Test
     void "validate since value null"() {
         assert validator.validateSinceValue(null)
     }

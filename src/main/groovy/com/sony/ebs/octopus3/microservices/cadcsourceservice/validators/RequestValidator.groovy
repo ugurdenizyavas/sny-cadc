@@ -18,16 +18,14 @@ class RequestValidator {
      * @return
      */
     boolean validateSinceValue(String since) {
-        if (since && !"all".equalsIgnoreCase(since)) {
-            try {
-                ISODateUtils.toISODate(since)
-            } catch (e) {
-                log.error "invalid since value $since", e
-                return false
-            }
+        try {
+            since ? ISODateUtils.toISODate(since) : true
+        } catch (e) {
+            log.error "invalid since value $since", e
+            false
         }
-        true
     }
+
     /**
      * The url needs to be valid and should have a host
      * @param url

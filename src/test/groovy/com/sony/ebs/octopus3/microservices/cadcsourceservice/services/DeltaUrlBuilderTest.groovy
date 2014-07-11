@@ -1,8 +1,10 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
-import com.sony.ebs.octopus3.commons.date.DateConversionException
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.IOUtils
 import org.junit.Before
 import org.junit.Test
+import org.springframework.core.io.DefaultResourceLoader
 
 class DeltaUrlBuilderTest {
 
@@ -14,42 +16,18 @@ class DeltaUrlBuilderTest {
     }
 
     @Test
-    void "create since with file"() {
-        def since = deltaUrlBuilder.createSinceValue("GLOBAL", "fr_FR", null)
-        assert since != null
-    }
-
-    @Test
-    void "create since with no file"() {
-        def since = deltaUrlBuilder.createSinceValue("GLOBAL", "en_GB", null)
-        assert since == null
-    }
-
-    @Test
-    void "create since with param"() {
-        def since = deltaUrlBuilder.createSinceValue("GLOBAL", "fr_FR", "2014-06-20T20:30:00.000Z")
-        assert since == "2014-06-20T20:30:00.000Z"
-    }
-
-    @Test(expected = DateConversionException.class)
-    void "create since with wrong format"() {
-        deltaUrlBuilder.createSinceValue("GLOBAL", "fr_FR", "2014-06-20T20:30:00-")
-    }
-
-    @Test
-    void "create since with all"() {
-        def since = deltaUrlBuilder.createSinceValue("GLOBAL", "fr_FR", "All")
-        assert since == null
-    }
-
-    @Test
     void "create url"() {
-        assert deltaUrlBuilder.createUrl("en_GB", null) == "/en_GB"
+        assert deltaUrlBuilder.createUrl("GLOBAL", "en_GB", null) == "/en_GB"
     }
 
     @Test
     void "create url with since"() {
-        assert deltaUrlBuilder.createUrl("en_GB", "s1") == "/changes/en_GB?since=s1"
+        assert deltaUrlBuilder.createUrl("GLOBAL", "en_GB", "s1") == "/changes/en_GB?since=s1"
+    }
+
+    @Test
+    void "create since with file"() {
+        assert deltaUrlBuilder.createUrl("GLOBAL", "fr_FR", null).contains("since=")
     }
 
     @Test
@@ -81,4 +59,13 @@ class DeltaUrlBuilderTest {
     void "get sku for prefix and sku"() {
         assert deltaUrlBuilder.getSkuFromUrl("aa/x1.c") == "x1.c"
     }
+
+    @Test
+    void "store delta"() {
+        deltaUrlBuilder.storageFolder = "file:target/delta"
+        deltaUrlBuilder.storeDelta("GLOBAL", "en_GB", "xxx")
+        def file = new DefaultResourceLoader().getResource("file:target/delta/GLOBAL/en_GB/_productlist")?.file
+        assert FileUtils.readFileToString(file) == "xxx"
+    }
+
 }
