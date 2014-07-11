@@ -7,6 +7,7 @@ import com.ning.http.client.Realm
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import ratpack.exec.ExecControl
 
@@ -23,7 +24,7 @@ class NingHttpClient implements HttpClient {
     }
 
     @Autowired
-    @org.springframework.context.annotation.Lazy
+    @Lazy
     ExecControl execControl
 
     @Autowired

@@ -11,6 +11,7 @@ import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import ratpack.exec.ExecControl
 
@@ -21,15 +22,12 @@ import static ratpack.rx.RxRatpack.observe
 class DeltaService {
 
     @Autowired
-    @org.springframework.context.annotation.Lazy
+    @Lazy
     ExecControl execControl
 
     @Autowired
     @Qualifier("ningHttpClient")
     HttpClient httpClient
-
-    @Autowired
-    ObservableHelper observableHelper
 
     @Autowired
     DeltaUrlBuilder deltaUrlBuilder
