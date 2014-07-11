@@ -29,8 +29,8 @@ class DeltaServiceTest {
 
     @Test
     void "delta flow"() {
-        def mockDeltaUrlBuilder = new StubFor(DeltaUrlBuilder)
-        mockDeltaUrlBuilder.demand.with {
+        def mockDeltaCollaborator = new StubFor(DeltaCollaborator)
+        mockDeltaCollaborator.demand.with {
             createUrl(1) { publication, locale, since -> "/delta" }
             getSkuFromUrl(2) { String url ->
                 def sku = url.endsWith("a") ? "a" : "b"
@@ -39,7 +39,7 @@ class DeltaServiceTest {
             }
             storeDelta(1) { publication, locale, text -> }
         }
-        deltaService.deltaUrlBuilder = mockDeltaUrlBuilder.proxyInstance()
+        deltaService.deltaCollaborator = mockDeltaCollaborator.proxyInstance()
 
         ProcessId processId = new ProcessIdImpl()
 

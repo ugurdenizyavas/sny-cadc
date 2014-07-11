@@ -14,7 +14,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 @Slf4j
 @Service
-public class DeltaUrlBuilder {
+public class DeltaCollaborator {
 
     @Value('${octopus3.sourceservice.storageFolder}')
     String storageFolder

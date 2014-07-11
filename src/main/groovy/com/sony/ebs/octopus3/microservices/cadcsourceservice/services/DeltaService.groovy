@@ -30,20 +30,20 @@ class DeltaService {
     HttpClient httpClient
 
     @Autowired
-    DeltaUrlBuilder deltaUrlBuilder
+    DeltaCollaborator deltaCollaborator
 
     @Value('${octopus3.sourceservice.importSheetUrl}')
     String importSheetUrl
 
     private rx.Observable<String> retrieveDelta(String publication, String locale, String since, String cadcUrl) {
         observe(execControl.blocking {
-            String relUrl = deltaUrlBuilder.createUrl(publication, locale, since)
+            String relUrl = deltaCollaborator.createUrl(publication, locale, since)
             "$cadcUrl$relUrl"
         }).flatMap({
             httpClient.getFromCadc(it)
         }).flatMap { String text ->
             observe(execControl.blocking {
-                deltaUrlBuilder.storeDelta(publication, locale, text)
+                deltaCollaborator.storeDelta(publication, locale, text)
                 text
             })
         }
@@ -54,7 +54,7 @@ class DeltaService {
             def result = new JsonSlurper().parseText(content)
             def urlMap = [:]
             result.skus[locale].each {
-                def sku = deltaUrlBuilder.getSkuFromUrl(it)
+                def sku = deltaCollaborator.getSkuFromUrl(it)
                 URN urn = new URNImpl(UrnType.global_sku.toString(), [publication, locale, sku])
                 urlMap[urn] = it
             }
