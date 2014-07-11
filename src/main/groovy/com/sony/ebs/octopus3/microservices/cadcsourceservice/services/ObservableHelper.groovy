@@ -34,6 +34,7 @@ class ObservableHelper {
     @PostConstruct
     public void init() {
         executorService = new ThreadPoolExecutor(10, 100, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>())
+        log.info "created executorService thread pool"
     }
 
 }
