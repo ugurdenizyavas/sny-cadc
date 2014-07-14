@@ -20,20 +20,10 @@ class NingHttpClientIntegrationTest {
 
     @Before
     void before() {
-        def httpClientConfig = new HttpClientConfig(
-                proxyHost: "43.194.159.10",
-                proxyPort: 10080,
-                proxyUser: "TRGAEbaseProxy",
-                proxyPassword: "badana01",
-                authenticationUser: "eu_octopus_syndication",
-                authenticationPassword: "2khj0xwb",
-                authenticationHosts: "origin.uat-cadc-loader-lb.sony.eu, b, c"
-        )
-
         execController = LaunchConfigBuilder.noBaseDir().build().execController
 
-        ningHttpClient = new NingHttpClient(httpClientConfig: httpClientConfig, execControl: execController.control)
-        ningHttpClient.init()
+        ningHttpClient = new NingHttpClient(execController.control,
+                "43.194.159.10", 10080, "TRGAEbaseProxy", "badana01", "eu_octopus_syndication", "2khj0xwb")
     }
 
     @After
@@ -53,7 +43,7 @@ class NingHttpClientIntegrationTest {
     void "test ningHttpClient"() {
         def finished = new Object()
         execController.start {
-            ningHttpClient.getFromCadc(CADC_URL).subscribe { String result ->
+            ningHttpClient.doGet(CADC_URL).subscribe { String result ->
                 synchronized (finished) {
                     validate(result)
                     finished.notifyAll()

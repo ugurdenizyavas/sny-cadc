@@ -3,7 +3,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.UrnType
 import groovy.json.JsonSlurper
@@ -26,8 +26,12 @@ class DeltaService {
     ExecControl execControl
 
     @Autowired
-    @Qualifier("ningHttpClient")
-    HttpClient httpClient
+    @Qualifier("localHttpClient")
+    NingHttpClient localHttpClient
+
+    @Autowired
+    @Qualifier("cadcHttpClient")
+    NingHttpClient cadcHttpClient
 
     @Autowired
     DeltaCollaborator deltaCollaborator
@@ -40,7 +44,7 @@ class DeltaService {
             String relUrl = deltaCollaborator.createUrl(publication, locale, since)
             "$cadcUrl$relUrl"
         }).flatMap({
-            httpClient.getFromCadc(it)
+            cadcHttpClient.doGet(it)
         }).flatMap { String text ->
             observe(execControl.blocking {
                 deltaCollaborator.storeDelta(publication, locale, text)
@@ -66,7 +70,7 @@ class DeltaService {
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
         def importUrl = "$importSheetUrl/$urn?url=$sheetUrl&processId=$processId.id"
-        httpClient.getLocal(importUrl).flatMap({
+        localHttpClient.doGet(importUrl).flatMap({
             rx.Observable.from("success for $urn")
         }).onErrorReturn({
             log.error "error in $urn", it

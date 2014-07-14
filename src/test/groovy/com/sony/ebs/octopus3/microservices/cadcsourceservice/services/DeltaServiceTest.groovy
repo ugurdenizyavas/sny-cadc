@@ -2,8 +2,9 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.HttpClient
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.NingHttpClient
 import groovy.mock.interceptor.StubFor
+import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
 import org.junit.After
 import org.junit.Before
@@ -11,6 +12,7 @@ import org.junit.Test
 import ratpack.exec.ExecController
 import ratpack.launch.LaunchConfigBuilder
 
+@Slf4j
 class DeltaServiceTest {
 
     DeltaService deltaService
@@ -43,26 +45,29 @@ class DeltaServiceTest {
 
         ProcessId processId = new ProcessIdImpl()
 
-        def mockHttpClient = new StubFor(HttpClient)
+        def mockHttpClient = new StubFor(NingHttpClient)
         mockHttpClient.demand.with {
-            getFromCadc(1) {
-                assert it == "http://cadc/delta"
-                rx.Observable.from('{"skus":{"en_GB":["http://cadc/a", "http://cadc/b"]}}')
-            }
-            getLocal(2) { String url ->
-                def importUrl = new URIBuilder(url).queryParams[0].value
-                def sku = importUrl.endsWith("a") ? "a" : "b"
-                assert url == "http://import/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=$processId.id"
-                rx.Observable.from("$sku$sku")
+            doGet(3) { String url ->
+                if (url.endsWith("/delta")) {
+                    assert url == "http://cadc/delta"
+                    rx.Observable.from('{"skus":{"en_GB":["http://cadc/a", "http://cadc/b"]}}')
+                } else {
+                    def importUrl = new URIBuilder(url).queryParams[0].value
+                    def sku = importUrl.endsWith("a") ? "a" : "b"
+                    assert url == "http://import/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=$processId.id"
+                    rx.Observable.from("$sku$sku")
+                }
             }
         }
-        deltaService.httpClient = mockHttpClient.proxyInstance()
+        deltaService.localHttpClient = mockHttpClient.proxyInstance()
+        deltaService.cadcHttpClient = mockHttpClient.proxyInstance()
 
         def finished = new Object()
         execController.start {
             deltaService.deltaFlow(processId, "SCORE", "en_GB", "2014", "http://cadc").subscribe { String result ->
                 synchronized (finished) {
                     assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
+                    log.info "test finished"
                     finished.notifyAll()
                 }
             }
