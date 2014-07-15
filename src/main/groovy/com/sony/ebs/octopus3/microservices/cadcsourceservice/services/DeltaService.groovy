@@ -40,14 +40,14 @@ class DeltaService {
 
     private rx.Observable<String> retrieveDelta(Delta delta) {
         observe(execControl.blocking {
-            String relUrl = deltaCollaborator.createUrl(delta.publication, delta.locale, delta.since)
+            String relUrl = deltaCollaborator.createUrl(delta)
             "$delta.cadcUrl$relUrl"
         }).flatMap({
             cadcHttpClient.doGet(it)
-        }).flatMap { String text ->
+        }).flatMap { String cadcResult ->
             observe(execControl.blocking {
-                deltaCollaborator.storeDelta(delta.publication, delta.locale, text)
-                text
+                deltaCollaborator.storeDelta(delta, cadcResult)
+                cadcResult
             })
         }
     }

@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import org.junit.Before
 import org.junit.Test
 
@@ -9,29 +10,31 @@ class DeltaCollaboratorTest {
 
     @Before
     void before() {
-        deltaCollaborator = new DeltaCollaborator(storageFolder: "target/delta")
+        deltaCollaborator = new DeltaCollaborator(storageFolder: "target/oct3")
     }
 
     @Test
     void "create url"() {
-        deltaCollaborator.deleteDelta("GLOBAL", "en_GB")
-        assert deltaCollaborator.createUrl("GLOBAL", "en_GB", null) == "/en_GB"
+        def delta = new Delta(publication: "GLOBAL", locale: "en_GB")
+        deltaCollaborator.deleteDelta(delta)
+        assert deltaCollaborator.createUrl(delta) == "/en_GB"
     }
 
     @Test
     void "create url with since value all"() {
-        assert deltaCollaborator.createUrl("GLOBAL", "en_GB", "All") == "/en_GB"
+        assert deltaCollaborator.createUrl(new Delta(publication: "GLOBAL", locale: "en_GB", since: "All")) == "/en_GB"
     }
 
     @Test
     void "create url with since"() {
-        assert deltaCollaborator.createUrl("GLOBAL", "en_GB", "s1") == "/changes/en_GB?since=s1"
+        assert deltaCollaborator.createUrl(new Delta(publication: "GLOBAL", locale: "en_GB", since: "s1")) == "/changes/en_GB?since=s1"
     }
 
     @Test
     void "create since with file"() {
-        deltaCollaborator.storeDelta("GLOBAL", "fr_FR", "xxx")
-        assert deltaCollaborator.createUrl("GLOBAL", "fr_FR", null).contains("since=")
+        def delta = new Delta(publication: "GLOBAL", locale: "fr_FR")
+        deltaCollaborator.storeDelta(delta, "xxx")
+        assert deltaCollaborator.createUrl(delta).contains("since=")
     }
 
     @Test
@@ -66,8 +69,9 @@ class DeltaCollaboratorTest {
 
     @Test
     void "store delta"() {
-        deltaCollaborator.storeDelta("GLOBAL", "en_GB", "xxx")
-        assert deltaCollaborator.readDelta("GLOBAL", "en_GB") == "xxx"
+        def delta = new Delta(publication: "GLOBAL", locale: "en_GB")
+        deltaCollaborator.storeDelta(delta, "xxx")
+        assert deltaCollaborator.readDelta(delta) == "xxx"
     }
 
 }

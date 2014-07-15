@@ -3,6 +3,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 import com.sony.ebs.octopus3.commons.date.ISODateUtils
 import com.sony.ebs.octopus3.commons.file.FileUtils
 import com.sony.ebs.octopus3.commons.urn.URN
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Value
@@ -20,10 +21,10 @@ public class DeltaCollaborator {
     @Value('${octopus3.sourceservice.storageFolder}')
     String storageFolder
 
-    String createUrl(String publication, String locale, String sincePrm) {
-        String since = !sincePrm ? createSinceFromFS(publication, locale) : (!sincePrm.equalsIgnoreCase("all") ? sincePrm : null)
-        String url = createUrlInner(locale, since)
-        log.info "url created for publication $publication locale $locale since $sincePrm is $url"
+    String createUrl(Delta delta) {
+        String since = !delta.since ? createSinceFromFS(delta) : (!delta.since.equalsIgnoreCase("all") ? delta.since : null)
+        String url = createUrlInner(delta.locale, since)
+        log.info "url created for $delta is $url"
         url
     }
 
@@ -33,24 +34,24 @@ public class DeltaCollaborator {
         url
     }
 
-    Path createDeltaFilePath(String publication, String locale) {
-        Paths.get("$storageFolder/$publication/$locale/_productlist")
+    private Path createDeltaFilePath(Delta delta) {
+        Paths.get("$storageFolder/${delta.urn.toPath()}")
     }
 
-    private String createSinceFromFS(String publication, String locale) {
-        def path = createDeltaFilePath(publication, locale)
+    private String createSinceFromFS(Delta delta) {
+        def path = createDeltaFilePath(delta)
         if (Files.exists(path)) {
             def lastModifiedTime = Files.readAttributes(path, BasicFileAttributes.class)?.lastModifiedTime()?.toMillis()
             def str = ISODateUtils.toISODateString(new DateTime(lastModifiedTime))
-            log.info "lastModifiedTime for $publication and $locale is $str"
+            log.info "lastModifiedTime for $delta is $str"
             str
         } else {
             null
         }
     }
 
-    void storeDelta(String publication, String locale, String text) {
-        def path = createDeltaFilePath(publication, locale)
+    void storeDelta(Delta delta, String text) {
+        def path = createDeltaFilePath(delta)
         log.info "starting storing $path"
         FileUtils.writeFile(path, text.getBytes("UTF-8"), true, true)
         log.info "finished storing $path"
@@ -63,16 +64,16 @@ public class DeltaCollaborator {
         log.info "finished storing $urn at $path"
     }
 
-    String readDelta(String publication, String locale) {
-        def path = createDeltaFilePath(publication, locale)
+    String readDelta(Delta delta) {
+        def path = createDeltaFilePath(delta)
         log.info "starting reading $path"
         def result = new String(Files.readAllBytes(path), "UTF-8")
         log.info "finished reading $path"
         result
     }
 
-    void deleteDelta(String publication, String locale) {
-        def path = createDeltaFilePath(publication, locale)
+    void deleteDelta(Delta delta) {
+        def path = createDeltaFilePath(delta)
         log.info "starting deleting $path"
         FileUtils.delete(path)
         log.info "finished deleting $path"

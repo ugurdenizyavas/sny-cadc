@@ -35,13 +35,13 @@ class DeltaServiceTest {
 
         def mockDeltaCollaborator = new StubFor(DeltaCollaborator)
         mockDeltaCollaborator.demand.with {
-            createUrl(1) { publication, locale, since -> "/delta" }
+            createUrl(1) { d -> "/delta" }
             getSkuFromUrl(2) { String url ->
                 def sku = url.endsWith("a") ? "a" : "b"
                 assert url == "http://cadc/$sku"
                 sku
             }
-            storeDelta(1) { publication, locale, text -> }
+            storeDelta(1) { d, text -> }
         }
         deltaService.deltaCollaborator = mockDeltaCollaborator.proxyInstance()
 
