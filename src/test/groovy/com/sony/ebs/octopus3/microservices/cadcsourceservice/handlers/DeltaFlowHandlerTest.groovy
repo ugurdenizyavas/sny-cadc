@@ -42,14 +42,14 @@ class DeltaFlowHandlerTest {
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }).with {
             assert status.code == 202
-            def res =  rendered(DefaultJsonRender).object
-            assert res.message == "delta started"
-            assert res.status == 202
-            assert res.delta.publication == "SCORE"
-            assert res.delta.locale == "en_GB"
-            assert res.delta.since == "2014"
-            assert res.delta.cadcUrl == "http://cadc/skus"
-            assert res.delta.processId != null
+            def ren =  rendered(DefaultJsonRender).object
+            assert ren.message == "delta started"
+            assert ren.status == 202
+            assert ren.delta.publication == "SCORE"
+            assert ren.delta.locale == "en_GB"
+            assert ren.delta.since == "2014"
+            assert ren.delta.cadcUrl == "http://cadc/skus"
+            assert ren.delta.processId != null
         }
     }
 
@@ -63,10 +63,10 @@ class DeltaFlowHandlerTest {
             uri "/"
         }).with {
             assert status.code == 400
-            def res =  rendered(DefaultJsonRender).object
-            assert res.status == 400
-            assert res.errors == ["error"]
-            assert res.delta != null
+            def ren =  rendered(DefaultJsonRender).object
+            assert ren.status == 400
+            assert ren.errors == ["error"]
+            assert ren.delta != null
         }
     }
 }

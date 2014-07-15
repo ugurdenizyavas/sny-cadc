@@ -1,8 +1,5 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
-import com.sony.ebs.octopus3.commons.process.ProcessId
-import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
-import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
 import groovy.mock.interceptor.StubFor

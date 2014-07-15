@@ -63,11 +63,11 @@ class DeltaServiceTest {
         deltaService.cadcHttpClient = mockHttpClient.proxyInstance()
 
         def finished = new Object()
+        def result
         execController.start {
-            deltaService.deltaFlow(delta).subscribe { String result ->
+            deltaService.deltaFlow(delta).subscribe { String res ->
                 synchronized (finished) {
-                    assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
-                    log.info "test finished"
+                    result = res
                     finished.notifyAll()
                 }
             }
@@ -75,6 +75,7 @@ class DeltaServiceTest {
         synchronized (finished) {
             finished.wait 5000
         }
+        assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
     }
 
 }

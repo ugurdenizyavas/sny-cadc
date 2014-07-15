@@ -51,12 +51,12 @@ class SheetFlowHandlerTest {
             uri "/?url=$SHEET_URL$processIdPostfix"
         }).with {
             assert status.code == 202
-            def res = rendered(DefaultJsonRender).object
-            assert res.status == 202
-            assert res.message == "deltaSheet started"
-            assert res.deltaSheet.urnStr == URN
-            assert res.deltaSheet.url == SHEET_URL
-            assert res.deltaSheet.processId == processId?.id
+            def ren = rendered(DefaultJsonRender).object
+            assert ren.status == 202
+            assert ren.message == "deltaSheet started"
+            assert ren.deltaSheet.urnStr == URN
+            assert ren.deltaSheet.url == SHEET_URL
+            assert ren.deltaSheet.processId == processId?.id
         }
     }
 
@@ -72,10 +72,10 @@ class SheetFlowHandlerTest {
             uri "/"
         }).with {
             assert status.code == 400
-            def res = rendered(DefaultJsonRender).object
-            assert res.status == 400
-            assert res.errors == ["error"]
-            assert res.deltaSheet != null
+            def ren = rendered(DefaultJsonRender).object
+            assert ren.status == 400
+            assert ren.errors == ["error"]
+            assert ren.deltaSheet != null
         }
     }
 

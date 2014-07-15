@@ -23,10 +23,11 @@ class SaveFlowHandlerTest {
             body "aaa", "application/json"
         }).with {
             assert status.code == 202
-            assert rendered(DefaultJsonRender).object.status == 202
-            assert rendered(DefaultJsonRender).object.message == "sheet saved"
-            assert rendered(DefaultJsonRender).object.urn == URN
-            assert rendered(DefaultJsonRender).object.processId == "123"
+            def ren = rendered(DefaultJsonRender).object
+            assert ren.status == 202
+            assert ren.message == "sheet saved"
+            assert ren.urn == URN
+            assert ren.processId == "123"
         }
     }
 }
