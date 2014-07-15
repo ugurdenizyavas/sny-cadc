@@ -1,11 +1,12 @@
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.SpringConfig
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.DeltaFlowHandler
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.ErrorHandler
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.SaveFlowHandler
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.SheetFlowHandler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
-import ratpack.error.DebugErrorHandler
+import ratpack.error.ClientErrorHandler
 import ratpack.error.ServerErrorHandler
 import ratpack.jackson.JacksonModule
 import ratpack.rx.RxRatpack
@@ -22,7 +23,8 @@ ratpack {
 
     bindings {
         add new JacksonModule()
-        bind ServerErrorHandler, new DebugErrorHandler()
+        bind ClientErrorHandler, new ErrorHandler()
+        bind ServerErrorHandler, new ErrorHandler()
         init {
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(SpringConfig.class)
             ctx.beanFactory.registerSingleton "launchConfig", launchConfig
