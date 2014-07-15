@@ -36,8 +36,8 @@ class DeltaServiceTest {
         def mockDeltaCollaborator = new StubFor(DeltaCollaborator)
         mockDeltaCollaborator.demand.with {
             createUrl(1) { d -> "/delta" }
-            getSkuFromUrl(2) { String url ->
-                def sku = url.endsWith("a") ? "a" : "b"
+            getSkuFromUrl(3) { String url ->
+                def sku = url.substring(url.size() - 1)
                 assert url == "http://cadc/$sku"
                 sku
             }
@@ -47,13 +47,13 @@ class DeltaServiceTest {
 
         def mockHttpClient = new StubFor(NingHttpClient)
         mockHttpClient.demand.with {
-            doGet(3) { String url ->
+            doGet(4) { String url ->
                 if (url.endsWith("/delta")) {
                     assert url == "http://cadc/delta"
-                    rx.Observable.from('{"skus":{"en_GB":["http://cadc/a", "http://cadc/b"]}}')
+                    rx.Observable.from('{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}')
                 } else {
                     def importUrl = new URIBuilder(url).queryParams[0].value
-                    def sku = importUrl.endsWith("a") ? "a" : "b"
+                    def sku = importUrl.substring(importUrl.size() - 1)
                     assert url == "http://import/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=$delta.processId.id"
                     rx.Observable.from("$sku$sku")
                 }
@@ -63,11 +63,11 @@ class DeltaServiceTest {
         deltaService.cadcHttpClient = mockHttpClient.proxyInstance()
 
         def finished = new Object()
-        def result
+        def result = [].asSynchronized()
         execController.start {
             deltaService.deltaFlow(delta).subscribe { String res ->
                 synchronized (finished) {
-                    result = res
+                    result << res
                     finished.notifyAll()
                 }
             }
@@ -75,7 +75,7 @@ class DeltaServiceTest {
         synchronized (finished) {
             finished.wait 5000
         }
-        assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
+        assert result.sort() == ["success for urn:global_sku:score:en_gb:a", "success for urn:global_sku:score:en_gb:b", "success for urn:global_sku:score:en_gb:c"]
     }
 
 }

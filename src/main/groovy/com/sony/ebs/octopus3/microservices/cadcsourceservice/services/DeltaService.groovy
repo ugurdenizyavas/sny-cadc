@@ -76,27 +76,21 @@ class DeltaService {
         })
     }
 
-    private rx.Observable<String> importSheets(Delta delta) {
-        log.info "starting import for $delta"
-        rx.Observable.zip(
-                delta?.urlMap?.collect { URN urn, String sheetUrl ->
-                    importSingleSheet(delta.processId, urn, sheetUrl)
-                }
-        ) { result ->
-            log.info "import finished with result $result"
-            "$result"
-        }
-    }
-
     rx.Observable<String> deltaFlow(Delta delta) {
         retrieveDelta(delta)
                 .flatMap({ String result ->
             createUrlMap(delta, result)
         }).flatMap({ Map urlMap ->
             delta.urlMap = urlMap
-            importSheets(delta)
-        }).doOnError({
+            log.info "starting import for $delta"
+            rx.Observable.merge(
+                    delta?.urlMap?.collect { URN urn, String sheetUrl ->
+                        importSingleSheet(delta.processId, urn, sheetUrl)
+                    }
+            )
+        }).onErrorReturn({
             log.error "error in delta import", it
+            "error in delta import"
         })
     }
 

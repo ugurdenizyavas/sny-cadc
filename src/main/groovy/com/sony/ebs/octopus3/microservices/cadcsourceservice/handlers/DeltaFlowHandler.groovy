@@ -35,7 +35,7 @@ class DeltaFlowHandler extends GroovyHandler {
                 render json(status: 400, errors: errors, delta: delta)
             } else {
                 deltaService.deltaFlow(delta).subscribe({ result ->
-                    log.info "$delta finished"
+                    log.info "$result"
                 })
                 log.info "$delta started"
                 response.status(202)
