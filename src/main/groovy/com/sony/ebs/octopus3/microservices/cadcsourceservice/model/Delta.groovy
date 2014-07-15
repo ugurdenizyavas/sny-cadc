@@ -16,7 +16,7 @@ class Delta {
 
     Map<URN, String> urlMap = [:]
 
-    URN getUrn() {
+    URN createUrn() {
         new URNImpl("delta", [publication, locale])
     }
 

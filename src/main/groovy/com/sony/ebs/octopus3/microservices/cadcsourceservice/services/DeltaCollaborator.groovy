@@ -35,7 +35,7 @@ public class DeltaCollaborator {
     }
 
     private Path createDeltaFilePath(Delta delta) {
-        Paths.get("$storageFolder/${delta.urn.toPath()}")
+        Paths.get("$storageFolder/${delta.createUrn().toPath()}")
     }
 
     private String createSinceFromFS(Delta delta) {
