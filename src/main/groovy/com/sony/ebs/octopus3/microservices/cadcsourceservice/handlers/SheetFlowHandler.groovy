@@ -1,9 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.commons.process.ProcessId
-import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
-import com.sony.ebs.octopus3.commons.urn.URN
-import com.sony.ebs.octopus3.commons.urn.URNImpl
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
@@ -27,28 +24,20 @@ class SheetFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            String urnStr = pathTokens.urn
-            String url = request.queryParams.url
-            String processIdStr = request.queryParams.processId
+            DeltaSheet deltaSheet = new DeltaSheet(urnStr: pathTokens.urn, url: request.queryParams.url, processId: request.queryParams.processId)
 
-            def sendError = { String message ->
-                log.error message
+            List errors = validator.validateDeltaSheet(deltaSheet)
+            if (errors) {
+                log.error "errors for $deltaSheet : $errors"
                 response.status(400)
-                render json(status: 400, message: message, urn: urnStr, url: url, processId: processIdStr)
-            }
-            URN urn = validator.createUrn(urnStr)
-            if (!urn) {
-                sendError("urn parameter is invalid")
-            } else if (!validator.validateUrl(url)) {
-                sendError("url parameter is invalid")
+                render json(status: 400, errors: errors, deltaSheet: deltaSheet)
             } else {
-                ProcessId processId = processIdStr ? new ProcessIdImpl(processIdStr) : null
-                sheetService.sheetFlow(urn, url, processId).subscribe {
-                    log.info "sheet import finished for urn $urnStr, url $url"
+                sheetService.sheetFlow(deltaSheet).subscribe {
+                    log.info "$deltaSheet finished"
                 }
-                log.info "import started for urn $urnStr, url $url"
+                log.info "$deltaSheet started"
                 response.status(202)
-                render json(status: 202, message: "sheet import started", urn: urnStr, url: url, processId: processIdStr)
+                render json(status: 202, message: "deltaSheet started", deltaSheet: deltaSheet)
             }
         }
     }

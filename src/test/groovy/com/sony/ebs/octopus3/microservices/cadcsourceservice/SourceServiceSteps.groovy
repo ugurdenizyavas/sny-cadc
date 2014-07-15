@@ -39,7 +39,7 @@ def validateError = { Response response, message ->
     assert response.statusCode == 400
     def json = parseJson(response)
     assert json?.status == 400
-    assert json?.message == message
+    assert json?.errors == [message]
 }
 
 World {
@@ -105,18 +105,18 @@ Then(~"Sheets should be imported with publication (.*) locale (.*) since (.*)") 
     assert response.statusCode == 202
     def json = parseJson(response)
     assert json.status == 202
-    assert json.message == "delta import started"
-    assert json.publication == publication
-    assert json.locale == locale
-    assert json.since == since
-    assert json.cadcUrl == "http://localhost:12306/skus"
+    assert json.message == "delta started"
+    assert json.delta.publication == publication
+    assert json.delta.locale == locale
+    assert json.delta.since == since
+    assert json.delta.cadcUrl == "http://localhost:12306/skus"
 }
 
 When(~"I import delta with invalid (.*) parameter") { paramName ->
     if (paramName == "publication") {
-        get("import/delta/publication/,,/locale/en_GB")
+        get("import/delta/publication/,,/locale/en_GB?cadcUrl=//host/skus")
     } else if (paramName == "locale") {
-        get("import/delta/publication/SCORE/locale/tr_")
+        get("import/delta/publication/SCORE/locale/tr_?cadcUrl=//host/skus")
     } else if (paramName == "cadcUrl") {
         get("import/delta/publication/SCORE/locale/en_GB?cadcUrl=/host/skus")
     } else if (paramName == "since") {
@@ -139,9 +139,9 @@ Then(~"Sheet import of (.*) should be successful") { sku ->
     assert response.statusCode == 202
     def json = parseJson(response)
     assert json.status == 202
-    assert json?.message == "sheet import started"
-    assert json?.urn == "urn:global_sku:score:en_gb:$sku"
-    assert json?.url == "http://localhost:12306/cadc/sheet/$sku"
+    assert json?.message == "deltaSheet started"
+    assert json?.deltaSheet.urnStr == "urn:global_sku:score:en_gb:$sku"
+    assert json?.deltaSheet.url == "http://localhost:12306/cadc/sheet/$sku"
 }
 
 When(~"I import sheet with invalid (.*) parameter") { paramName ->

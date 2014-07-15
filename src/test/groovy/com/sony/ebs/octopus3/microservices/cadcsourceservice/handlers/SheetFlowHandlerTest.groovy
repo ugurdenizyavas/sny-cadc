@@ -4,6 +4,7 @@ import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.mock.interceptor.StubFor
@@ -32,24 +33,17 @@ class SheetFlowHandlerTest {
     void "run sheet flow"(ProcessId processId, String processIdPostfix) {
         def mockSheetService = new StubFor(SheetService)
         mockSheetService.demand.with {
-            sheetFlow(1) { URN urn, String sheetUrl, ProcessId pid ->
-                assert urn.toString() == URN
-                assert sheetUrl == SHEET_URL
-                assert pid?.id == processId?.id
+            sheetFlow(1) { DeltaSheet deltaSheet ->
+                assert deltaSheet.urnStr == URN
+                assert deltaSheet.url == SHEET_URL
+                assert deltaSheet.processId == processId?.id
                 rx.Observable.from("aa")
             }
         }
 
         def mockRequestValidator = new StubFor(RequestValidator)
         mockRequestValidator.demand.with {
-            createUrn(1) {
-                assert it == URN
-                new URNImpl(URN)
-            }
-            validateUrl(1) {
-                assert it == SHEET_URL
-                true
-            }
+            validateDeltaSheet(1) { [] }
         }
 
         handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
@@ -57,20 +51,20 @@ class SheetFlowHandlerTest {
             uri "/?url=$SHEET_URL$processIdPostfix"
         }).with {
             assert status.code == 202
-            assert rendered(DefaultJsonRender).object.message == "sheet import started"
-            assert rendered(DefaultJsonRender).object.urn == URN
-            assert rendered(DefaultJsonRender).object.url == SHEET_URL
-            assert rendered(DefaultJsonRender).object.status == 202
-            assert rendered(DefaultJsonRender).object.processId == processId?.id
+            def res = rendered(DefaultJsonRender).object
+            assert res.status == 202
+            assert res.message == "deltaSheet started"
+            assert res.deltaSheet.urnStr == URN
+            assert res.deltaSheet.url == SHEET_URL
+            assert res.deltaSheet.processId == processId?.id
         }
     }
 
     @Test
-    void "url parameter is invalid"() {
+    void "invalid parameter"() {
         def mockRequestValidator = new StubFor(RequestValidator)
         mockRequestValidator.demand.with {
-            createUrn(1) { new URNImpl(URN) }
-            validateUrl(1) { false }
+            validateDeltaSheet(1) { ["error"] }
         }
 
         handle(new SheetFlowHandler(validator: mockRequestValidator.proxyInstance()), {
@@ -78,27 +72,11 @@ class SheetFlowHandlerTest {
             uri "/"
         }).with {
             assert status.code == 400
-            assert rendered(DefaultJsonRender).object.status == 400
-            assert rendered(DefaultJsonRender).object.message == "url parameter is invalid"
+            def res = rendered(DefaultJsonRender).object
+            assert res.status == 400
+            assert res.errors == ["error"]
+            assert res.deltaSheet != null
         }
     }
 
-    @Test
-    void "urn parameter is invalid"() {
-        def mockRequestValidator = new StubFor(RequestValidator)
-        mockRequestValidator.demand.with {
-            createUrn(1) {
-                assert it == null
-                null
-            }
-        }
-
-        handle(new SheetFlowHandler(validator: mockRequestValidator.proxyInstance()), {
-            uri "/?url=//aa"
-        }).with {
-            assert status.code == 400
-            assert rendered(DefaultJsonRender).object.status == 400
-            assert rendered(DefaultJsonRender).object.message == "urn parameter is invalid"
-        }
-    }
 }

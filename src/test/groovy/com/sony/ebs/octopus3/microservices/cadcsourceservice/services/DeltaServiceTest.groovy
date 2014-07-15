@@ -1,8 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
-import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.NingHttpClient
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
@@ -31,6 +31,8 @@ class DeltaServiceTest {
 
     @Test
     void "delta flow"() {
+        Delta delta = new Delta(processId: new ProcessIdImpl(), publication: "SCORE", locale: "en_GB", since: "2014", cadcUrl: "http://cadc")
+
         def mockDeltaCollaborator = new StubFor(DeltaCollaborator)
         mockDeltaCollaborator.demand.with {
             createUrl(1) { publication, locale, since -> "/delta" }
@@ -43,8 +45,6 @@ class DeltaServiceTest {
         }
         deltaService.deltaCollaborator = mockDeltaCollaborator.proxyInstance()
 
-        ProcessId processId = new ProcessIdImpl()
-
         def mockHttpClient = new StubFor(NingHttpClient)
         mockHttpClient.demand.with {
             doGet(3) { String url ->
@@ -54,7 +54,7 @@ class DeltaServiceTest {
                 } else {
                     def importUrl = new URIBuilder(url).queryParams[0].value
                     def sku = importUrl.endsWith("a") ? "a" : "b"
-                    assert url == "http://import/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=$processId.id"
+                    assert url == "http://import/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=$delta.processId.id"
                     rx.Observable.from("$sku$sku")
                 }
             }
@@ -64,7 +64,7 @@ class DeltaServiceTest {
 
         def finished = new Object()
         execController.start {
-            deltaService.deltaFlow(processId, "SCORE", "en_GB", "2014", "http://cadc").subscribe { String result ->
+            deltaService.deltaFlow(delta).subscribe { String result ->
                 synchronized (finished) {
                     assert result == "[success for urn:global_sku:score:en_gb:a, success for urn:global_sku:score:en_gb:b]"
                     log.info "test finished"

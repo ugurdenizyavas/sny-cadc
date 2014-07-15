@@ -1,7 +1,7 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
@@ -25,32 +25,21 @@ class DeltaFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            String publication = pathTokens.publication
-            String locale = pathTokens.locale
-            String since = request.queryParams.since
-            String cadcUrl = request.queryParams.cadcUrl
+            Delta delta = new Delta(processId: new ProcessIdImpl(), publication: pathTokens.publication, locale: pathTokens.locale,
+                    since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
 
-            def sendError = { String message ->
-                log.error message
+            List errors = validator.validateDelta(delta)
+            if (errors) {
+                log.error "errors for $delta : $errors"
                 response.status(400)
-                render json(status: 400, message: message, publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
-            }
-            if (!validator.validatePublication(publication)) {
-                sendError("publication parameter is invalid")
-            } else if (!validator.validateLocale(locale)) {
-                sendError("locale parameter is invalid")
-            } else if (!validator.validateUrl(cadcUrl)) {
-                sendError("cadcUrl parameter is invalid")
-            } else if (!validator.validateSinceValue(since)) {
-                sendError("since parameter is invalid")
+                render json(status: 400, errors: errors, delta: delta)
             } else {
-                ProcessId processId = new ProcessIdImpl()
-                deltaService.deltaFlow(processId, publication, locale, since, cadcUrl).subscribe({ result ->
-                    log.info "delta import finished for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl, reuslt: $result"
+                deltaService.deltaFlow(delta).subscribe({ result ->
+                    log.info "$delta finished"
                 })
-                log.info "delta import started for publication $publication, locale $locale, since $since, cadcUrl $cadcUrl"
+                log.info "$delta started"
                 response.status(202)
-                render json(status: 202, processId: processId.id, message: "delta import started", publication: publication, locale: locale, since: since, cadcUrl: cadcUrl)
+                render json(status: 202, message: "delta started", delta: delta)
             }
         }
     }

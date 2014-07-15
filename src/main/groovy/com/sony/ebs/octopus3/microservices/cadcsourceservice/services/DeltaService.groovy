@@ -5,7 +5,6 @@ import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.UrnType
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -39,32 +38,31 @@ class DeltaService {
     @Value('${octopus3.sourceservice.importSheetUrl}')
     String importSheetUrl
 
-    private rx.Observable<String> retrieveDelta(String publication, String locale, String since, String cadcUrl) {
+    private rx.Observable<String> retrieveDelta(Delta delta) {
         observe(execControl.blocking {
-            String relUrl = deltaCollaborator.createUrl(publication, locale, since)
-            "$cadcUrl$relUrl"
+            String relUrl = deltaCollaborator.createUrl(delta.publication, delta.locale, delta.since)
+            "$delta.cadcUrl$relUrl"
         }).flatMap({
             cadcHttpClient.doGet(it)
         }).flatMap { String text ->
             observe(execControl.blocking {
-                deltaCollaborator.storeDelta(publication, locale, text)
+                deltaCollaborator.storeDelta(delta.publication, delta.locale, text)
                 text
             })
         }
     }
 
-    private rx.Observable<Delta> parseDelta(String publication, String locale, String content) {
+    private rx.Observable<Map> createUrlMap(Delta delta, String content) {
         observe(execControl.blocking {
             def result = new JsonSlurper().parseText(content)
             def urlMap = [:]
-            result.skus[locale].each {
+            result.skus[delta.locale].each {
                 def sku = deltaCollaborator.getSkuFromUrl(it)
-                URN urn = new URNImpl(UrnType.global_sku.toString(), [publication, locale, sku])
+                URN urn = new URNImpl("global_sku", [delta.publication, delta.locale, sku])
                 urlMap[urn] = it
             }
-            def delta = new Delta(publication: publication, locale: locale, urlMap: urlMap)
-            log.info "parsed delta: $delta"
-            delta
+            log.info "parsed delta: $urlMap for $delta"
+            urlMap
         })
     }
 
@@ -78,11 +76,11 @@ class DeltaService {
         })
     }
 
-    private rx.Observable<String> importSheets(ProcessId processId, Delta delta) {
+    private rx.Observable<String> importSheets(Delta delta) {
         log.info "starting import for $delta"
         rx.Observable.zip(
                 delta?.urlMap?.collect { URN urn, String sheetUrl ->
-                    importSingleSheet(processId, urn, sheetUrl)
+                    importSingleSheet(delta.processId, urn, sheetUrl)
                 }
         ) { result ->
             log.info "import finished with result $result"
@@ -90,12 +88,13 @@ class DeltaService {
         }
     }
 
-    rx.Observable<String> deltaFlow(ProcessId processId, String publication, String locale, String since, String cadcUrl) {
-        retrieveDelta(publication, locale, since, cadcUrl)
+    rx.Observable<String> deltaFlow(Delta delta) {
+        retrieveDelta(delta)
                 .flatMap({ String result ->
-            parseDelta(publication, locale, result)
-        }).flatMap({ Delta delta ->
-            importSheets(processId, delta)
+            createUrlMap(delta, result)
+        }).flatMap({ Map urlMap ->
+            delta.urlMap = urlMap
+            importSheets(delta)
         }).doOnError({
             log.error "error in delta import", it
         })
