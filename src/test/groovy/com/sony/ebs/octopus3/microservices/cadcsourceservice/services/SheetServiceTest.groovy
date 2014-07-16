@@ -9,7 +9,7 @@ import org.junit.Test
 class SheetServiceTest {
 
     SheetService sheetService
-    String SAVE_REPO_URL = "http://save/repo"
+    String SAVE_REPO_URL = "http://cadcsource/save"
 
     @Before
     void before() {

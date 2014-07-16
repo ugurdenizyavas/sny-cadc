@@ -67,7 +67,7 @@ def cadcService = { HttpServer server, String publication, String locale, int nu
 
     (numOfSheets - numOfErrors).times {
         def name = "p${it + 1}"
-        server.request(by(uri("/import/sheet/urn:global_sku:$publication:$locale:$name".toLowerCase()))).response("sheet${it + 1}")
+        server.request(by(uri("/cadcsource/sheet/urn:global_sku:$publication:$locale:$name".toLowerCase()))).response("sheet${it + 1}")
     }
 }
 
@@ -84,7 +84,7 @@ Given(~"Cadc returns (.*) sheets for publication (.*) locale (.*) successfully")
 * */
 
 When(~"I save sheet (.*)") { sku ->
-    post("save/repo/urn:global_sku:score:en_gb:$sku")
+    post("cadcsource/save/urn:global_sku:score:en_gb:$sku")
 }
 
 Then(~"sheet (.*) should be saved") { sku ->
@@ -98,7 +98,7 @@ Then(~"sheet (.*) should be saved") { sku ->
 * */
 
 When(~"I request delta of publication (.*) locale (.*) since (.*)") { publication, locale, since ->
-    get("import/delta/publication/$publication/locale/$locale?since=$since&cadcUrl=http://localhost:12306/skus")
+    get("cadcsource/delta/publication/$publication/locale/$locale?since=$since&cadcUrl=http://localhost:12306/skus")
 }
 
 Then(~"Sheets should be imported with publication (.*) locale (.*) since (.*)") { publication, locale, since ->
@@ -114,13 +114,13 @@ Then(~"Sheets should be imported with publication (.*) locale (.*) since (.*)") 
 
 When(~"I import delta with invalid (.*) parameter") { paramName ->
     if (paramName == "publication") {
-        get("import/delta/publication/,,/locale/en_GB?cadcUrl=//host/skus")
+        get("cadcsource/delta/publication/,,/locale/en_GB?cadcUrl=//host/skus")
     } else if (paramName == "locale") {
-        get("import/delta/publication/SCORE/locale/tr_?cadcUrl=//host/skus")
+        get("cadcsource/delta/publication/SCORE/locale/tr_?cadcUrl=//host/skus")
     } else if (paramName == "cadcUrl") {
-        get("import/delta/publication/SCORE/locale/en_GB?cadcUrl=/host/skus")
+        get("cadcsource/delta/publication/SCORE/locale/en_GB?cadcUrl=/host/skus")
     } else if (paramName == "since") {
-        get("import/delta/publication/SCORE/locale/en_GB?cadcUrl=http://host/skus&since=s1")
+        get("cadcsource/delta/publication/SCORE/locale/en_GB?cadcUrl=http://host/skus&since=s1")
     }
 }
 
@@ -132,7 +132,7 @@ Then(~"Import should give (.*) parameter error") { paramName ->
 * ******************** SHEET IMPORT SERVICE *************************************************************
 * */
 When(~"I import sheet (.*) correctly") { sku ->
-    get("import/sheet/urn:global_sku:score:en_gb:$sku?url=http://localhost:12306/cadc/sheet/$sku")
+    get("cadcsource/sheet/urn:global_sku:score:en_gb:$sku?url=http://localhost:12306/cadc/sheet/$sku")
 }
 
 Then(~"Sheet import of (.*) should be successful") { sku ->
@@ -146,9 +146,9 @@ Then(~"Sheet import of (.*) should be successful") { sku ->
 
 When(~"I import sheet with invalid (.*) parameter") { paramName ->
     if (paramName == "urn") {
-        get("import/sheet/a?url=http://sheet/a")
+        get("cadcsource/sheet/a?url=http://sheet/a")
     } else if (paramName == "url") {
-        get("import/sheet/urn:global_sku:score:en_gb:a?url=/sheet/a")
+        get("cadcsource/sheet/urn:global_sku:score:en_gb:a?url=/sheet/a")
     }
 }
 
