@@ -44,7 +44,7 @@ ratpack {
 
     handlers {
 
-        get("amazon/healthcheck") {
+        get("cadcsource/healthcheck") {
             def params = [:]
 
             params.enabled = request.queryParams.enabled
