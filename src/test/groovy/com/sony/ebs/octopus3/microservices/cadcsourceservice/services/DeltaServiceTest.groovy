@@ -1,7 +1,7 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j

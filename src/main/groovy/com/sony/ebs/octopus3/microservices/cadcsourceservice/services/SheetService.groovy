@@ -1,6 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.http.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired

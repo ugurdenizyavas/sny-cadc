@@ -1,3 +1,6 @@
+import com.sony.ebs.octopus3.commons.ratpack.handlers.ErrorHandler
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HealthCheckHandler
+import com.sony.ebs.octopus3.commons.ratpack.monitoring.MonitoringService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.SpringConfig
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.*
 import org.slf4j.Logger
@@ -31,7 +34,7 @@ ratpack {
             deltaFlowHandler = ctx.getBean(DeltaFlowHandler.class)
             sheetFlowHandler = ctx.getBean(SheetFlowHandler.class)
             saveFlowHandler = ctx.getBean(SaveFlowHandler.class)
-            healthCheckHandler = ctx.getBean(HealthCheckHandler.class)
+            healthCheckHandler = new HealthCheckHandler(monitoringService: new MonitoringService())
 
             RxRatpack.initialize()
         }
