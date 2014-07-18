@@ -44,6 +44,7 @@ apply plugin: "groovy"
 apply plugin: 'idea'
 apply plugin: 'nexus'
 apply plugin: "com.github.johnrengelman.shadow"
+apply plugin: 'maven-publish'
 
 //======================================================================
 // CONFIGURATIONS
@@ -71,7 +72,19 @@ idea {
     }
 }
 
+run { systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir')) }
+run { systemProperty('environment', System.getProperty('environment')) }
+test { systemProperty('environment', System.getProperty('environment')) }
+
+//======================================================================
+// PACKAGING SHADOWJAR
+// 1) Upload snapshots: gradle publishShadowPublicationToSnapshotsRepository
+// 2) Upload releases: gradle publishShadowPublicationToReleasesRepository
+//======================================================================
+
 shadowJar {
+    baseName = "${project.name}-app"
+    classifier = group
     transform(AppendingTransformer) {
         resource = "META-INF/spring.handlers"
     }
@@ -80,9 +93,32 @@ shadowJar {
     }
 }
 
-run { systemProperty('storage.root', System.getProperty('storage.root') ?: System.getProperty('java.io.tmpdir')) }
-run { systemProperty('environment', System.getProperty('environment')) }
-test { systemProperty('environment', System.getProperty('environment')) }
+publishing {
+    publications {
+        shadow(MavenPublication) {
+            from components.shadow
+            artifactId = "${project.name}-app"
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                username project.getProperty('nexusUsername')
+                password project.getProperty('nexusPassword')
+            }
+            name = "releases"
+            url = "https://mvn.sony-europe.com/content/repositories/releases"
+        }
+        maven {
+            credentials {
+                username project.getProperty('nexusUsername')
+                password project.getProperty('nexusPassword')
+            }
+            name = "snapshots"
+            url = "https://mvn.sony-europe.com/content/repositories/snapshots"
+        }
+    }
+}
 
 //======================================================================
 // DEPENDENCIES
