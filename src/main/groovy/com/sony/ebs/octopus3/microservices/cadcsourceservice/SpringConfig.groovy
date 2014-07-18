@@ -25,41 +25,57 @@ class SpringConfig {
         return new PropertySourcesPlaceholderConfigurer();
     }
 
-    @Bean
-    @Qualifier("cadcHttpClient")
-    @org.springframework.context.annotation.Lazy
-    public NingHttpClient cadcHttpClient() {
-        new NingHttpClient(execControl,
-                proxyHost, proxyPort, proxyUser, proxyPassword, nonProxyHosts,
-                authenticationUser, authenticationPassword)
-    }
+    @Value('${octopus3.sourceservice.local.proxy.host}')
+    String localProxyHost
 
-    @Value('${octopus3.sourceservice.proxyHost}')
-    String proxyHost
+    @Value('${octopus3.sourceservice.local.proxy.port}')
+    int localProxyPort
 
-    @Value('${octopus3.sourceservice.proxyPort}')
-    int proxyPort
+    @Value('${octopus3.sourceservice.local.proxy.user}')
+    String localProxyUser
 
-    @Value('${octopus3.sourceservice.proxyUser}')
-    String proxyUser
+    @Value('${octopus3.sourceservice.local.proxy.password}')
+    String localProxyPassword
 
-    @Value('${octopus3.sourceservice.proxyPassword}')
-    String proxyPassword
-
-    @Value('${octopus3.sourceservice.authenticationUser}')
-    String authenticationUser
-
-    @Value('${octopus3.sourceservice.authenticationPassword}')
-    String authenticationPassword
-
-    @Value('${octopus3.sourceservice.nonProxyHosts}')
-    String nonProxyHosts
+    @Value('${octopus3.sourceservice.local.proxy.nonProxyHosts}')
+    String localNonProxyHosts
 
     @Bean
     @Qualifier("localHttpClient")
     @org.springframework.context.annotation.Lazy
     public NingHttpClient localHttpClient() {
-        new NingHttpClient(execControl)
+        new NingHttpClient(execControl,
+                localProxyHost, localProxyPort, localProxyUser, localProxyPassword, localNonProxyHosts, "", "")
+    }
+
+    @Value('${octopus3.sourceservice.cadc.proxy.host}')
+    String cadcProxyHost
+
+    @Value('${octopus3.sourceservice.cadc.proxy.port}')
+    int cadcProxyPort
+
+    @Value('${octopus3.sourceservice.cadc.proxy.user}')
+    String cadcProxyUser
+
+    @Value('${octopus3.sourceservice.cadc.proxy.password}')
+    String cadcProxyPassword
+
+    @Value('${octopus3.sourceservice.cadc.proxy.nonProxyHosts}')
+    String cadcNonProxyHosts
+
+    @Value('${octopus3.sourceservice.cadc.authenticationUser}')
+    String cadcAuthenticationUser
+
+    @Value('${octopus3.sourceservice.cadc.authenticationPassword}')
+    String cadcAuthenticationPassword
+
+    @Bean
+    @Qualifier("cadcHttpClient")
+    @org.springframework.context.annotation.Lazy
+    public NingHttpClient cadcHttpClient() {
+        new NingHttpClient(execControl,
+                cadcProxyHost, cadcProxyPort, cadcProxyUser, cadcProxyPassword, cadcNonProxyHosts,
+                cadcAuthenticationUser, cadcAuthenticationPassword)
     }
 
 }

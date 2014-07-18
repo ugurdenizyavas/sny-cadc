@@ -21,7 +21,7 @@ class DeltaServiceTest {
     @Before
     void before() {
         execController = LaunchConfigBuilder.noBaseDir().build().execController
-        deltaService = new DeltaService(execControl: execController.control, importSheetUrl: "http://import")
+        deltaService = new DeltaService(execControl: execController.control, importSheetUrl: "http://import/:urn")
     }
 
     @After

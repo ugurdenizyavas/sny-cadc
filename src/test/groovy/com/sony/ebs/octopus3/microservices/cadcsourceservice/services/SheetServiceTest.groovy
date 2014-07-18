@@ -9,7 +9,7 @@ import org.junit.Test
 class SheetServiceTest {
 
     SheetService sheetService
-    String SAVE_REPO_URL = "http://cadcsource/save"
+    String SAVE_REPO_URL = "http://cadcsource/save/:urn"
 
     @Before
     void before() {
@@ -29,7 +29,7 @@ class SheetServiceTest {
     void "run sheet flow"(String processId, String processIdPostfix) {
         String SHEET_URL = 'http://cadc/p', SHEET_RESULT = 'eee', SAVE_RESULT = 'aaa'
         String URN = "urn:global_sku:score:en_gb:p"
-        String POST_URL = "$SAVE_REPO_URL/$URN$processIdPostfix"
+        String POST_URL = "http://cadcsource/save/$URN$processIdPostfix"
 
         DeltaSheet deltaSheet = new DeltaSheet(url: SHEET_URL, urnStr: URN, processId: processId)
 

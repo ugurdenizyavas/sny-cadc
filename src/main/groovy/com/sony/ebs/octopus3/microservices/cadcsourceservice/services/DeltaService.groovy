@@ -67,7 +67,7 @@ class DeltaService {
     }
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
-        def importUrl = "$importSheetUrl/$urn?url=$sheetUrl&processId=$processId.id"
+        def importUrl = importSheetUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
         localHttpClient.doGet(importUrl).flatMap({
             rx.Observable.from("success for $urn")
         }).onErrorReturn({

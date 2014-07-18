@@ -26,7 +26,7 @@ class SheetService {
     rx.Observable<String> sheetFlow(DeltaSheet deltaSheet) {
         cadcHttpClient.doGet(deltaSheet.url)
                 .flatMap({ String sheetContent ->
-            String postUrl = "$saveRepoUrl/$deltaSheet.urnStr"
+            String postUrl = saveRepoUrl.replace(":urn", deltaSheet.urnStr)
             if (deltaSheet.processId) postUrl += "?processId=$deltaSheet.processId"
             localHttpClient.doPost(postUrl, sheetContent)
         }).doOnError({
