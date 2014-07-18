@@ -29,7 +29,7 @@ public class DeltaCollaborator {
     }
 
     private String createUrlInner(String locale, String since) {
-        def url = !since ? "/$locale" : "/changes/$locale?since=$since"
+        def url = !since ? "/$locale" : "/changes/$locale?since=" + URLEncoder.encode(since, "UTF-8")
         log.info "url inner for locale $locale and since $since is $url"
         url
     }

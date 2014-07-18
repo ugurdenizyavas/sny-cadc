@@ -31,6 +31,11 @@ class DeltaCollaboratorTest {
     }
 
     @Test
+    void "create url with since encoded"() {
+        assert deltaCollaborator.createUrl(new Delta(publication: "GLOBAL", locale: "en_GB", since: "2014-07-17T14:35:25.089+03:00")) == "/changes/en_GB?since=2014-07-17T14%3A35%3A25.089%2B03%3A00"
+    }
+
+    @Test
     void "create since with file"() {
         def delta = new Delta(publication: "GLOBAL", locale: "fr_FR")
         deltaCollaborator.storeDelta(delta, "xxx")
