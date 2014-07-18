@@ -11,6 +11,7 @@ import org.junit.Before
 import org.junit.Test
 import ratpack.exec.ExecController
 import ratpack.launch.LaunchConfigBuilder
+import spock.util.concurrent.BlockingVariable
 
 @Slf4j
 class DeltaServiceTest {
@@ -62,20 +63,13 @@ class DeltaServiceTest {
         deltaService.localHttpClient = mockHttpClient.proxyInstance()
         deltaService.cadcHttpClient = mockHttpClient.proxyInstance()
 
-        def finished = new Object()
-        def result = [].asSynchronized()
+        def result = new BlockingVariable<List<String>>(5)
         execController.start {
-            deltaService.deltaFlow(delta).subscribe { String res ->
-                synchronized (finished) {
-                    result << res
-                    finished.notifyAll()
-                }
+            deltaService.deltaFlow(delta).toList().subscribe {
+                result.set(it)
             }
         }
-        synchronized (finished) {
-            finished.wait 5000
-        }
-        assert result.sort() == ["success for urn:global_sku:score:en_gb:a", "success for urn:global_sku:score:en_gb:b", "success for urn:global_sku:score:en_gb:c"]
+        assert result.get().sort() == ["success for urn:global_sku:score:en_gb:a", "success for urn:global_sku:score:en_gb:b", "success for urn:global_sku:score:en_gb:c"]
     }
 
 }
