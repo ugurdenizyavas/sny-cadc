@@ -5,6 +5,7 @@ import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaUrnValue
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -58,7 +59,7 @@ class DeltaService {
             def urlMap = [:]
             result.skus[delta.locale].each {
                 def sku = deltaCollaborator.getSkuFromUrl(it)
-                URN urn = new URNImpl("global_sku", [delta.publication, delta.locale, sku])
+                URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
                 urlMap[urn] = it
             }
             log.info "parsed delta: $urlMap for $delta"
