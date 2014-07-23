@@ -2,7 +2,7 @@
 
 IP="43.216.132.90"
 PORT="9092"
-PACKAGE="octopus3-cadc-source-service-1.0-SNAPSHOT-all.jar"
+PACKAGE="octopus3-cadc-source-service-1.0-SNAPSHOT-Shadow.jar"
 NAME="octopus3-cadc-source-service"
 LOGDIR="/opt/logs/cadc-source"
 ENVIRONMENT="dev"
