@@ -2,8 +2,6 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
-import com.sony.ebs.octopus3.commons.urn.URN
-import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
@@ -11,9 +9,7 @@ import groovy.mock.interceptor.StubFor
 import org.junit.Before
 import org.junit.Test
 import ratpack.jackson.internal.DefaultJsonRender
-import spock.util.concurrent.BlockingVariable
 
-import static ratpack.groovy.test.GroovyUnitTest.handle
 import static ratpack.groovy.test.GroovyUnitTest.handle
 
 class SheetFlowHandlerTest {
@@ -47,10 +43,10 @@ class SheetFlowHandlerTest {
             pathBinding([urn: URN])
             uri "/?url=$SHEET_URL$processIdPostfix"
         }).with {
-            assert status.code == 200
+            assert status.code == 202
             def ren = rendered(DefaultJsonRender).object
-            assert ren.status == 200
-            assert ren.message == "deltaSheet finished"
+            assert ren.status == 202
+            assert ren.message == "deltaSheet started"
             assert ren.deltaSheet.urnStr == URN
             assert ren.deltaSheet.url == SHEET_URL
             assert ren.deltaSheet.processId == processId?.id

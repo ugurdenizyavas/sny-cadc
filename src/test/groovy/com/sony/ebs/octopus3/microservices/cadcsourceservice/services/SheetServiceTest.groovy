@@ -90,7 +90,7 @@ class SheetServiceTest {
     void "error in get"() {
         mockNingHttpClient.demand.with {
             doGet(1) {
-                throw new Exception()
+                throw new Exception("exp in doGet")
             }
         }
         runFlow(null, "error")
@@ -99,8 +99,11 @@ class SheetServiceTest {
     @Test
     void "error in post"() {
         mockNingHttpClient.demand.with {
+            doGet(1) {
+                rx.Observable.from("eee")
+            }
             doPost(1) { url, data ->
-                throw new Exception()
+                throw new Exception("exp in doPost")
             }
         }
         runFlow(null, "error")

@@ -31,7 +31,7 @@ class SheetService {
     String saveRepoUrl
 
     rx.Observable<String> sheetFlow(DeltaSheet deltaSheet) {
-        rx.Observable.from("starting").flatMap({
+        observe(execControl.blocking { "starting" }).flatMap({
             cadcHttpClient.doGet(deltaSheet.url)
         }).flatMap({ String sheetContent ->
             log.info "saving sheet"
