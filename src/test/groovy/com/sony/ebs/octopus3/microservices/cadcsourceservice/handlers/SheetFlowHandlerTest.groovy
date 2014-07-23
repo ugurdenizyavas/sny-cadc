@@ -8,9 +8,12 @@ import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.mock.interceptor.StubFor
+import org.junit.Before
 import org.junit.Test
 import ratpack.jackson.internal.DefaultJsonRender
+import spock.util.concurrent.BlockingVariable
 
+import static ratpack.groovy.test.GroovyUnitTest.handle
 import static ratpack.groovy.test.GroovyUnitTest.handle
 
 class SheetFlowHandlerTest {
@@ -18,20 +21,15 @@ class SheetFlowHandlerTest {
     final static String URN = "urn:global_sku:score:en_gb:a"
     final static String SHEET_URL = "http://cadc/a"
 
+    StubFor mockSheetService, mockRequestValidator
 
-    @Test
-    void "sheet flow"() {
-        "run sheet flow"((ProcessId) null, "")
+    @Before
+    void before() {
+        mockSheetService = new StubFor(SheetService)
+        mockRequestValidator = new StubFor(RequestValidator)
     }
 
-    @Test
-    void "sheet flow with process id"() {
-        ProcessId processId = new ProcessIdImpl()
-        "run sheet flow"(processId, "&processId=$processId.id")
-    }
-
-    void "run sheet flow"(ProcessId processId, String processIdPostfix) {
-        def mockSheetService = new StubFor(SheetService)
+    void runFlow(ProcessId processId, String processIdPostfix) {
         mockSheetService.demand.with {
             sheetFlow(1) { DeltaSheet deltaSheet ->
                 assert deltaSheet.urnStr == URN
@@ -41,7 +39,6 @@ class SheetFlowHandlerTest {
             }
         }
 
-        def mockRequestValidator = new StubFor(RequestValidator)
         mockRequestValidator.demand.with {
             validateDeltaSheet(1) { [] }
         }
@@ -50,10 +47,10 @@ class SheetFlowHandlerTest {
             pathBinding([urn: URN])
             uri "/?url=$SHEET_URL$processIdPostfix"
         }).with {
-            assert status.code == 202
+            assert status.code == 200
             def ren = rendered(DefaultJsonRender).object
-            assert ren.status == 202
-            assert ren.message == "deltaSheet started"
+            assert ren.status == 200
+            assert ren.message == "deltaSheet finished"
             assert ren.deltaSheet.urnStr == URN
             assert ren.deltaSheet.url == SHEET_URL
             assert ren.deltaSheet.processId == processId?.id
@@ -61,13 +58,23 @@ class SheetFlowHandlerTest {
     }
 
     @Test
+    void "sheet flow"() {
+        runFlow((ProcessId) null, "")
+    }
+
+    @Test
+    void "sheet flow with process id"() {
+        ProcessId processId = new ProcessIdImpl()
+        runFlow(processId, "&processId=$processId.id")
+    }
+
+    @Test
     void "invalid parameter"() {
-        def mockRequestValidator = new StubFor(RequestValidator)
         mockRequestValidator.demand.with {
             validateDeltaSheet(1) { ["error"] }
         }
 
-        handle(new SheetFlowHandler(validator: mockRequestValidator.proxyInstance()), {
+        handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
             pathBinding([urn: URN])
             uri "/"
         }).with {

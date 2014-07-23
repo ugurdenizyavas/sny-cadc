@@ -22,9 +22,9 @@ class SaveFlowHandlerTest {
             uri "/?processId=123"
             body "aaa", "application/json"
         }).with {
-            assert status.code == 202
+            assert status.code == 200
             def ren = rendered(DefaultJsonRender).object
-            assert ren.status == 202
+            assert ren.status == 200
             assert ren.message == "sheet saved"
             assert ren.urn == URN
             assert ren.processId == "123"

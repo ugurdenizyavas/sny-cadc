@@ -18,9 +18,6 @@ class Delta {
     String cadcUrl
 
     @JsonIgnore
-    Map<URN, String> urlMap = [:]
-
-    @JsonIgnore
     URN getDeltaUrn() {
         new URNImpl(DeltaUrnValue.delta.toString(), [publication, locale])
     }

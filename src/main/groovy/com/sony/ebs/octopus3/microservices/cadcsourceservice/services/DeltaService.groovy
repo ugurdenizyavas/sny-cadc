@@ -39,59 +39,57 @@ class DeltaService {
     @Value('${octopus3.sourceservice.importSheetUrl}')
     String importSheetUrl
 
-    private rx.Observable<String> retrieveDelta(Delta delta) {
-        observe(execControl.blocking {
-            String relUrl = deltaCollaborator.createUrl(delta)
-            "$delta.cadcUrl$relUrl"
-        }).flatMap({
-            cadcHttpClient.doGet(it)
-        }).flatMap { String cadcResult ->
-            observe(execControl.blocking {
-                deltaCollaborator.storeDelta(delta, cadcResult)
-                cadcResult
-            })
+    private Map createUrlMap(Delta delta, String feed) {
+        def json = new JsonSlurper().parseText(feed)
+        def urlMap = [:]
+        json.skus[delta.locale].each {
+            def sku = deltaCollaborator.getSkuFromUrl(it)
+            URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
+            urlMap[urn] = it
         }
-    }
-
-    private rx.Observable<Map> createUrlMap(Delta delta, String content) {
-        observe(execControl.blocking {
-            def result = new JsonSlurper().parseText(content)
-            def urlMap = [:]
-            result.skus[delta.locale].each {
-                def sku = deltaCollaborator.getSkuFromUrl(it)
-                URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
-                urlMap[urn] = it
-            }
-            log.info "parsed delta: $urlMap for $delta"
-            urlMap
-        })
+        log.info "parsed delta: $urlMap for $delta"
+        urlMap
     }
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
-        def importUrl = importSheetUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
-        localHttpClient.doGet(importUrl).flatMap({
-            rx.Observable.from("success for $urn")
+        rx.Observable.from("starting").flatMap({
+            def importUrl = importSheetUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
+            localHttpClient.doGet(importUrl)
+        }).map({
+            "success for $urn"
         }).onErrorReturn({
-            log.error "error in $urn", it
-            "error in $urn"
+             "error for $urn"
         })
     }
 
     rx.Observable<String> deltaFlow(Delta delta) {
-        retrieveDelta(delta)
-                .flatMap({ String result ->
-            createUrlMap(delta, result)
+        rx.Observable.from("starting").flatMap({
+            observe(execControl.blocking({
+                log.info "creating delta url"
+                String relUrl = deltaCollaborator.createUrl(delta)
+                "$delta.cadcUrl$relUrl"
+            }))
+        }).flatMap({ String url ->
+            log.info "getting delta for $url"
+            cadcHttpClient.doGet(url)
+        }).flatMap({ String feed ->
+            observe(execControl.blocking({
+                log.info "storing delta"
+                deltaCollaborator.storeDelta(delta, feed)
+                feed
+            }))
+        }).flatMap({ String feed ->
+            observe(execControl.blocking({
+                log.info "creating url map"
+                createUrlMap(delta, feed)
+            }))
         }).flatMap({ Map urlMap ->
-            delta.urlMap = urlMap
-            log.info "starting import for $delta"
+            log.info "starting import for ${urlMap.size()} urls"
             rx.Observable.merge(
-                    delta?.urlMap?.collect { URN urn, String sheetUrl ->
+                    urlMap?.collect { URN urn, String sheetUrl ->
                         importSingleSheet(delta.processId, urn, sheetUrl)
                     }
             )
-        }).onErrorReturn({
-            log.error "error in delta import", it
-            "error in delta import"
         })
     }
 

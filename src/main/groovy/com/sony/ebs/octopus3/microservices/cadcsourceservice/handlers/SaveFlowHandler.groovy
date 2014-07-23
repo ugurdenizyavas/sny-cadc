@@ -28,8 +28,8 @@ class SaveFlowHandler extends GroovyHandler {
             deltaCollaborator.storeUrn(new URNImpl(urn), text)
             log.info "finished saving for procesId $processIdStr and urn $urn "
 
-            response.status(202)
-            render json(status: 202, message: "sheet saved", urn: urn, processId: processIdStr)
+            response.status(200)
+            render json(status: 200, message: "sheet saved", urn: urn, processId: processIdStr)
         }
     }
 

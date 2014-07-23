@@ -13,7 +13,8 @@ import static ch.qos.logback.classic.Level.*
 scan()
 println "[LOGBACK] Log files are loaded in every 1 minute"
 
-logFormat = "%d{yyyy.MM.dd HH:mm:ss.SSS} %-5p %-40c{1} - %m%n"
+logFormat = "%d %5p %-25t %-10c{1}: %m%n"
+//logFormat = "%d{yyyy.MM.dd HH:mm:ss.SSS} %-5p %-40c{1} - %m%n"
 println "[LOGBACK] Log format is ${logFormat}"
 
 environment = System.getProperty("environment")
@@ -22,7 +23,7 @@ println "[LOGBACK] Environment is ${environment}"
 logDirectory = System.getProperty("logDirectory") ?: System.getProperty("java.io.tmpdir")
 println "[LOGBACK] Logging directory is ${logDirectory}"
 
-defaultLevel = DEBUG
+defaultLevel = INFO
 println "[LOGBACK] Default logging level is ${defaultLevel}"
 
 //***********************************

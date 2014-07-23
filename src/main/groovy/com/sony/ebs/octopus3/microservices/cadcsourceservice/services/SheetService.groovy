@@ -7,10 +7,17 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import ratpack.exec.ExecControl
+
+import static ratpack.rx.RxRatpack.observe
 
 @Slf4j
 @Service
 class SheetService {
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    ExecControl execControl
 
     @Autowired
     @Qualifier("localHttpClient")
@@ -24,13 +31,18 @@ class SheetService {
     String saveRepoUrl
 
     rx.Observable<String> sheetFlow(DeltaSheet deltaSheet) {
-        cadcHttpClient.doGet(deltaSheet.url)
-                .flatMap({ String sheetContent ->
+        rx.Observable.from("starting").flatMap({
+            cadcHttpClient.doGet(deltaSheet.url)
+        }).flatMap({ String sheetContent ->
+            log.info "saving sheet"
             String postUrl = saveRepoUrl.replace(":urn", deltaSheet.urnStr)
             if (deltaSheet.processId) postUrl += "?processId=$deltaSheet.processId"
+
             localHttpClient.doPost(postUrl, sheetContent)
-        }).doOnError({
-            log.error "error in $deltaSheet", it
+        }).map({
+            log.info "returning success"
+            log.debug "save sheet result is $it"
+            "success for $deltaSheet"
         })
     }
 

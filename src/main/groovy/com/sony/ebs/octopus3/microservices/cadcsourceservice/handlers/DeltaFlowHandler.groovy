@@ -30,12 +30,14 @@ class DeltaFlowHandler extends GroovyHandler {
 
             List errors = validator.validateDelta(delta)
             if (errors) {
-                log.error "errors for $delta : $errors"
+                log.error "error validating $delta : $errors"
                 response.status(400)
                 render json(status: 400, errors: errors, delta: delta)
             } else {
                 deltaService.deltaFlow(delta).subscribe({ result ->
                     log.info "$result"
+                }, { e ->
+                    log.error "error in $delta", e
                 })
                 log.info "$delta started"
                 response.status(202)

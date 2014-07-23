@@ -26,18 +26,24 @@ class SheetFlowHandler extends GroovyHandler {
         context.with {
             DeltaSheet deltaSheet = new DeltaSheet(urnStr: pathTokens.urn, url: request.queryParams.url, processId: request.queryParams.processId)
 
+            def sendError = {
+                response.status(400)
+                render json(status: 400, errors: it, deltaSheet: deltaSheet)
+            }
+
             List errors = validator.validateDeltaSheet(deltaSheet)
             if (errors) {
-                log.error "errors for $deltaSheet : $errors"
-                response.status(400)
-                render json(status: 400, errors: errors, deltaSheet: deltaSheet)
+                log.error "error validating $deltaSheet : $errors"
+                sendError(errors)
             } else {
-                sheetService.sheetFlow(deltaSheet).subscribe {
+                sheetService.sheetFlow(deltaSheet).subscribe({
                     log.info "$deltaSheet finished"
-                }
-                log.info "$deltaSheet started"
-                response.status(202)
-                render json(status: 202, message: "deltaSheet started", deltaSheet: deltaSheet)
+                    response.status(200)
+                    render json(status: 200, message: "deltaSheet finished", deltaSheet: deltaSheet)
+                }, { e ->
+                    log.error "error in $deltaSheet", e
+                    sendError([e.getMessage()])
+                })
             }
         }
     }

@@ -136,10 +136,10 @@ When(~"I import sheet (.*) correctly") { sku ->
 }
 
 Then(~"Sheet import of (.*) should be successful") { sku ->
-    assert response.statusCode == 202
+    assert response.statusCode == 200
     def json = parseJson(response)
-    assert json.status == 202
-    assert json?.message == "deltaSheet started"
+    assert json.status == 200
+    assert json?.message == "deltaSheet finished"
     assert json?.deltaSheet.urnStr == "urn:global_sku:score:en_gb:$sku"
     assert json?.deltaSheet.url == "http://localhost:12306/cadc/sheet/$sku"
 }
