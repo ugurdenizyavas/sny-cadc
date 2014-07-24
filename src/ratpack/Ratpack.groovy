@@ -41,7 +41,7 @@ ratpack {
     }
 
     handlers {
-        get("cadcsource/healthcheck", healthCheckHandler)
+        get("healthcheck", healthCheckHandler)
         get("cadcsource/sheet/:urn", sheetFlowHandler)
         get("cadcsource/delta/publication/:publication/locale/:locale", deltaFlowHandler)
         post("cadcsource/save/:urn", saveFlowHandler)
