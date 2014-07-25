@@ -33,9 +33,11 @@ println "[LOGBACK] Default logging level is ${defaultLevel}"
 // Create the appenders. These will all be rolling file appenders.
 createConsoleAppender()
 createStandardAppender("defaultAppender", "output")
+createStandardAppender("activityAppender", "activity")
 
 // Create the loggers
 root(defaultLevel, ["consoleAppender", "defaultAppender"])
+logger("activity", DEBUG, ["activityAppender"])
 
 if (environment == "production") {
     root(INFO, ["consoleAppender", "defaultAppender"])

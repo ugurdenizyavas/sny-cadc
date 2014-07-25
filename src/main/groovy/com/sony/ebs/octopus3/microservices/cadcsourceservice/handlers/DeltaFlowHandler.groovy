@@ -12,7 +12,7 @@ import ratpack.groovy.handling.GroovyHandler
 
 import static ratpack.jackson.Jackson.json
 
-@Slf4j
+@Slf4j(value = "activity")
 @Component
 class DeltaFlowHandler extends GroovyHandler {
 
@@ -30,16 +30,16 @@ class DeltaFlowHandler extends GroovyHandler {
 
             List errors = validator.validateDelta(delta)
             if (errors) {
-                log.error "error validating $delta : $errors"
+                activity.error "error validating $delta : $errors"
                 response.status(400)
                 render json(status: 400, errors: errors, delta: delta)
             } else {
                 deltaService.deltaFlow(delta).subscribe({ result ->
-                    log.info "$result"
+                    activity.info "$result for ${delta}"
                 }, { e ->
-                    log.error "error in $delta", e
+                    activity.error "error in $delta", e
                 })
-                log.info "$delta started"
+                activity.info "$delta started"
                 response.status(202)
                 render json(status: 202, message: "delta started", delta: delta)
             }

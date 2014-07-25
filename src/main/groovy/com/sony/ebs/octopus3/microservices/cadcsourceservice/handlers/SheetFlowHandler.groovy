@@ -11,7 +11,7 @@ import ratpack.groovy.handling.GroovyHandler
 
 import static ratpack.jackson.Jackson.json
 
-@Slf4j
+@Slf4j(value = "activity")
 @Component
 class SheetFlowHandler extends GroovyHandler {
 
@@ -28,16 +28,16 @@ class SheetFlowHandler extends GroovyHandler {
 
             List errors = validator.validateDeltaSheet(deltaSheet)
             if (errors) {
-                log.error "error validating $deltaSheet : $errors"
+                activity.error "error validating $deltaSheet : $errors"
                 response.status(400)
                 render json(status: 400, errors: errors, deltaSheet: deltaSheet)
             } else {
                 sheetService.sheetFlow(deltaSheet).subscribe({
-                    log.info "$deltaSheet finished"
+                    activity.info "$deltaSheet finished"
                 }, { e ->
-                    log.error "error in $deltaSheet", e
+                    activity.error "error in $deltaSheet", e
                 })
-                log.info "$deltaSheet started"
+                activity.info "$deltaSheet started"
                 response.status(202)
                 render json(status: 202, message: "deltaSheet started", deltaSheet: deltaSheet)
             }

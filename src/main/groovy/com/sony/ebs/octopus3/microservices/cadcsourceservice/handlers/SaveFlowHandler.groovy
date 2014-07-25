@@ -10,7 +10,7 @@ import ratpack.groovy.handling.GroovyHandler
 
 import static ratpack.jackson.Jackson.json
 
-@Slf4j
+@Slf4j(value = "activity")
 @Component
 class SaveFlowHandler extends GroovyHandler {
 
@@ -24,9 +24,9 @@ class SaveFlowHandler extends GroovyHandler {
             String text = request.body.text
             String processIdStr = request.queryParams.processId
 
-            log.info "starting saving for procesId $processIdStr and urn $urn "
+            activity.info "starting saving for procesId $processIdStr and urn $urn "
             deltaCollaborator.storeUrn(new URNImpl(urn), text)
-            log.info "finished saving for procesId $processIdStr and urn $urn "
+            activity.info "finished saving for procesId $processIdStr and urn $urn "
 
             response.status(200)
             render json(status: 200, message: "sheet saved", urn: urn, processId: processIdStr)

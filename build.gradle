@@ -20,7 +20,7 @@ buildscript {
     }
     dependencies {
         classpath "io.ratpack:ratpack-gradle:0.9.7-SNAPSHOT"
-        classpath "org.gradle.api.plugins:gradle-nexus-plugin:0.7"
+        classpath "org.gradle.api.plugins:gradle-nexus-plugin:0.7.1"
         classpath "com.github.jengelman.gradle.plugins:shadow:1.0.2"
     }
 }
@@ -29,7 +29,6 @@ repositories {
     mavenLocal()
     maven { url 'https://mvn.sony-europe.com/content/groups/global' }
     mavenCentral()
-    maven { url "https://mvn.sony-europe.com/content/groups/global" }
     maven { url "http://oss.jfrog.org/repo" }
     maven { url "http://repo.springsource.org/repo" }
     maven { url "http://repo.spring.io/libs-release" }
