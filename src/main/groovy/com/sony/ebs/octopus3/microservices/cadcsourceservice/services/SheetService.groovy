@@ -12,6 +12,7 @@ import ratpack.exec.ExecControl
 
 @Slf4j
 @Service
+@org.springframework.context.annotation.Lazy
 class SheetService {
 
     @Autowired

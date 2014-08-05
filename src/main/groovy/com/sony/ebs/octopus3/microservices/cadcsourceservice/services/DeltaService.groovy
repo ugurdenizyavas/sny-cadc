@@ -20,6 +20,7 @@ import static ratpack.rx.RxRatpack.observe
 
 @Slf4j
 @Service
+@org.springframework.context.annotation.Lazy
 class DeltaService {
 
     @Autowired
@@ -48,7 +49,7 @@ class DeltaService {
             URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
             urlMap[urn] = it
         }
-        log.info "parsed delta: $urlMap for $delta"
+        log.info "parsed ${urlMap.size()} products for $delta"
         urlMap
     }
 

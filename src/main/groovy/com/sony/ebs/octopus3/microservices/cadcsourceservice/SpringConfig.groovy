@@ -10,20 +10,25 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
 import ratpack.exec.ExecControl
+import ratpack.launch.LaunchConfig
 
 @Configuration
 @ComponentScan(value = "com.sony.ebs.octopus3.microservices.cadcsourceservice")
 @PropertySource(value = ['classpath:/default.properties', 'classpath:/${environment}.properties'], ignoreResourceNotFound = true)
 class SpringConfig {
 
-    @Autowired
-    @org.springframework.context.annotation.Lazy
-    ExecControl execControl
-
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
         return new PropertySourcesPlaceholderConfigurer();
     }
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    ExecControl execControl
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    LaunchConfig launchConfig
 
     @Value('${octopus3.sourceservice.local.proxy.host}')
     String localProxyHost
@@ -44,7 +49,7 @@ class SpringConfig {
     @Qualifier("localHttpClient")
     @org.springframework.context.annotation.Lazy
     public NingHttpClient localHttpClient() {
-        new NingHttpClient(execControl,
+        new NingHttpClient(launchConfig,
                 localProxyHost, localProxyPort, localProxyUser, localProxyPassword, localNonProxyHosts, "", "")
     }
 
@@ -73,7 +78,7 @@ class SpringConfig {
     @Qualifier("cadcHttpClient")
     @org.springframework.context.annotation.Lazy
     public NingHttpClient cadcHttpClient() {
-        new NingHttpClient(execControl,
+        new NingHttpClient(launchConfig,
                 cadcProxyHost, cadcProxyPort, cadcProxyUser, cadcProxyPassword, cadcNonProxyHosts,
                 cadcAuthenticationUser, cadcAuthenticationPassword)
     }

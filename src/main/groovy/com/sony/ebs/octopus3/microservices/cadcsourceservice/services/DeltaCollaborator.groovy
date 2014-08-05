@@ -16,6 +16,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 @Slf4j
 @Service
+@org.springframework.context.annotation.Lazy
 public class DeltaCollaborator {
 
     @Value('${octopus3.sourceservice.storageFolder}')
@@ -81,7 +82,7 @@ public class DeltaCollaborator {
 
     String getSkuFromUrl(String url) {
         def sku = url?.lastIndexOf('/') >= 0 && !url?.endsWith("/") ? url.substring(url.lastIndexOf('/') + 1) : null
-        log.info "sku for $url is $sku"
+        log.debug "sku for $url is $sku"
         sku
     }
 

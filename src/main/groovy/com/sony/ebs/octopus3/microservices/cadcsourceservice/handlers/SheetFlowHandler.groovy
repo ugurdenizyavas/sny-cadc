@@ -13,6 +13,7 @@ import static ratpack.jackson.Jackson.json
 
 @Slf4j(value = "activity")
 @Component
+@org.springframework.context.annotation.Lazy
 class SheetFlowHandler extends GroovyHandler {
 
     @Autowired
