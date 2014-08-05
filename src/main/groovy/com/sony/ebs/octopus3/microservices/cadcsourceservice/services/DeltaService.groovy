@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
+import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
@@ -55,10 +56,10 @@ class DeltaService {
         rx.Observable.from("starting").flatMap({
             def importUrl = importSheetUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
             localHttpClient.doGet(importUrl)
+        }).filter({ Response response ->
+            NingHttpClient.isSuccess(response)
         }).map({
             "success for $urn"
-        }).onErrorReturn({
-             "error for $urn"
         })
     }
 
@@ -72,11 +73,14 @@ class DeltaService {
         }).flatMap({ String url ->
             log.info "getting delta for $url"
             cadcHttpClient.doGet(url)
-        }).flatMap({ String feed ->
+        }).filter({ Response response ->
+            NingHttpClient.isSuccess(response)
+        }).flatMap({ Response response ->
             observe(execControl.blocking({
                 log.info "storing delta"
-                deltaCollaborator.storeDelta(delta, feed)
-                feed
+                def deltaFeed = response.responseBody
+                deltaCollaborator.storeDelta(delta, deltaFeed)
+                deltaFeed
             }))
         }).flatMap({ String feed ->
             observe(execControl.blocking({
