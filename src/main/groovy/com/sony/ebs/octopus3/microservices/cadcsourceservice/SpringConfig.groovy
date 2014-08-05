@@ -50,7 +50,7 @@ class SpringConfig {
     @org.springframework.context.annotation.Lazy
     public NingHttpClient localHttpClient() {
         new NingHttpClient(launchConfig,
-                localProxyHost, localProxyPort, localProxyUser, localProxyPassword, localNonProxyHosts, "", "")
+                localProxyHost, localProxyPort, localProxyUser, localProxyPassword, localNonProxyHosts, "", "", 2000, 10000)
     }
 
     @Value('${octopus3.sourceservice.cadc.proxy.host}')
@@ -80,7 +80,7 @@ class SpringConfig {
     public NingHttpClient cadcHttpClient() {
         new NingHttpClient(launchConfig,
                 cadcProxyHost, cadcProxyPort, cadcProxyUser, cadcProxyPassword, cadcNonProxyHosts,
-                cadcAuthenticationUser, cadcAuthenticationPassword)
+                cadcAuthenticationUser, cadcAuthenticationPassword, 5000, 20000)
     }
 
 }

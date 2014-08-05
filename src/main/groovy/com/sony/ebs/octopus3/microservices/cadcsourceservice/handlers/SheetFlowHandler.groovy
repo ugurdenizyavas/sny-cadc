@@ -34,11 +34,11 @@ class SheetFlowHandler extends GroovyHandler {
                 render json(status: 400, errors: errors, deltaSheet: deltaSheet)
             } else {
                 sheetService.sheetFlow(deltaSheet).subscribe({
-                    activity.info "$deltaSheet finished"
+                    activity.info "finished $deltaSheet"
                 }, { e ->
                     activity.error "error in $deltaSheet", e
                 })
-                activity.info "$deltaSheet started"
+                activity.info "started $deltaSheet"
                 response.status(202)
                 render json(status: 202, message: "deltaSheet started", deltaSheet: deltaSheet)
             }

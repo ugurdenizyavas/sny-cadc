@@ -61,6 +61,8 @@ class DeltaService {
             NingHttpClient.isSuccess(response)
         }).map({
             "success for $urn"
+        }).onErrorReturn({
+            "error for $urn"
         })
     }
 
