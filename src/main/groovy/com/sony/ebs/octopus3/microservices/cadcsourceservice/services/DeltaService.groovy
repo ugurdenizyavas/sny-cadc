@@ -62,6 +62,7 @@ class DeltaService {
         }).map({
             "success for $urn"
         }).onErrorReturn({
+            log.error "error for $urn", it
             "error for $urn"
         })
     }
