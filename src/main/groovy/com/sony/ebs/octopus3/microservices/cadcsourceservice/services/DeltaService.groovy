@@ -97,7 +97,7 @@ class DeltaService {
                     urlMap?.collect { URN urn, String sheetUrl ->
                         importSingleSheet(delta.processId, urn, sheetUrl)
                     }
-            )
+            , 30)
         })
     }
 
