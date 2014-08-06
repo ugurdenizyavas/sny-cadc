@@ -27,8 +27,8 @@ class SheetService {
     @Qualifier("cadcHttpClient")
     NingHttpClient cadcHttpClient
 
-    @Value('${octopus3.sourceservice.saveRepoUrl}')
-    String saveRepoUrl
+    @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
+    String repositoryFileServiceUrl
 
     rx.Observable<String> sheetFlow(DeltaSheet deltaSheet) {
         rx.Observable.from("starting").flatMap({
@@ -37,7 +37,7 @@ class SheetService {
             NingHttpClient.isSuccess(response)
         }).flatMap({ Response response ->
             log.info "saving sheet"
-            String postUrl = saveRepoUrl.replace(":urn", deltaSheet.urnStr)
+            String postUrl = repositoryFileServiceUrl.replace(":urn", deltaSheet.urnStr)
             if (deltaSheet.processId) postUrl += "?processId=$deltaSheet.processId"
 
             localHttpClient.doPost(postUrl, response.responseBody)

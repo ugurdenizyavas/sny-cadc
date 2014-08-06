@@ -8,7 +8,6 @@ import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
-import org.junit.After
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
@@ -40,7 +39,7 @@ class DeltaServiceTest {
 
     @Before
     void before() {
-        deltaService = new DeltaService(execControl: execController.control, importSheetUrl: "http://import/:urn")
+        deltaService = new DeltaService(execControl: execController.control, cadcsourceSheetServiceUrl: "http://import/:urn")
         mockDeltaCollaborator = new StubFor(DeltaCollaborator)
         mockHttpClient = new MockFor(NingHttpClient)
     }

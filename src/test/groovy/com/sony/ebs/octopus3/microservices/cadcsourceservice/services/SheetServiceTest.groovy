@@ -34,7 +34,7 @@ class SheetServiceTest {
 
     @Before
     void before() {
-        sheetService = new SheetService(saveRepoUrl: SAVE_REPO_URL, execControl: execController.control)
+        sheetService = new SheetService(repositoryFileServiceUrl: SAVE_REPO_URL, execControl: execController.control)
         mockNingHttpClient = new StubFor(NingHttpClient)
     }
 

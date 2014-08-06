@@ -38,8 +38,8 @@ class DeltaService {
     @Autowired
     DeltaCollaborator deltaCollaborator
 
-    @Value('${octopus3.sourceservice.importSheetUrl}')
-    String importSheetUrl
+    @Value('${octopus3.sourceservice.cadcsourceSheetServiceUrl}')
+    String cadcsourceSheetServiceUrl
 
     private Map createUrlMap(Delta delta, String feed) {
         def json = new JsonSlurper().parseText(feed)
@@ -55,7 +55,7 @@ class DeltaService {
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
 
-        def importUrl = importSheetUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
+        def importUrl = cadcsourceSheetServiceUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
 
         rx.Observable.from("starting").flatMap({
             localHttpClient.doGet(importUrl)
