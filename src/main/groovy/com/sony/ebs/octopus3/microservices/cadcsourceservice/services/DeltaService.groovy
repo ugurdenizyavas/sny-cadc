@@ -54,15 +54,17 @@ class DeltaService {
     }
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
+
+        def importUrl = importSheetUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
+
         rx.Observable.from("starting").flatMap({
-            def importUrl = importSheetUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
             localHttpClient.doGet(importUrl)
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response)
         }).map({
             "success for $urn"
         }).onErrorReturn({
-            log.error "error for $urn", it
+            log.error "error for $importUrl", it
             "error for $urn"
         })
     }
