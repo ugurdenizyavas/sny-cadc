@@ -80,7 +80,7 @@ class SpringConfig {
     public NingHttpClient cadcHttpClient() {
         new NingHttpClient(launchConfig,
                 cadcProxyHost, cadcProxyPort, cadcProxyUser, cadcProxyPassword, cadcNonProxyHosts,
-                cadcAuthenticationUser, cadcAuthenticationPassword, 5000, 20000)
+                cadcAuthenticationUser, cadcAuthenticationPassword, 8000, 30000)
     }
 
 }
