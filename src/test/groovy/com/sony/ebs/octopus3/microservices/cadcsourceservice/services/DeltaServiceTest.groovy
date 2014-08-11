@@ -22,7 +22,7 @@ class DeltaServiceTest {
     final static String DELTA_FEED = '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'
 
     DeltaService deltaService
-    StubFor mockDeltaCollaborator
+    StubFor mockDeltaUrlHelper
     MockFor mockHttpClient
 
     static ExecController execController
@@ -40,7 +40,7 @@ class DeltaServiceTest {
     @Before
     void before() {
         deltaService = new DeltaService(execControl: execController.control, cadcsourceSheetServiceUrl: "http://import/:urn")
-        mockDeltaCollaborator = new StubFor(DeltaCollaborator)
+        mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
         mockHttpClient = new MockFor(NingHttpClient)
     }
 
@@ -50,7 +50,7 @@ class DeltaServiceTest {
         def mockHttpClientPI = mockHttpClient.proxyInstance()
         deltaService.localHttpClient = mockHttpClientPI
         deltaService.cadcHttpClient = mockHttpClientPI
-        deltaService.deltaCollaborator = mockDeltaCollaborator.proxyInstance()
+        deltaService.deltaUrlHelper = mockDeltaUrlHelper.proxyInstance()
 
         def result = new BlockingVariable<List<String>>(5)
         execController.start {
@@ -66,14 +66,18 @@ class DeltaServiceTest {
 
     @Test
     void "success"() {
-        mockDeltaCollaborator.demand.with {
-            createUrl(1) { d -> "/delta" }
+        mockDeltaUrlHelper.demand.with {
+            createDeltaUrl(1) {
+                rx.Observable.just("http://cadc/delta")
+            }
             getSkuFromUrl(3) { String url ->
                 def sku = url.substring(url.size() - 1)
                 assert url == "http://cadc/$sku"
                 sku
             }
-            storeDelta(1) { d, text -> }
+            updateLastModified(1) {
+                rx.Observable.just("done")
+            }
         }
 
         mockHttpClient.demand.with {
@@ -93,27 +97,33 @@ class DeltaServiceTest {
 
     @Test
     void "error getting delta"() {
-        mockDeltaCollaborator.demand.with {
-            createUrl(1) { d -> "/delta" }
+        mockDeltaUrlHelper.demand.with {
+            createDeltaUrl(1) {
+                rx.Observable.just("http://cadc/delta")
+            }
         }
         mockHttpClient.demand.with {
             doGet(1) {
                 rx.Observable.from(new MockNingResponse(_statusCode: 404))
             }
         }
-        assert [] == runFlow()
+        assert runFlow() == []
     }
 
     @Test
     void "one sheet is not imported"() {
-        mockDeltaCollaborator.demand.with {
-            createUrl(1) { d -> "/delta" }
+        mockDeltaUrlHelper.demand.with {
+            createDeltaUrl(1) {
+                rx.Observable.just("http://cadc/delta")
+            }
             getSkuFromUrl(3) { String url ->
                 def sku = url.substring(url.size() - 1)
                 assert url == "http://cadc/$sku"
                 sku
             }
-            storeDelta(1) { d, text -> }
+            updateLastModified(1) {
+                rx.Observable.just("done")
+            }
         }
 
         mockHttpClient.demand.with {

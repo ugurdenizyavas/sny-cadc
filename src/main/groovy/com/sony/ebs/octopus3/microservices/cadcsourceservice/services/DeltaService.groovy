@@ -2,9 +2,9 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.process.ProcessId
+import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaUrnValue
 import groovy.json.JsonSlurper
@@ -36,16 +36,17 @@ class DeltaService {
     NingHttpClient cadcHttpClient
 
     @Autowired
-    DeltaCollaborator deltaCollaborator
+    DeltaUrlHelper deltaUrlHelper
 
     @Value('${octopus3.sourceservice.cadcsourceSheetServiceUrl}')
     String cadcsourceSheetServiceUrl
 
     private Map createUrlMap(Delta delta, String feed) {
+        log.info "creating url map"
         def json = new JsonSlurper().parseText(feed)
         def urlMap = [:]
         json.skus[delta.locale].each {
-            def sku = deltaCollaborator.getSkuFromUrl(it)
+            def sku = deltaUrlHelper.getSkuFromUrl(it)
             URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
             urlMap[urn] = it
         }
@@ -70,36 +71,27 @@ class DeltaService {
     }
 
     rx.Observable<String> deltaFlow(Delta delta) {
+        Map urlMap
         rx.Observable.from("starting").flatMap({
-            observe(execControl.blocking({
-                log.info "creating delta url"
-                String relUrl = deltaCollaborator.createUrl(delta)
-                "$delta.cadcUrl$relUrl"
-            }))
-        }).flatMap({ String url ->
-            log.info "getting delta for $url"
-            cadcHttpClient.doGet(url)
+            deltaUrlHelper.createDeltaUrl(delta)
+        }).flatMap({ String deltaUrl ->
+            log.info "getting delta for $deltaUrl"
+            cadcHttpClient.doGet(deltaUrl)
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
-                log.info "storing delta"
-                def deltaFeed = response.responseBody
-                deltaCollaborator.storeDelta(delta, deltaFeed)
-                deltaFeed
+                urlMap = createUrlMap(delta, response.responseBody)
             }))
-        }).flatMap({ String feed ->
-            observe(execControl.blocking({
-                log.info "creating url map"
-                createUrlMap(delta, feed)
-            }))
-        }).flatMap({ Map urlMap ->
+        }).flatMap({
+            deltaUrlHelper.updateLastModified(delta)
+        }).flatMap({
             log.info "starting import for ${urlMap.size()} urls"
             rx.Observable.merge(
                     urlMap?.collect { URN urn, String sheetUrl ->
                         importSingleSheet(delta.processId, urn, sheetUrl)
                     }
-            , 30)
+                    , 30)
         })
     }
 

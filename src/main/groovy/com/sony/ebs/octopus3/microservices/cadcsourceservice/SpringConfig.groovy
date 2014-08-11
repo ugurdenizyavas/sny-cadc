@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice
 
+import com.sony.ebs.octopus3.commons.ratpack.file.FileAttributesProvider
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -82,6 +83,18 @@ class SpringConfig {
                 cadcProxyHost, cadcProxyPort, cadcProxyUser, cadcProxyPassword, cadcNonProxyHosts,
                 cadcAuthenticationUser, cadcAuthenticationPassword, 8000, 30000)
     }
+
+    @Value('${octopus3.flix.repositoryFileAttributesServiceUrl}')
+    String repositoryFileAttributesServiceUrl
+
+    @Bean
+    @org.springframework.context.annotation.Lazy
+    public FileAttributesProvider attributesProvider() {
+        new FileAttributesProvider(execControl: execControl,
+                repositoryFileAttributesServiceUrl: repositoryFileAttributesServiceUrl,
+                httpClient: localHttpClient())
+    }
+
 
 }
 
