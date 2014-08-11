@@ -21,6 +21,8 @@ class DeltaServiceTest {
 
     final static String DELTA_FEED = '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'
 
+    final static String DELTA_FEED_NO_PRODUCTS = '{"skus":{"en_GB":[]}}'
+
     DeltaService deltaService
     StubFor mockDeltaUrlHelper
     MockFor mockHttpClient
@@ -93,6 +95,25 @@ class DeltaServiceTest {
             }
         }
         assert runFlow().sort() == ["success for urn:global_sku:score:en_gb:a", "success for urn:global_sku:score:en_gb:b", "success for urn:global_sku:score:en_gb:c"]
+    }
+
+    @Test
+    void "no products to import"() {
+        mockDeltaUrlHelper.demand.with {
+            createDeltaUrl(1) {
+                rx.Observable.just("http://cadc/delta")
+            }
+            updateLastModified(1) {
+                rx.Observable.just("done")
+            }
+        }
+        mockHttpClient.demand.with {
+            doGet(1) { String url ->
+                assert url == "http://cadc/delta"
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: DELTA_FEED_NO_PRODUCTS))
+            }
+        }
+        assert runFlow().sort() == ["no products to import for urn:global_sku:score:en_gb"]
     }
 
     @Test

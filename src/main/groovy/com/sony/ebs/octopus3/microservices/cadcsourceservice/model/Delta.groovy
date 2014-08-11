@@ -18,6 +18,11 @@ class Delta {
     String cadcUrl
 
     @JsonIgnore
+    URN getBaseUrn() {
+        new URNImpl(DeltaUrnValue.global_sku.toString(), [publication, locale])
+    }
+
+    @JsonIgnore
     URN getLastModifiedUrn() {
         new URNImpl(DeltaUrnValue.global_sku.toString(), [DeltaUrnValue.last_modified.toString(), publication, locale])
     }

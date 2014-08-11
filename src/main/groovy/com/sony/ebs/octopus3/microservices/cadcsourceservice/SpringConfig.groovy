@@ -84,7 +84,7 @@ class SpringConfig {
                 cadcAuthenticationUser, cadcAuthenticationPassword, 8000, 30000)
     }
 
-    @Value('${octopus3.flix.repositoryFileAttributesServiceUrl}')
+    @Value('${octopus3.sourceservice.repositoryFileAttributesServiceUrl}')
     String repositoryFileAttributesServiceUrl
 
     @Bean

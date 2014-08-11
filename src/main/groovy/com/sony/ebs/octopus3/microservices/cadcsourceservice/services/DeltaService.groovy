@@ -86,12 +86,18 @@ class DeltaService {
         }).flatMap({
             deltaUrlHelper.updateLastModified(delta)
         }).flatMap({
-            log.info "starting import for ${urlMap.size()} urls"
-            rx.Observable.merge(
-                    urlMap?.collect { URN urn, String sheetUrl ->
-                        importSingleSheet(delta.processId, urn, sheetUrl)
-                    }
-                    , 30)
+            if (urlMap) {
+                log.info "starting import for ${urlMap.size()} urls"
+                rx.Observable.merge(
+                        urlMap?.collect { URN urn, String sheetUrl ->
+                            importSingleSheet(delta.processId, urn, sheetUrl)
+                        }
+                        , 30)
+            } else {
+                def message = "no products to import for $delta.baseUrn"
+                log.info message
+                rx.Observable.just(message)
+            }
         })
     }
 
