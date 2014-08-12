@@ -61,7 +61,7 @@ class DeltaService {
         rx.Observable.from("starting").flatMap({
             localHttpClient.doGet(importUrl)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response)
+            NingHttpClient.isSuccess(response, "calling cadcsource sheet service")
         }).map({
             "success for $urn"
         }).onErrorReturn({
@@ -78,7 +78,7 @@ class DeltaService {
             log.info "getting delta for $deltaUrl"
             cadcHttpClient.doGet(deltaUrl)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response)
+            NingHttpClient.isSuccess(response, "getting delta json from cadc")
         }).flatMap({ Response response ->
             observe(execControl.blocking({
                 urlMap = createUrlMap(delta, response.responseBody)

@@ -35,7 +35,7 @@ class DeltaUrlHelper {
             def url = repositoryFileServiceUrl.replace(":urn", delta.lastModifiedUrn.toString())
             httpClient.doPost(url, "update")
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response)
+            NingHttpClient.isSuccess(response, "updating last modified date")
         }).map({
             "done"
         })
