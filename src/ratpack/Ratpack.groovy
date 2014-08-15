@@ -19,7 +19,6 @@ ratpack {
 
     SheetFlowHandler sheetFlowHandler
     DeltaFlowHandler deltaFlowHandler
-    SaveFlowHandler saveFlowHandler
     HealthCheckHandler healthCheckHandler
 
     bindings {
@@ -35,7 +34,6 @@ ratpack {
 
             deltaFlowHandler = ctx.getBean(DeltaFlowHandler.class)
             sheetFlowHandler = ctx.getBean(SheetFlowHandler.class)
-            saveFlowHandler = ctx.getBean(SaveFlowHandler.class)
             healthCheckHandler = new HealthCheckHandler(monitoringService: new MonitoringService())
         }
     }
@@ -44,6 +42,5 @@ ratpack {
         get("healthcheck", healthCheckHandler)
         get("cadcsource/sheet/:urn", sheetFlowHandler)
         get("cadcsource/delta/publication/:publication/locale/:locale", deltaFlowHandler)
-        post("cadcsource/save/:urn", saveFlowHandler)
     }
 }

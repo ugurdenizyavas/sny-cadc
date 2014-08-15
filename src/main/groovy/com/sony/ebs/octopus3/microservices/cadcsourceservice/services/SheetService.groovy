@@ -34,7 +34,7 @@ class SheetService {
         rx.Observable.from("starting").flatMap({
             cadcHttpClient.doGet(deltaSheet.url)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting sheet json from cadc")
+            NingHttpClient.isSuccess(response, "getting sheet json from cadc", deltaSheet.errors)
         }).flatMap({ Response response ->
             log.info "saving sheet"
             String postUrl = repositoryFileServiceUrl.replace(":urn", deltaSheet.urnStr)
@@ -42,11 +42,10 @@ class SheetService {
 
             localHttpClient.doPost(postUrl, response.responseBodyAsStream)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "saving sheet json to repo")
+            NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaSheet.errors)
         }).map({
-            log.info "returning success"
-            log.debug "save sheet result is $it"
-            "success for $deltaSheet"
+            log.info "$deltaSheet finished successfully"
+            "success"
         })
     }
 

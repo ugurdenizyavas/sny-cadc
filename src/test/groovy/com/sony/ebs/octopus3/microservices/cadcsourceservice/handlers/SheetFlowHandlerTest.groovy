@@ -31,7 +31,7 @@ class SheetFlowHandlerTest {
                 assert deltaSheet.urnStr == URN
                 assert deltaSheet.url == SHEET_URL
                 assert deltaSheet.processId == processId?.id
-                rx.Observable.from("aa")
+                rx.Observable.from("xxx")
             }
         }
 
@@ -43,13 +43,13 @@ class SheetFlowHandlerTest {
             pathBinding([urn: URN])
             uri "/?url=$SHEET_URL$processIdPostfix"
         }).with {
-            assert status.code == 202
+            assert status.code == 200
             def ren = rendered(DefaultJsonRender).object
-            assert ren.status == 202
-            assert ren.message == "deltaSheet started"
+            assert ren.status == 200
             assert ren.deltaSheet.urnStr == URN
             assert ren.deltaSheet.url == SHEET_URL
             assert ren.deltaSheet.processId == processId?.id
+            assert ren.result == ["xxx"]
         }
     }
 
@@ -79,6 +79,33 @@ class SheetFlowHandlerTest {
             assert ren.status == 400
             assert ren.errors == ["error"]
             assert ren.deltaSheet != null
+        }
+    }
+
+    @Test
+    void "error in sheet flow"() {
+        mockSheetService.demand.with {
+            sheetFlow(1) { DeltaSheet deltaSheet ->
+                deltaSheet.errors << "error in sheet flow"
+                rx.Observable.just(null)
+            }
+        }
+
+        mockRequestValidator.demand.with {
+            validateDeltaSheet(1) { [] }
+        }
+
+        handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+            pathBinding([urn: URN])
+            uri "/?url=$SHEET_URL"
+        }).with {
+            assert status.code == 500
+            def ren = rendered(DefaultJsonRender).object
+            assert ren.status == 500
+            assert ren.deltaSheet.urnStr == URN
+            assert ren.deltaSheet.url == SHEET_URL
+            assert ren.errors == ["error in sheet flow"]
+            assert !ren.result
         }
     }
 

@@ -29,22 +29,46 @@ class DeltaFlowHandler extends GroovyHandler {
             Delta delta = new Delta(processId: new ProcessIdImpl(), publication: pathTokens.publication, locale: pathTokens.locale,
                     since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
 
+            List sheetServiceResults = []
             List errors = validator.validateDelta(delta)
             if (errors) {
                 activity.error "error validating $delta : $errors"
                 response.status(400)
                 render json(status: 400, errors: errors, delta: delta)
             } else {
-                deltaService.deltaFlow(delta).subscribe({ result ->
-                    activity.info "$result for ${delta}"
+                deltaService.deltaFlow(delta).subscribe({
+                    sheetServiceResults << it
+                    activity.info "sheet result: $it"
                 }, { e ->
+                    delta.errors << e.message ?: e.cause?.message
                     activity.error "error in $delta", e
+                }, {
+                    if (delta.errors) {
+                        response.status(500)
+                        render json(status: 500, delta: delta, errors: delta.errors)
+                    } else {
+                        response.status(200)
+                        render json(status: 200, delta: delta, result: createDeltaResult(delta, sheetServiceResults))
+                    }
                 })
-                activity.info "$delta started"
-                response.status(202)
-                render json(status: 202, message: "delta started", delta: delta)
             }
         }
     }
+
+    Map createDeltaResult(Delta delta, List sheetServiceResults) {
+        [
+                stats: [
+                        "number of delta products": delta.urlMap?.size(),
+                        "number of success"       : sheetServiceResults?.findAll({
+                            it.success
+                        }).size(),
+                        "number of errors"        : sheetServiceResults?.findAll({
+                            !it.success
+                        }).size()
+                ],
+                list : sheetServiceResults
+        ]
+    }
+
 
 }

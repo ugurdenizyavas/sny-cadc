@@ -22,6 +22,7 @@ class DeltaUrlHelperTest {
     DeltaUrlHelper deltaUrlHelper
 
     StubFor mockNingHttpClient, mockFileAttributesProvider
+    Delta delta
 
     static ExecController execController
 
@@ -43,12 +44,12 @@ class DeltaUrlHelperTest {
                 repositoryFileServiceUrl: "/repository/file/:urn")
         mockNingHttpClient = new StubFor(NingHttpClient)
         mockFileAttributesProvider = new StubFor(FileAttributesProvider)
+
+        delta = new Delta(publication: "SCORE", locale: "fr_BE")
     }
 
     def runUpdateLastModified() {
         deltaUrlHelper.httpClient = mockNingHttpClient.proxyInstance()
-
-        def delta = new Delta(publication: "SCORE", locale: "fr_BE")
 
         def result = new BlockingVariable<String>(5)
         boolean valueSet = false
@@ -86,6 +87,7 @@ class DeltaUrlHelperTest {
             }
         }
         assert runUpdateLastModified() == "outOfFlow"
+        assert delta.errors == ["HTTP 500 error updating last modified date"]
     }
 
     @Test

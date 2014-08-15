@@ -38,14 +38,12 @@ class SheetServiceTest {
         mockNingHttpClient = new StubFor(NingHttpClient)
     }
 
-    void runFlow(String processId, String expected) {
-        DeltaSheet deltaSheet = new DeltaSheet(url: "http://cadc/p", urnStr: "urn:global_sku:score:en_gb:p", processId: processId)
-
+    def runFlow(DeltaSheet deltaSheet) {
         sheetService.localHttpClient = mockNingHttpClient.proxyInstance()
         sheetService.cadcHttpClient = mockNingHttpClient.proxyInstance()
 
 
-        def result = new BlockingVariable<String>(5)
+        def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
             sheetService.sheetFlow(deltaSheet).subscribe({
@@ -55,63 +53,69 @@ class SheetServiceTest {
                 log.error "error in flow", it
                 result.set("error")
             }, {
-                if (!valueSet)result.set("outOfFlow")
+                if (!valueSet) result.set("outOfFlow")
             })
         }
-        assert result.get() == expected
+        result.get()
     }
 
 
     @Test
     void "success"() {
+        DeltaSheet deltaSheet = new DeltaSheet(url: "http://cadc", urnStr: "urn:a:b")
         mockNingHttpClient.demand.with {
             doGet(1) {
-                assert it == "http://cadc/p"
+                assert it == "http://cadc"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "eee"))
             }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p"
+                assert url == "http://cadcsource/save/urn:a:b"
                 assert data.text == "eee"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
-        runFlow(null, "success for DeltaSheet(urnStr:urn:global_sku:score:en_gb:p, url:http://cadc/p)")
+        assert runFlow(deltaSheet) == "success"
     }
 
     @Test
     void "success with process id"() {
+        DeltaSheet deltaSheet = new DeltaSheet(url: "http://cadc/p", urnStr: "urn:a:b", processId: "123")
         mockNingHttpClient.demand.with {
             doGet(1) {
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "eee"))
             }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p?processId=123"
+                assert url == "http://cadcsource/save/urn:a:b?processId=123"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
-        runFlow("123", "success for DeltaSheet(urnStr:urn:global_sku:score:en_gb:p, url:http://cadc/p, processId:123)")
+        assert runFlow(deltaSheet) == "success"
     }
 
     @Test
     void "sheet not found"() {
+        DeltaSheet deltaSheet = new DeltaSheet(url: "http://cadc", urnStr: "urn:a:b")
         mockNingHttpClient.demand.with {
             doGet(1) {
                 rx.Observable.from(new MockNingResponse(_statusCode: 404))
             }
         }
-        runFlow(null, "outOfFlow")
+        assert runFlow(deltaSheet) == "outOfFlow"
+        assert deltaSheet.errors == ["HTTP 404 error getting sheet json from cadc"]
     }
 
     @Test
     void "sheet could not be saved"() {
+        DeltaSheet deltaSheet = new DeltaSheet(url: "http://cadc", urnStr: "urn:a:b")
         mockNingHttpClient.demand.with {
             doGet(1) {
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "eee"))
             }
             doPost(1) { url, data ->
-                rx.Observable.from(new MockNingResponse(_statusCode: 404))
+                rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }
         }
-        runFlow(null, "outOfFlow")
+        assert runFlow(deltaSheet) == "outOfFlow"
+        assert deltaSheet.errors == ["HTTP 500 error saving sheet json to repo"]
     }
 }

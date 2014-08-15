@@ -7,6 +7,7 @@ import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaUrnValue
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,7 +44,7 @@ class DeltaService {
     @Value('${octopus3.sourceservice.cadcsourceSheetServiceUrl}')
     String cadcsourceSheetServiceUrl
 
-    private Map createUrlMap(Delta delta, InputStream feedInputStream) {
+    private def setUrlMap(Delta delta, InputStream feedInputStream) {
         log.info "creating url map"
         def json = jsonSlurper.parse(feedInputStream, "UTF-8")
         def urlMap = [:]
@@ -53,53 +54,54 @@ class DeltaService {
             urlMap[urn] = it
         }
         log.info "parsed ${urlMap.size()} products for $delta"
-        urlMap
+        delta.urlMap = urlMap
     }
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
-
-        def importUrl = cadcsourceSheetServiceUrl.replace(":urn", urn.toString()) + "?url=$sheetUrl&processId=$processId.id"
+        def urnStr = urn.toString()
 
         rx.Observable.from("starting").flatMap({
+            def importUrl = cadcsourceSheetServiceUrl.replace(":urn", urnStr) + "?url=$sheetUrl"
+            if (processId?.id) importUrl += "&processId=${processId?.id}"
             localHttpClient.doGet(importUrl)
-        }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "calling cadcsource sheet service")
-        }).map({
-            "success for $urn"
+        }).flatMap({ Response response ->
+            observe(execControl.blocking({
+                boolean success = NingHttpClient.isSuccess(response)
+                def sheetServiceResult = new SheetServiceResult(urn: urnStr, success: success, statusCode: response.statusCode)
+                if (!success) {
+                    def json = jsonSlurper.parse(response.responseBodyAsStream, "UTF-8")
+                    sheetServiceResult.errors = json.errors
+                }
+                sheetServiceResult
+            }))
         }).onErrorReturn({
-            log.error "error for $importUrl", it
-            "error for $urn"
+            log.error "error for $urnStr", it
+            def error = it.message ?: it.cause?.message
+            new SheetServiceResult(urn: urnStr, success: false, errors: [error])
         })
     }
 
-    rx.Observable<String> deltaFlow(Delta delta) {
-        Map urlMap
+    rx.Observable deltaFlow(Delta delta) {
+
         rx.Observable.from("starting").flatMap({
             deltaUrlHelper.createDeltaUrl(delta)
         }).flatMap({ String deltaUrl ->
             log.info "getting delta for $deltaUrl"
             cadcHttpClient.doGet(deltaUrl)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting delta json from cadc")
+            NingHttpClient.isSuccess(response, "getting delta json from cadc", delta.errors)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
-                urlMap = createUrlMap(delta, response.responseBodyAsStream)
+                setUrlMap(delta, response.responseBodyAsStream)
             }))
         }).flatMap({
             deltaUrlHelper.updateLastModified(delta)
         }).flatMap({
-            if (urlMap) {
-                log.info "starting import for ${urlMap.size()} urls"
-                rx.Observable.merge(
-                        urlMap?.collect { URN urn, String sheetUrl ->
-                            importSingleSheet(delta.processId, urn, sheetUrl)
-                        }
-                        , 30)
-            } else {
-                def message = "no products to import for $delta.baseUrn"
-                log.info message
-                rx.Observable.just(message)
-            }
+            rx.Observable.merge(
+                    delta.urlMap?.collect { URN urn, String sheetUrl ->
+                        importSingleSheet(delta.processId, urn, sheetUrl)
+                    }
+                    , 30)
         })
     }
 

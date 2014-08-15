@@ -7,7 +7,7 @@ import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import groovy.transform.ToString
 
-@ToString(includeNames = true, includePackage = false, ignoreNulls = true)
+@ToString(includeNames = true, includePackage = false, ignoreNulls = true, excludes = ['errors','urlMap'])
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class Delta {
 
@@ -16,6 +16,11 @@ class Delta {
     String locale
     String since
     String cadcUrl
+
+    Map urlMap
+
+    @JsonIgnore
+    List errors = []
 
     @JsonIgnore
     URN getBaseUrn() {
