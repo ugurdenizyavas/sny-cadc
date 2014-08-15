@@ -17,6 +17,7 @@ class Delta {
     String since
     String cadcUrl
 
+    @JsonIgnore
     Map urlMap
 
     @JsonIgnore

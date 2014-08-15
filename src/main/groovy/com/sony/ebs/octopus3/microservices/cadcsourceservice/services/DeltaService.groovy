@@ -70,13 +70,13 @@ class DeltaService {
                 def sheetServiceResult = new SheetServiceResult(urn: urnStr, success: success, statusCode: response.statusCode)
                 if (!success) {
                     def json = jsonSlurper.parse(response.responseBodyAsStream, "UTF-8")
-                    sheetServiceResult.errors = json.errors
+                    sheetServiceResult.errors = json?.errors.collect { it.toString() }
                 }
                 sheetServiceResult
             }))
         }).onErrorReturn({
             log.error "error for $urnStr", it
-            def error = it.message ?: it.cause?.message
+            def error = (it.message ?: it.cause?.message)?.toString()
             new SheetServiceResult(urn: urnStr, success: false, errors: [error])
         })
     }
