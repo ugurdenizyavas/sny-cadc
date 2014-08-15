@@ -40,7 +40,7 @@ class SheetService {
             String postUrl = repositoryFileServiceUrl.replace(":urn", deltaSheet.urnStr)
             if (deltaSheet.processId) postUrl += "?processId=$deltaSheet.processId"
 
-            localHttpClient.doPost(postUrl, response.responseBody)
+            localHttpClient.doPost(postUrl, response.responseBodyAsStream)
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response, "saving sheet json to repo")
         }).map({

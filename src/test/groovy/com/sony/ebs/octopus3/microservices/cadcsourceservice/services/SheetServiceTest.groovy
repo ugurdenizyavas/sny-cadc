@@ -71,7 +71,7 @@ class SheetServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p"
-                assert data == "eee"
+                assert data.text == "eee"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }

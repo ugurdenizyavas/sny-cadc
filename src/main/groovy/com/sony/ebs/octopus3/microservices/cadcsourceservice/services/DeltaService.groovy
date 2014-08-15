@@ -23,6 +23,8 @@ import static ratpack.rx.RxRatpack.observe
 @org.springframework.context.annotation.Lazy
 class DeltaService {
 
+    final JsonSlurper jsonSlurper = new JsonSlurper()
+
     @Autowired
     @Lazy
     ExecControl execControl
@@ -41,9 +43,9 @@ class DeltaService {
     @Value('${octopus3.sourceservice.cadcsourceSheetServiceUrl}')
     String cadcsourceSheetServiceUrl
 
-    private Map createUrlMap(Delta delta, String feed) {
+    private Map createUrlMap(Delta delta, InputStream feedInputStream) {
         log.info "creating url map"
-        def json = new JsonSlurper().parseText(feed)
+        def json = jsonSlurper.parse(feedInputStream)
         def urlMap = [:]
         json.skus[delta.locale].each {
             def sku = deltaUrlHelper.getSkuFromUrl(it)
@@ -81,7 +83,7 @@ class DeltaService {
             NingHttpClient.isSuccess(response, "getting delta json from cadc")
         }).flatMap({ Response response ->
             observe(execControl.blocking({
-                urlMap = createUrlMap(delta, response.responseBody)
+                urlMap = createUrlMap(delta, response.responseBodyAsStream)
             }))
         }).flatMap({
             deltaUrlHelper.updateLastModified(delta)
