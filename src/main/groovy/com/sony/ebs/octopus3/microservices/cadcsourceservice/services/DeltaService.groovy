@@ -45,7 +45,7 @@ class DeltaService {
 
     private Map createUrlMap(Delta delta, InputStream feedInputStream) {
         log.info "creating url map"
-        def json = jsonSlurper.parse(feedInputStream)
+        def json = jsonSlurper.parse(feedInputStream, "UTF-8")
         def urlMap = [:]
         json.skus[delta.locale].each {
             def sku = deltaUrlHelper.getSkuFromUrl(it)
