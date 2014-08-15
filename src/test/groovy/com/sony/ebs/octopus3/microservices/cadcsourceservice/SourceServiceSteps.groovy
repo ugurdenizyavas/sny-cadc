@@ -14,6 +14,8 @@ import com.jayway.restassured.response.Response
 
 import static com.github.dreamhead.moco.Moco.by
 import static com.github.dreamhead.moco.Moco.uri
+import static com.github.dreamhead.moco.Moco.status
+import static com.github.dreamhead.moco.Moco.with
 
 this.metaClass.mixin(Hooks)
 this.metaClass.mixin(EN)
@@ -55,61 +57,113 @@ After() {
     aut.stop()
 }
 
-def cadcService = { HttpServer server, String publication, String locale, int numOfSheets, int numOfErrors ->
-    def str = new JsonBuilder({
-        startDate 's1'
-        endDate 'e1'
-        skus {
-            "$locale"((1..numOfSheets).collect { "http://localhost:12306/cadc/sheet/p$it" })
-        }
-    }).toString()
-    server.request(by(uri("/skus/changes/$locale"))).response(str)
-
-    (numOfSheets - numOfErrors).times {
-        def name = "p${it + 1}"
-        server.request(by(uri("/cadcsource/sheet/urn:global_sku:$publication:$locale:$name".toLowerCase()))).response("sheet${it + 1}")
-    }
-}
-
-Given(~"Cadc sheet (.*)") { name ->
-    server.request(by(uri("/cadc/sheet/$name"))).response("sheet $name")
-}
-
-Given(~"Cadc returns (.*) sheets for publication (.*) locale (.*) successfully") { int numOfSheets, String publication, String locale ->
-    cadcService(server, publication, locale, numOfSheets, 0)
-}
-
 /*
-* ******************** SAVE SERVICE *************************************************************
+* ******************** DELTA SERVICE ***********************************************************
 * */
 
-When(~"I save sheet (.*)") { sku ->
-    post("cadcsource/save/urn:global_sku:score:en_gb:$sku")
+Given(~"Cadc services for locale (.*)") { String locale ->
+    def deltaFeed = '{"skus":{"' + locale + '":["http://localhost:12306/a", "http://localhost:12306/c", "http://localhost:12306/b"]}}'
+    server.get(by(uri("/delta/$locale"))).response(deltaFeed)
+    server.get(by(uri("/a"))).response("a")
+    server.get(by(uri("/b"))).response("b")
+    server.get(by(uri("/c"))).response("c")
 }
 
-Then(~"sheet (.*) should be saved") { sku ->
+Given(~"Cadc delta service error for locale (.*)") { String locale ->
+    server.get(by(uri("/delta/$locale"))).response(status(500))
+}
+
+Given(~"Repo services for publication (.*) locale (.*) with no errors") { String publication, String locale ->
+    def values = "${publication.toLowerCase()}:${locale.toLowerCase()}"
+
+    server.get(by(uri("/repository/fileattributes/urn:global_sku:last_modified:$values"))).response(status(404))
+    server.post(by(uri("/repository/file/urn:global_sku:last_modified:$values"))).response(status(200))
+    server.post(by(uri("/repository/file/urn:global_sku:$values:a"))).response(status(200))
+    server.post(by(uri("/repository/file/urn:global_sku:$values:b"))).response(status(200))
+    server.post(by(uri("/repository/file/urn:global_sku:$values:c"))).response(status(200))
+}
+
+Given(~"Repo services for publication (.*) locale (.*) with last modified date save error") { String publication, String locale ->
+    def values = "${publication.toLowerCase()}:${locale.toLowerCase()}"
+
+    server.get(by(uri("/repository/fileattributes/urn:global_sku:last_modified:$values"))).response(status(404))
+    server.post(by(uri("/repository/file/urn:global_sku:last_modified:$values"))).response(status(500))
+}
+
+Given(~"Repo services for publication (.*) locale (.*) with save errors") { String publication, String locale ->
+    def values = "${publication.toLowerCase()}:${locale.toLowerCase()}"
+
+    server.get(by(uri("/repository/fileattributes/urn:global_sku:last_modified:$values"))).response(status(404))
+    server.post(by(uri("/repository/file/urn:global_sku:last_modified:$values"))).response(status(200))
+    server.post(by(uri("/repository/file/urn:global_sku:$values:a"))).response(status(200))
+    server.post(by(uri("/repository/file/urn:global_sku:$values:b"))).response(status(500))
+    server.post(by(uri("/repository/file/urn:global_sku:$values:c"))).response(status(200))
+}
+
+When(~"I request delta of publication (.*) locale (.*)") { String publication, String locale ->
+    get("cadcsource/delta/publication/$publication/locale/$locale?cadcUrl=http://localhost:12306/delta")
+}
+
+Then(~"Delta for publication (.*) locale (.*) should be imported successfully") { String publication, String locale ->
+    def values = "${publication.toLowerCase()}:${locale.toLowerCase()}"
+
+    assert response.statusCode == 200
     def json = parseJson(response)
-    assert json?.urn == "urn:global_sku:score:en_gb:$sku"
-    assert json?.message == "sheet saved"
-}
-
-/*
-* ******************** DELTA IMPORT SERVICE ***********************************************************
-* */
-
-When(~"I request delta of publication (.*) locale (.*) since (.*)") { publication, locale, since ->
-    get("cadcsource/delta/publication/$publication/locale/$locale?since=$since&cadcUrl=http://localhost:12306/skus")
-}
-
-Then(~"Sheets should be imported with publication (.*) locale (.*) since (.*)") { publication, locale, since ->
-    assert response.statusCode == 202
-    def json = parseJson(response)
-    assert json.status == 202
-    assert json.message == "delta started"
+    assert json.status == 200
     assert json.delta.publication == publication
     assert json.delta.locale == locale
-    assert json.delta.since == since
-    assert json.delta.cadcUrl == "http://localhost:12306/skus"
+    assert json.delta.cadcUrl == "http://localhost:12306/delta"
+
+    assert json.result.stats."number of delta products" == 3
+    assert json.result.stats."number of success" == 3
+    assert json.result.stats."number of errors" == 0
+
+    assert json.result.list.size() == 3
+    assert json.result.list.contains([statusCode: 200, success: true, urn: "urn:global_sku:$values:a".toString()])
+    assert json.result.list.contains([statusCode: 200, success: true, urn: "urn:global_sku:$values:b".toString()])
+    assert json.result.list.contains([statusCode: 200, success: true, urn: "urn:global_sku:$values:c".toString()])
+}
+
+Then(~"Delta for publication (.*) locale (.*) should get last modified date save error") { String publication, String locale ->
+    assert response.statusCode == 500
+    def json = parseJson(response)
+    assert json.status == 500
+    assert json.delta.publication == publication
+    assert json.delta.locale == locale
+
+    assert json.errors == ["HTTP 500 error updating last modified date"]
+    assert !json.result
+}
+
+Then(~"Delta for publication (.*) locale (.*) should get cadc delta service error") { String publication, String locale ->
+    assert response.statusCode == 500
+    def json = parseJson(response)
+    assert json.status == 500
+    assert json.delta.publication == publication
+    assert json.delta.locale == locale
+
+    assert json.errors == ["HTTP 500 error getting delta json from cadc"]
+    assert !json.result
+}
+
+Then(~"Delta for publication (.*) locale (.*) should get save errors") { String publication, String locale ->
+    def values = "${publication.toLowerCase()}:${locale.toLowerCase()}"
+
+    assert response.statusCode == 200
+    def json = parseJson(response)
+    assert json.status == 200
+    assert json.delta.publication == publication
+    assert json.delta.locale == locale
+
+    assert json.result.stats."number of delta products" == 3
+    assert json.result.stats."number of success" == 2
+    assert json.result.stats."number of errors" == 1
+
+    def list = json.result.list
+    assert list.size() == 3
+    assert list.contains([statusCode: 200, success: true, urn: "urn:global_sku:$values:a".toString()])
+    assert list.contains([statusCode: 500, success: false, urn: "urn:global_sku:$values:b".toString(), errors: ["HTTP 500 error saving sheet json to repo"]])
+    assert list.contains([statusCode: 200, success: true, urn: "urn:global_sku:$values:c".toString()])
 }
 
 When(~"I import delta with invalid (.*) parameter") { paramName ->
@@ -129,19 +183,38 @@ Then(~"Import should give (.*) parameter error") { paramName ->
 }
 
 /*
-* ******************** SHEET IMPORT SERVICE *************************************************************
+* ******************** SHEET SERVICE *************************************************************
 * */
-When(~"I import sheet (.*) correctly") { sku ->
-    get("cadcsource/sheet/urn:global_sku:score:en_gb:$sku?url=http://localhost:12306/cadc/sheet/$sku")
+
+Given(~"Cadc sheet (.*)") { name ->
+    server.request(by(uri("/cadc/sheet/$name"))).response("sheet $name")
 }
 
-Then(~"Sheet import of (.*) should be successful") { sku ->
-    assert response.statusCode == 202
+Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String publication, String locale, String sku ->
+    def publicationLC = publication.toLowerCase()
+    def localeLC = locale.toLowerCase()
+    def skuLC = sku.toLowerCase()
+    server.post(by(uri("/repository/file/urn:global_sku:$publicationLC:$localeLC:$skuLC"))).response("")
+}
+
+When(~"I import sheet with publication (.*) locale (.*) sku (.*) correctly") { String publication, String locale, String sku ->
+    def publicationLC = publication.toLowerCase()
+    def localeLC = locale.toLowerCase()
+    def skuLC = sku.toLowerCase()
+    get("cadcsource/sheet/urn:global_sku:$publicationLC:$localeLC:$skuLC?url=http://localhost:12306/cadc/sheet/$sku")
+}
+
+Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported successful") { String publication, String locale, String sku ->
+    def publicationLC = publication.toLowerCase()
+    def localeLC = locale.toLowerCase()
+    def skuLC = sku.toLowerCase()
+
+    assert response.statusCode == 200
     def json = parseJson(response)
-    assert json.status == 202
-    assert json?.message == "deltaSheet started"
-    assert json?.deltaSheet.urnStr == "urn:global_sku:score:en_gb:$sku"
+    assert json.status == 200
+    assert json?.deltaSheet.urnStr == "urn:global_sku:$publicationLC:$localeLC:$skuLC"
     assert json?.deltaSheet.url == "http://localhost:12306/cadc/sheet/$sku"
+    assert json.result == ["success"]
 }
 
 When(~"I import sheet with invalid (.*) parameter") { paramName ->

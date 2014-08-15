@@ -2,14 +2,28 @@
 Feature: Delta
   Delta service should be in sync with data-source (CADC)
 
-  Scenario: Save flow
-    When I save sheet z1.ceh
-    Then sheet z1.ceh should be saved
+  Scenario: Delta flow successful
+    Given Cadc services for locale en_GB
+    Given Repo services for publication SCORE locale en_GB with no errors
+    When I request delta of publication SCORE locale en_GB
+    Then Delta for publication SCORE locale en_GB should be imported successfully
 
-  Scenario: Delta flow correct
-    Given Cadc returns 3 sheets for publication SCORE locale en_GB successfully
-    When I request delta of publication SCORE locale en_GB since 2014-06-20T20:30:00.000Z
-    Then Sheets should be imported with publication SCORE locale en_GB since 2014-06-20T20:30:00.000Z
+  Scenario: Delta flow with cadc delta service error
+    Given Cadc delta service error for locale en_GB
+    When I request delta of publication SCORE locale en_GB
+    Then Delta for publication SCORE locale en_GB should get cadc delta service error
+
+  Scenario: Delta flow with last modified date save error
+    Given Cadc services for locale en_GB
+    Given Repo services for publication SCORE locale en_GB with last modified date save error
+    When I request delta of publication SCORE locale en_GB
+    Then Delta for publication SCORE locale en_GB should get last modified date save error
+
+  Scenario: Delta flow with save errors
+    Given Cadc services for locale en_GB
+    Given Repo services for publication SCORE locale en_GB with save errors
+    When I request delta of publication SCORE locale en_GB
+    Then Delta for publication SCORE locale en_GB should get save errors
 
   Scenario: Delta flow invalid publication parameter
     When I import delta with invalid publication parameter
@@ -29,8 +43,9 @@ Feature: Delta
 
   Scenario: Sheet flow correct
     Given Cadc sheet z1.ceh
-    When I import sheet z1.ceh correctly
-    Then Sheet import of z1.ceh should be successful
+    Given Repo save service for publication SCORE locale en_GB sku z1.ceh
+    When I import sheet with publication SCORE locale en_GB sku z1.ceh correctly
+    Then Sheet with publication SCORE locale en_GB sku z1.ceh should be imported successful
 
   Scenario: Sheet flow invalid urn
     When I import sheet with invalid urn parameter
