@@ -3,7 +3,7 @@ Feature: Delta
   Delta service should be in sync with data-source (CADC)
 
   Scenario: Delta flow successful
-    Given Cadc services for locale en_GB
+    Given Cadc services for locale en_GB with no errors
     Given Repo services for publication SCORE locale en_GB with no errors
     When I request delta of publication SCORE locale en_GB
     Then Delta for publication SCORE locale en_GB should be imported successfully
@@ -14,13 +14,13 @@ Feature: Delta
     Then Delta for publication SCORE locale en_GB should get cadc delta service error
 
   Scenario: Delta flow with last modified date save error
-    Given Cadc services for locale en_GB
+    Given Cadc services for locale en_GB with no errors
     Given Repo services for publication SCORE locale en_GB with last modified date save error
     When I request delta of publication SCORE locale en_GB
     Then Delta for publication SCORE locale en_GB should get last modified date save error
 
   Scenario: Delta flow with save errors
-    Given Cadc services for locale en_GB
+    Given Cadc services for locale en_GB with errors
     Given Repo services for publication SCORE locale en_GB with save errors
     When I request delta of publication SCORE locale en_GB
     Then Delta for publication SCORE locale en_GB should get save errors

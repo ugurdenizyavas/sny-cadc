@@ -16,8 +16,9 @@ class DeltaFlowHandlerTest {
     StubFor mockDeltaService, mockValidator
 
     def sheetResultA = new SheetServiceResult(urn: "a", success: true)
-    def sheetResultB = new SheetServiceResult(urn: "b", success: false)
+    def sheetResultB = new SheetServiceResult(urn: "b", success: false, errors: ["err3", "err1"])
     def sheetResultC = new SheetServiceResult(urn: "c", success: true)
+    def sheetResultD = new SheetServiceResult(urn: "d", success: false, errors: ["err1", "err2"])
 
     @Before
     void before() {
@@ -34,8 +35,8 @@ class DeltaFlowHandlerTest {
                 assert delta.locale == "en_GB"
                 assert delta.since == "2014"
                 assert delta.cadcUrl == "http://cadc/skus"
-                delta.urlMap = [a: "/a", b: "/b", c: "/c"]
-                rx.Observable.from([sheetResultC, sheetResultA, sheetResultB])
+                delta.urlMap = [a: "/a", b: "/b", c: "/c", d: "/d"]
+                rx.Observable.from([sheetResultC, sheetResultA, sheetResultD, sheetResultB])
             }
         }
 
@@ -56,10 +57,16 @@ class DeltaFlowHandlerTest {
             assert ren.delta.cadcUrl == "http://cadc/skus"
             assert ren.delta.processId != null
 
-            assert ren.result.list?.sort() == [sheetResultA, sheetResultB, sheetResultC]
-            assert ren.result.stats."number of delta products" == 3
+            assert ren.result.success?.sort() == ["a", "c"]
+
+            assert ren.result.errors?.size() == 3
+            assert ren.result.errors.err1?.sort() == ["b", "d"]
+            assert ren.result.errors.err2 == ["d"]
+            assert ren.result.errors.err3 == ["b"]
+
+            assert ren.result.stats."number of delta products" == 4
             assert ren.result.stats."number of success" == 2
-            assert ren.result.stats."number of errors" == 1
+            assert ren.result.stats."number of errors" == 2
         }
     }
 

@@ -2,6 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
@@ -56,8 +57,21 @@ class DeltaFlowHandler extends GroovyHandler {
     }
 
     Map createDeltaResult(Delta delta, List sheetServiceResults) {
+        def createSuccess = {
+            sheetServiceResults.findAll({ it.success }).collect({ it.urn })
+        }
+        def createErrors = {
+            Map errorMap = [:]
+            sheetServiceResults.findAll({ !it.success }).each { SheetServiceResult serviceResult ->
+                serviceResult.errors.each { error ->
+                    if (errorMap[error] == null) errorMap[error] = []
+                    errorMap[error] << serviceResult.urn
+                }
+            }
+            errorMap
+        }
         [
-                stats: [
+                stats  : [
                         "number of delta products": delta.urlMap?.size(),
                         "number of success"       : sheetServiceResults?.findAll({
                             it.success
@@ -66,9 +80,9 @@ class DeltaFlowHandler extends GroovyHandler {
                             !it.success
                         }).size()
                 ],
-                list : sheetServiceResults
+                success: createSuccess(),
+                errors : createErrors()
         ]
     }
-
 
 }
