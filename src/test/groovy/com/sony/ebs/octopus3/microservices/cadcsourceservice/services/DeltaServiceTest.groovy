@@ -40,7 +40,8 @@ class DeltaServiceTest {
 
     @Before
     void before() {
-        deltaService = new DeltaService(execControl: execController.control, cadcsourceSheetServiceUrl: "http://import/:urn")
+        deltaService = new DeltaService(execControl: execController.control
+                , cadcsourceSheetServiceUrl: "http://flix/sheet/:urn", repositoryFileServiceUrl: "http://repo/file/:urn")
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
         mockHttpClient = new MockFor(NingHttpClient)
 
@@ -89,7 +90,7 @@ class DeltaServiceTest {
             doGet(3) { String url ->
                 def importUrl = new URIBuilder(url).queryParams[0].value
                 def sku = importUrl.substring(importUrl.size() - 1)
-                assert url.startsWith("http://import/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=123")
+                assert url.startsWith("http://flix/sheet/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=123")
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "success"))
             }
         }
@@ -97,9 +98,13 @@ class DeltaServiceTest {
         delta.processId = new ProcessIdImpl("123")
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
-        assert result[1] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
-        assert result[2] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
+        assert result[0] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
+        assert result[1] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:b", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:b")
+        assert result[2] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
+
+        assert result[0].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
+        assert result[1].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:b"
+        assert result[2].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
     }
 
     @Test
@@ -161,7 +166,7 @@ class DeltaServiceTest {
             }
             doGet(3) { String url ->
                 if (url.endsWith("/b")) {
-                    rx.Observable.from(new MockNingResponse(_statusCode: 500, _responseBody:  '{ "errors" : ["err1", "err2"]}'))
+                    rx.Observable.from(new MockNingResponse(_statusCode: 500, _responseBody: '{ "errors" : ["err1", "err2"]}'))
                 } else {
                     rx.Observable.from(new MockNingResponse(_statusCode: 200))
                 }
@@ -169,9 +174,13 @@ class DeltaServiceTest {
         }
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
+        assert result[0] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
         assert result[1] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:b", success: false, statusCode: 500, errors: ["err1", "err2"])
-        assert result[2] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
+        assert result[2] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
+
+        assert result[0].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
+        assert result[1].jsonUrl == null
+        assert result[2].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
     }
 
 }

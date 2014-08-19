@@ -58,7 +58,7 @@ class DeltaFlowHandler extends GroovyHandler {
 
     Map createDeltaResult(Delta delta, List sheetServiceResults) {
         def createSuccess = {
-            sheetServiceResults.findAll({ it.success }).collect({ it.urn })
+            sheetServiceResults.findAll({ it.success }).collect({ it.jsonUrl })
         }
         def createErrors = {
             Map errorMap = [:]

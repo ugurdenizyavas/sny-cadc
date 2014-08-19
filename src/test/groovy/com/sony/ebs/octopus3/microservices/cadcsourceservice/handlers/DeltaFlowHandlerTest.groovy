@@ -15,9 +15,9 @@ class DeltaFlowHandlerTest {
 
     StubFor mockDeltaService, mockValidator
 
-    def sheetResultA = new SheetServiceResult(urn: "a", success: true)
+    def sheetResultA = new SheetServiceResult(urn: "a", success: true, jsonUrl: "/repo/file/a")
     def sheetResultB = new SheetServiceResult(urn: "b", success: false, errors: ["err3", "err1"])
-    def sheetResultC = new SheetServiceResult(urn: "c", success: true)
+    def sheetResultC = new SheetServiceResult(urn: "c", success: true, jsonUrl: "/repo/file/c")
     def sheetResultD = new SheetServiceResult(urn: "d", success: false, errors: ["err1", "err2"])
 
     @Before
@@ -57,7 +57,7 @@ class DeltaFlowHandlerTest {
             assert ren.delta.cadcUrl == "http://cadc/skus"
             assert ren.delta.processId != null
 
-            assert ren.result.success?.sort() == ["a", "c"]
+            assert ren.result.success?.sort() == ["/repo/file/a", "/repo/file/c"]
 
             assert ren.result.errors?.size() == 3
             assert ren.result.errors.err1?.sort() == ["b", "d"]

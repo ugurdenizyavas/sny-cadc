@@ -110,8 +110,8 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.result.stats."number of success" == 4
     assert json.result.stats."number of errors" == 0
 
-    def getURN = { "urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getURN("a"), getURN("b"), getURN("c"), getURN("d")]
+    def getXmlUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
+    assert json.result.success?.sort() == [getXmlUrl("a"), getXmlUrl("b"), getXmlUrl("c"), getXmlUrl("d")]
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get last modified date save error") { String publication, String locale ->
@@ -170,7 +170,8 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
     assert json.result.stats."number of errors" == 2
 
     def getURN = { "urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getURN("a"), getURN("c")]
+    def getXmlUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
+    assert json.result.success?.sort() == [getXmlUrl("a"), getXmlUrl("c")]
 
     assert json.result.errors?.size() == 2
     assert json.result.errors."HTTP 500 error saving sheet json to repo" == [getURN("b")]
