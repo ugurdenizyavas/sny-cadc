@@ -34,13 +34,7 @@ class SheetFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, errors: errors, deltaSheet: deltaSheet)
             } else {
-                sheetService.sheetFlow(deltaSheet).subscribe({
-                    result << it?.toString()
-                    activity.info "$deltaSheet finished: $it"
-                }, { e ->
-                    deltaSheet.errors << e.message ?: e.cause?.message
-                    activity.error "error in $deltaSheet", e
-                }, {
+                sheetService.sheetFlow(deltaSheet).finallyDo({
                     if (deltaSheet.errors) {
                         response.status(500)
                         render json(status: 500, deltaSheet: deltaSheet, errors: deltaSheet.errors)
@@ -48,6 +42,12 @@ class SheetFlowHandler extends GroovyHandler {
                         response.status(200)
                         render json(status: 200, deltaSheet: deltaSheet, result: result)
                     }
+                }).subscribe({
+                    result << it?.toString()
+                    activity.info "$deltaSheet finished: $it"
+                }, { e ->
+                    deltaSheet.errors << HandlerUtil.getErrorMessage(e)
+                    activity.error "error in $deltaSheet", e
                 })
             }
         }

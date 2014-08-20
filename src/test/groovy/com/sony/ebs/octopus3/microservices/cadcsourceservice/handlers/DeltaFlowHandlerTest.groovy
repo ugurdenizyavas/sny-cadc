@@ -115,4 +115,30 @@ class DeltaFlowHandlerTest {
         }
     }
 
+    @Test
+    void "exception in delta flow"() {
+        mockDeltaService.demand.with {
+            deltaFlow(1) {
+                rx.Observable.just("starting").map({
+                    throw new Exception("exp in delta flow")
+                })
+            }
+        }
+        mockValidator.demand.with {
+            validateDelta(1) { [] }
+        }
+
+        handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+            pathBinding([publication: "SCORE", locale: "en_GB"])
+            uri "/?cadcUrl=http://cadc/skus&since=2014"
+        }).with {
+            assert status.code == 500
+            def ren = rendered(DefaultJsonRender).object
+            assert ren.status == 500
+            assert ren.delta.publication == "SCORE"
+            assert ren.delta.locale == "en_GB"
+            assert ren.errors == ["exp in delta flow"]
+            assert !ren.result
+        }
+    }
 }

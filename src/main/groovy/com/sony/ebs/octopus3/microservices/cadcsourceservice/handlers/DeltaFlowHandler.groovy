@@ -37,13 +37,7 @@ class DeltaFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, errors: errors, delta: delta)
             } else {
-                deltaService.deltaFlow(delta).subscribe({
-                    sheetServiceResults << it
-                    activity.info "sheet result: $it"
-                }, { e ->
-                    delta.errors << e.message ?: e.cause?.message
-                    activity.error "error in $delta", e
-                }, {
+                deltaService.deltaFlow(delta).finallyDo({
                     if (delta.errors) {
                         response.status(500)
                         render json(status: 500, delta: delta, errors: delta.errors)
@@ -51,6 +45,12 @@ class DeltaFlowHandler extends GroovyHandler {
                         response.status(200)
                         render json(status: 200, delta: delta, result: createDeltaResult(delta, sheetServiceResults))
                     }
+                }).subscribe({
+                    sheetServiceResults << it
+                    activity.info "sheet result: $it"
+                }, { e ->
+                    delta.errors << HandlerUtil.getErrorMessage(e)
+                    activity.error "error in $delta", e
                 })
             }
         }

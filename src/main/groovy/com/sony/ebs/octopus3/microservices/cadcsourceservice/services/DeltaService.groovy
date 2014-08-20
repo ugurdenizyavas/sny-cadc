@@ -5,6 +5,7 @@ import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.HandlerUtil
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaUrnValue
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
@@ -83,7 +84,7 @@ class DeltaService {
             }))
         }).onErrorReturn({
             log.error "error for $urnStr", it
-            def error = (it.message ?: it.cause?.message)?.toString()
+            def error = HandlerUtil.getErrorMessage(it)
             new SheetServiceResult(urn: urnStr, success: false, errors: [error])
         })
     }
