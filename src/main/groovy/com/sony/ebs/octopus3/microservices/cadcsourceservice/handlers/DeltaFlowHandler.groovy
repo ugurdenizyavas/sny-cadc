@@ -40,10 +40,10 @@ class DeltaFlowHandler extends GroovyHandler {
                 deltaService.deltaFlow(delta).finallyDo({
                     if (delta.errors) {
                         response.status(500)
-                        render json(status: 500, delta: delta, errors: delta.errors)
+                        render json(status: 500, errors: delta.errors, delta: delta)
                     } else {
                         response.status(200)
-                        render json(status: 200, delta: delta, result: createDeltaResult(delta, sheetServiceResults))
+                        render json(status: 200, result: createDeltaResult(delta, sheetServiceResults), delta: delta)
                     }
                 }).subscribe({
                     sheetServiceResults << it

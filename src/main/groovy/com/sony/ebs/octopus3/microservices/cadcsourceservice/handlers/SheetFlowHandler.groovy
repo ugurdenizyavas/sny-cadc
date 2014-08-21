@@ -37,10 +37,10 @@ class SheetFlowHandler extends GroovyHandler {
                 sheetService.sheetFlow(deltaSheet).finallyDo({
                     if (deltaSheet.errors) {
                         response.status(500)
-                        render json(status: 500, deltaSheet: deltaSheet, errors: deltaSheet.errors)
+                        render json(status: 500, errors: deltaSheet.errors, deltaSheet: deltaSheet)
                     } else {
                         response.status(200)
-                        render json(status: 200, deltaSheet: deltaSheet, result: result)
+                        render json(status: 200, result: result, deltaSheet: deltaSheet)
                     }
                 }).subscribe({
                     result << it?.toString()
