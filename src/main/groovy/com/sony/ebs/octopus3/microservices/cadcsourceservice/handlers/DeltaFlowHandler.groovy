@@ -1,11 +1,13 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
+import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import ratpack.groovy.handling.GroovyContext
@@ -37,13 +39,16 @@ class DeltaFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, errors: errors, delta: delta)
             } else {
+                def startTime = new DateTime()
                 deltaService.deltaFlow(delta).finallyDo({
+                    def endTime = new DateTime()
+                    def timeStats = HandlerUtil.getTimeStats(startTime, endTime)
                     if (delta.errors) {
                         response.status(500)
-                        render json(status: 500, errors: delta.errors, delta: delta)
+                        render json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
                     } else {
                         response.status(200)
-                        render json(status: 200, result: createDeltaResult(delta, sheetServiceResults), delta: delta)
+                        render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, sheetServiceResults), delta: delta)
                     }
                 }).subscribe({
                     sheetServiceResults << it
