@@ -15,9 +15,9 @@ class DeltaFlowHandlerTest {
 
     StubFor mockDeltaService, mockValidator
 
-    def sheetResultA = new SheetServiceResult(urn: "a", success: true)
+    def sheetResultA = new SheetServiceResult(urn: "a", success: true, jsonUrl: "/repo/file/a")
     def sheetResultB = new SheetServiceResult(urn: "b", success: false, errors: ["err3", "err1"])
-    def sheetResultC = new SheetServiceResult(urn: "c", success: true)
+    def sheetResultC = new SheetServiceResult(urn: "c", success: true, jsonUrl: "/repo/file/c")
     def sheetResultD = new SheetServiceResult(urn: "d", success: false, errors: ["err1", "err2"])
 
     @Before
@@ -57,7 +57,7 @@ class DeltaFlowHandlerTest {
             assert ren.delta.cadcUrl == "http://cadc/skus"
             assert ren.delta.processId != null
 
-            assert ren.result.success?.sort() == ["a", "c"]
+            assert ren.result.success?.sort() == ["/repo/file/a", "/repo/file/c"]
 
             assert ren.result.errors?.size() == 3
             assert ren.result.errors.err1?.sort() == ["b", "d"]
@@ -115,4 +115,30 @@ class DeltaFlowHandlerTest {
         }
     }
 
+    @Test
+    void "exception in delta flow"() {
+        mockDeltaService.demand.with {
+            deltaFlow(1) {
+                rx.Observable.just("starting").map({
+                    throw new Exception("exp in delta flow")
+                })
+            }
+        }
+        mockValidator.demand.with {
+            validateDelta(1) { [] }
+        }
+
+        handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+            pathBinding([publication: "SCORE", locale: "en_GB"])
+            uri "/?cadcUrl=http://cadc/skus&since=2014"
+        }).with {
+            assert status.code == 500
+            def ren = rendered(DefaultJsonRender).object
+            assert ren.status == 500
+            assert ren.delta.publication == "SCORE"
+            assert ren.delta.locale == "en_GB"
+            assert ren.errors == ["exp in delta flow"]
+            assert !ren.result
+        }
+    }
 }

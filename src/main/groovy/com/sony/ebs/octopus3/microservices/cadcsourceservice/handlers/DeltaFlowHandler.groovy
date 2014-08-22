@@ -1,11 +1,13 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
+import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import ratpack.groovy.handling.GroovyContext
@@ -37,20 +39,23 @@ class DeltaFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, errors: errors, delta: delta)
             } else {
-                deltaService.deltaFlow(delta).subscribe({
+                def startTime = new DateTime()
+                deltaService.deltaFlow(delta).finallyDo({
+                    def endTime = new DateTime()
+                    def timeStats = HandlerUtil.getTimeStats(startTime, endTime)
+                    if (delta.errors) {
+                        response.status(500)
+                        render json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
+                    } else {
+                        response.status(200)
+                        render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, sheetServiceResults), delta: delta)
+                    }
+                }).subscribe({
                     sheetServiceResults << it
                     activity.info "sheet result: $it"
                 }, { e ->
-                    delta.errors << e.message ?: e.cause?.message
+                    delta.errors << HandlerUtil.getErrorMessage(e)
                     activity.error "error in $delta", e
-                }, {
-                    if (delta.errors) {
-                        response.status(500)
-                        render json(status: 500, delta: delta, errors: delta.errors)
-                    } else {
-                        response.status(200)
-                        render json(status: 200, delta: delta, result: createDeltaResult(delta, sheetServiceResults))
-                    }
                 })
             }
         }
@@ -58,7 +63,7 @@ class DeltaFlowHandler extends GroovyHandler {
 
     Map createDeltaResult(Delta delta, List sheetServiceResults) {
         def createSuccess = {
-            sheetServiceResults.findAll({ it.success }).collect({ it.urn })
+            sheetServiceResults.findAll({ it.success }).collect({ it.jsonUrl })
         }
         def createErrors = {
             Map errorMap = [:]

@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
@@ -34,20 +35,20 @@ class SheetFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, errors: errors, deltaSheet: deltaSheet)
             } else {
-                sheetService.sheetFlow(deltaSheet).subscribe({
+                sheetService.sheetFlow(deltaSheet).finallyDo({
+                    if (deltaSheet.errors) {
+                        response.status(500)
+                        render json(status: 500, errors: deltaSheet.errors, deltaSheet: deltaSheet)
+                    } else {
+                        response.status(200)
+                        render json(status: 200, result: result, deltaSheet: deltaSheet)
+                    }
+                }).subscribe({
                     result << it?.toString()
                     activity.info "$deltaSheet finished: $it"
                 }, { e ->
-                    deltaSheet.errors << e.message ?: e.cause?.message
+                    deltaSheet.errors << HandlerUtil.getErrorMessage(e)
                     activity.error "error in $deltaSheet", e
-                }, {
-                    if (deltaSheet.errors) {
-                        response.status(500)
-                        render json(status: 500, deltaSheet: deltaSheet, errors: deltaSheet.errors)
-                    } else {
-                        response.status(200)
-                        render json(status: 200, deltaSheet: deltaSheet, result: result)
-                    }
                 })
             }
         }

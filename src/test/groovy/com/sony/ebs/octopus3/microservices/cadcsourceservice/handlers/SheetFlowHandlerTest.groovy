@@ -109,4 +109,30 @@ class SheetFlowHandlerTest {
         }
     }
 
+    @Test
+    void "exception in sheet flow"() {
+        mockSheetService.demand.with {
+            sheetFlow(1) {
+                rx.Observable.just("starting").map({
+                    throw new Exception("exp in sheet flow")
+                })
+            }
+        }
+        mockRequestValidator.demand.with {
+            validateDeltaSheet(1) { [] }
+        }
+
+        handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+            pathBinding([urn: URN])
+            uri "/?url=$SHEET_URL"
+        }).with {
+            assert status.code == 500
+            def ren = rendered(DefaultJsonRender).object
+            assert ren.status == 500
+            assert ren.deltaSheet.urnStr == URN
+            assert ren.deltaSheet.url == SHEET_URL
+            assert ren.errors == ["exp in sheet flow"]
+            assert !ren.result
+        }
+    }
 }

@@ -2,6 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.process.ProcessId
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
@@ -41,6 +42,9 @@ class DeltaService {
     @Autowired
     DeltaUrlHelper deltaUrlHelper
 
+    @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
+    String repositoryFileServiceUrl
+
     @Value('${octopus3.sourceservice.cadcsourceSheetServiceUrl}')
     String cadcsourceSheetServiceUrl
 
@@ -71,12 +75,16 @@ class DeltaService {
                 if (!success) {
                     def json = jsonSlurper.parse(response.responseBodyAsStream, "UTF-8")
                     sheetServiceResult.errors = json?.errors.collect { it.toString() }
+                } else {
+                    sheetServiceResult.with {
+                        jsonUrl = repositoryFileServiceUrl.replace(":urn", urnStr)
+                    }
                 }
                 sheetServiceResult
             }))
         }).onErrorReturn({
             log.error "error for $urnStr", it
-            def error = (it.message ?: it.cause?.message)?.toString()
+            def error = HandlerUtil.getErrorMessage(it)
             new SheetServiceResult(urn: urnStr, success: false, errors: [error])
         })
     }
