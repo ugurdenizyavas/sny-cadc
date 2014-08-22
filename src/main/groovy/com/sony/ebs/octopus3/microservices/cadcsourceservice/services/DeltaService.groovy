@@ -57,7 +57,7 @@ class DeltaService {
             URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
             urlMap[urn] = it
         }
-        log.info "parsed ${urlMap.size()} products for $delta"
+        log.info "parsed {} products for {}", urlMap.size(), delta
         delta.urlMap = urlMap
     }
 
@@ -94,7 +94,7 @@ class DeltaService {
         rx.Observable.from("starting").flatMap({
             deltaUrlHelper.createDeltaUrl(delta)
         }).flatMap({ String deltaUrl ->
-            log.info "getting delta for $deltaUrl"
+            log.info "getting delta for {}", deltaUrl
             cadcHttpClient.doGet(deltaUrl)
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response, "getting delta json from cadc", delta.errors)

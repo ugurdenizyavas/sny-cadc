@@ -48,7 +48,7 @@ class DeltaUrlHelper {
         } else {
             url = "$cadcUrl/changes/$locale?since=" + URLEncoder.encode(since, "UTF-8")
         }
-        log.info "url inner for locale $locale and since $since is $url"
+        log.info "url inner for locale {} and since {} is {}", locale, since, url
         url
     }
 
@@ -66,7 +66,7 @@ class DeltaUrlHelper {
 
     String getSkuFromUrl(String url) {
         def sku = url?.lastIndexOf('/') >= 0 && !url?.endsWith("/") ? url.substring(url.lastIndexOf('/') + 1) : null
-        log.debug "sku for $url is $sku"
+        log.trace "sku for {} is {}", url, sku
         sku
     }
 

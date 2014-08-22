@@ -76,7 +76,6 @@ class RequestValidator {
             URIBuilder uriBuilder
             try {
                 uriBuilder = new URIBuilder(url)
-                log.debug "$uriBuilder is {uriBuilder.toString()} for $url"
             } catch (e) {
                 log.error "invalid url value $url", e
                 return false

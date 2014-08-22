@@ -44,7 +44,7 @@ class SheetService {
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaSheet.errors)
         }).map({
-            log.info "$deltaSheet finished successfully"
+            log.info "{} finished successfully", deltaSheet
             "success"
         })
     }
