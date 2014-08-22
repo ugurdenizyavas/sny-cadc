@@ -15,7 +15,7 @@ import ratpack.groovy.handling.GroovyHandler
 
 import static ratpack.jackson.Jackson.json
 
-@Slf4j(value = "activity")
+@Slf4j(value = "activity", category = "activity")
 @Component
 @org.springframework.context.annotation.Lazy
 class DeltaFlowHandler extends GroovyHandler {
@@ -31,6 +31,7 @@ class DeltaFlowHandler extends GroovyHandler {
         context.with {
             Delta delta = new Delta(processId: new ProcessIdImpl(), publication: pathTokens.publication, locale: pathTokens.locale,
                     since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
+            activity.info "starting $delta"
 
             List sheetServiceResults = []
             List errors = validator.validateDelta(delta)
@@ -44,15 +45,17 @@ class DeltaFlowHandler extends GroovyHandler {
                     def endTime = new DateTime()
                     def timeStats = HandlerUtil.getTimeStats(startTime, endTime)
                     if (delta.errors) {
+                        activity.error "finished $delta with errors: $delta.errors"
                         response.status(500)
                         render json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
                     } else {
+                        activity.info "finished $delta with success"
                         response.status(200)
                         render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, sheetServiceResults), delta: delta)
                     }
                 }).subscribe({
                     sheetServiceResults << it
-                    activity.info "sheet result: $it"
+                    activity.debug "delta flow emitted: $it"
                 }, { e ->
                     delta.errors << HandlerUtil.getErrorMessage(e)
                     activity.error "error in $delta", e

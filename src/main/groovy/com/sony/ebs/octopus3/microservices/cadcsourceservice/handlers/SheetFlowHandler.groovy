@@ -12,7 +12,7 @@ import ratpack.groovy.handling.GroovyHandler
 
 import static ratpack.jackson.Jackson.json
 
-@Slf4j(value = "activity")
+@Slf4j(value = "activity", category = "activity")
 @Component
 @org.springframework.context.annotation.Lazy
 class SheetFlowHandler extends GroovyHandler {
@@ -27,6 +27,7 @@ class SheetFlowHandler extends GroovyHandler {
     protected void handle(GroovyContext context) {
         context.with {
             DeltaSheet deltaSheet = new DeltaSheet(urnStr: pathTokens.urn, url: request.queryParams.url, processId: request.queryParams.processId)
+            activity.debug "starting $deltaSheet"
 
             List result = []
             List errors = validator.validateDeltaSheet(deltaSheet)
@@ -37,15 +38,18 @@ class SheetFlowHandler extends GroovyHandler {
             } else {
                 sheetService.sheetFlow(deltaSheet).finallyDo({
                     if (deltaSheet.errors) {
+                        activity.error "finished $deltaSheet with errors: $deltaSheet.errors"
                         response.status(500)
                         render json(status: 500, errors: deltaSheet.errors, deltaSheet: deltaSheet)
                     } else {
+                        activity.debug "finished $deltaSheet with success"
                         response.status(200)
                         render json(status: 200, result: result, deltaSheet: deltaSheet)
                     }
                 }).subscribe({
-                    result << it?.toString()
-                    activity.info "$deltaSheet finished: $it"
+                    def flowResult = it?.toString()
+                    result << flowResult
+                    activity.debug "sheet flow for $deltaSheet emited: $flowResult"
                 }, { e ->
                     deltaSheet.errors << HandlerUtil.getErrorMessage(e)
                     activity.error "error in $deltaSheet", e

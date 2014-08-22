@@ -7,7 +7,7 @@ import com.sony.ebs.octopus3.commons.urn.URN
 import com.sony.ebs.octopus3.commons.urn.URNImpl
 import groovy.transform.ToString
 
-@ToString(includeNames = true, includePackage = false, ignoreNulls = true, excludes = ['errors','urlMap'])
+@ToString(includeNames = true, includePackage = false, ignoreNulls = true, includes = ['processId', 'publication', 'locale', 'since', 'cadcUrl'])
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class Delta {
 

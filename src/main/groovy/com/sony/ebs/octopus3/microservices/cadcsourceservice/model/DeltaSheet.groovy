@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import groovy.transform.ToString
 
-@ToString(includeNames = true, includePackage = false, ignoreNulls = true, excludes = ['errors'])
+@ToString(includeNames = true, includePackage = false, ignoreNulls = true, includes = ['processId', 'urnStr', 'url'])
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class DeltaSheet {
 
