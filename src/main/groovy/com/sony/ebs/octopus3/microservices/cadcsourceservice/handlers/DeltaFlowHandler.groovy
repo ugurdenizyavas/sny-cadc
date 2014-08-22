@@ -31,12 +31,12 @@ class DeltaFlowHandler extends GroovyHandler {
         context.with {
             Delta delta = new Delta(processId: new ProcessIdImpl(), publication: pathTokens.publication, locale: pathTokens.locale,
                     since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
-            activity.info "starting $delta"
+            activity.info "starting {}", delta
 
             List sheetServiceResults = []
             List errors = validator.validateDelta(delta)
             if (errors) {
-                activity.error "error validating $delta : $errors"
+                activity.error "error validating {} : {}", delta, errors
                 response.status(400)
                 render json(status: 400, errors: errors, delta: delta)
             } else {
@@ -45,17 +45,17 @@ class DeltaFlowHandler extends GroovyHandler {
                     def endTime = new DateTime()
                     def timeStats = HandlerUtil.getTimeStats(startTime, endTime)
                     if (delta.errors) {
-                        activity.error "finished $delta with errors: $delta.errors"
+                        activity.error "finished {} with errors: {}", delta, delta.errors
                         response.status(500)
                         render json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
                     } else {
-                        activity.info "finished $delta with success"
+                        activity.info "finished {} with success", delta
                         response.status(200)
                         render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, sheetServiceResults), delta: delta)
                     }
                 }).subscribe({
                     sheetServiceResults << it
-                    activity.debug "delta flow emitted: $it"
+                    activity.debug "delta flow emitted: {}", it
                 }, { e ->
                     delta.errors << HandlerUtil.getErrorMessage(e)
                     activity.error "error in $delta", e
