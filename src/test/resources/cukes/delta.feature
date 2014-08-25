@@ -19,6 +19,11 @@ Feature: Delta
     When I request delta of publication SCORE locale en_GB
     Then Delta for publication SCORE locale en_GB should get last modified date save error
 
+  Scenario: Delta flow with parse delta error
+    Given Cadc services for locale en_GB with parse delta error
+    When I request delta of publication SCORE locale en_GB
+    Then Delta for publication SCORE locale en_GB should get parse delta error
+
   Scenario: Delta flow with save errors
     Given Cadc services for locale en_GB with errors
     Given Repo services for publication SCORE locale en_GB with save errors

@@ -9,6 +9,7 @@ import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaUrnValue
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
+import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,17 +49,21 @@ class DeltaService {
     @Value('${octopus3.sourceservice.cadcsourceSheetServiceUrl}')
     String cadcsourceSheetServiceUrl
 
-    private def setUrlMap(Delta delta, InputStream feedInputStream) {
-        log.info "creating url map"
-        def json = jsonSlurper.parse(feedInputStream, "UTF-8")
-        def urlMap = [:]
-        json.skus[delta.locale].each {
-            def sku = deltaUrlHelper.getSkuFromUrl(it)
-            URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
-            urlMap[urn] = it
+    private def setUrlMap(Delta delta, InputStream feedInputStream) throws Exception {
+        try {
+            log.info "creating url map"
+            def json = jsonSlurper.parse(feedInputStream, "UTF-8")
+            def urlMap = [:]
+            json.skus[delta.locale].each {
+                def sku = deltaUrlHelper.getSkuFromUrl(it)
+                URN urn = new URNImpl(DeltaUrnValue.global_sku.toString(), [delta.publication, delta.locale, sku])
+                urlMap[urn] = it
+            }
+            log.info "parsed {} products for {}", urlMap.size(), delta
+            delta.urlMap = urlMap
+        } catch (JsonException e) {
+            throw new Exception("error parsing cadc delta json", e)
         }
-        log.info "parsed {} products for {}", urlMap.size(), delta
-        delta.urlMap = urlMap
     }
 
     private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String cadcUrl) {

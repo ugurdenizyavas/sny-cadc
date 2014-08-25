@@ -60,7 +60,7 @@ class DeltaServiceTest {
                 result.set(it)
             }, {
                 log.error "error in flow", it
-                result.set(["error"])
+                result.set([it.message])
             })
         }
         result.get()
@@ -122,7 +122,7 @@ class DeltaServiceTest {
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: '{"skus":{"en_GB":[]}}'))
             }
         }
-        def result = runFlow().sort()
+        def result = runFlow()
         assert result.size() == 0
     }
 
@@ -138,9 +138,53 @@ class DeltaServiceTest {
                 rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }
         }
-        def result = runFlow().sort()
+        def result = runFlow()
         assert result.size() == 0
         assert delta.errors == ["HTTP 500 error getting delta json from cadc"]
+    }
+
+    @Test
+    void "error parsing cadc delta json"() {
+        mockDeltaUrlHelper.demand.with {
+            createDeltaUrl(1) {
+                rx.Observable.just("http://cadc/delta")
+            }
+        }
+        mockHttpClient.demand.with {
+            doGet(1) { String url ->
+                assert url == "http://cadc/delta"
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: 'invalid json'))
+            }
+        }
+        def result = runFlow()
+        assert result == ["error parsing cadc delta json"]
+    }
+
+    @Test
+    void "error updating last modified date"() {
+        mockDeltaUrlHelper.demand.with {
+            updateLastModified(1) { Delta delta ->
+                rx.Observable.just("error").filter({
+                    delta.errors << "error updating last modified date"
+                    false
+                })
+            }
+            getSkuFromUrl(3) { String url ->
+                url.substring(url.size() - 1)
+            }
+            createDeltaUrl(1) {
+                rx.Observable.just("http://cadc/delta")
+            }
+        }
+        mockHttpClient.demand.with {
+            doGet(1) { String url ->
+                assert url == "http://cadc/delta"
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'))
+            }
+        }
+        def result = runFlow()
+        assert result.size() == 0
+        assert delta.errors == ["error updating last modified date"]
     }
 
     @Test

@@ -193,6 +193,22 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
     assert json.result.errors."HTTP 500 error getting sheet json from cadc" == [getCadcUrl("f")]
 }
 
+Given(~"Cadc services for locale (.*) with parse delta error") { String locale ->
+    server.get(by(uri("/delta/$locale"))).response('invalid json')
+}
+
+Then(~"Delta for publication (.*) locale (.*) should get parse delta error") { String publication, String locale ->
+    assert response.statusCode == 500
+    def json = parseJson(response)
+    assert json.status == 500
+    assert json.delta.publication == publication
+    assert json.delta.locale == locale
+
+    assert json.errors == ["error parsing cadc delta json"]
+    assert !json.result
+}
+
+
 When(~"I import delta with invalid (.*) parameter") { paramName ->
     if (paramName == "publication") {
         get("cadcsource/delta/publication/,,/locale/en_GB?cadcUrl=//host/skus")
