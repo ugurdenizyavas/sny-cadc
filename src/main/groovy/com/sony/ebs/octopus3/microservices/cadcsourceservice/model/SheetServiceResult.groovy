@@ -6,15 +6,16 @@ import groovy.transform.Sortable
 import groovy.transform.ToString
 
 @ToString(includeNames = true, includePackage = false, ignoreNulls = true)
-@Sortable(includes = ['urn', 'success', 'statusCode'])
-@EqualsAndHashCode(includes = ['urn', 'success', 'statusCode', 'errors', 'jsonUrl'])
+@Sortable(includes = ['urnStr', 'success', 'statusCode'])
+@EqualsAndHashCode(includes = ['urnStr', 'success', 'statusCode', 'errors', 'repoUrl'])
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class SheetServiceResult {
 
-    String urn
+    String urnStr
+    String cadcUrl
     int statusCode
     boolean success
     List errors
-    String jsonUrl
+    String repoUrl
 
 }

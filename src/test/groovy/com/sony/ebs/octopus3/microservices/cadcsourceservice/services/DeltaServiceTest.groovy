@@ -98,13 +98,13 @@ class DeltaServiceTest {
         delta.processId = new ProcessIdImpl("123")
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
-        assert result[1] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:b", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:b")
-        assert result[2] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
+        assert result[0] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
+        assert result[1] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:b", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:b")
+        assert result[2] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
 
-        assert result[0].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
-        assert result[1].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:b"
-        assert result[2].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
+        assert result[0].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
+        assert result[1].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:b"
+        assert result[2].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
     }
 
     @Test
@@ -174,13 +174,13 @@ class DeltaServiceTest {
         }
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
-        assert result[1] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:b", success: false, statusCode: 500, errors: ["err1", "err2"])
-        assert result[2] == new SheetServiceResult(urn: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, jsonUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
+        assert result[0] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
+        assert result[1] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:b", success: false, statusCode: 500, errors: ["err1", "err2"])
+        assert result[2] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
 
-        assert result[0].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
-        assert result[1].jsonUrl == null
-        assert result[2].jsonUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
+        assert result[0].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
+        assert result[1].repoUrl == null
+        assert result[2].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
     }
 
 }

@@ -61,23 +61,23 @@ class DeltaService {
         delta.urlMap = urlMap
     }
 
-    private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String sheetUrl) {
+    private rx.Observable<String> importSingleSheet(ProcessId processId, URN urn, String cadcUrl) {
         def urnStr = urn.toString()
 
         rx.Observable.from("starting").flatMap({
-            def importUrl = cadcsourceSheetServiceUrl.replace(":urn", urnStr) + "?url=$sheetUrl"
+            def importUrl = cadcsourceSheetServiceUrl.replace(":urn", urnStr) + "?url=$cadcUrl"
             if (processId?.id) importUrl += "&processId=${processId?.id}"
             localHttpClient.doGet(importUrl)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
                 boolean success = NingHttpClient.isSuccess(response)
-                def sheetServiceResult = new SheetServiceResult(urn: urnStr, success: success, statusCode: response.statusCode)
+                def sheetServiceResult = new SheetServiceResult(urnStr: urnStr, cadcUrl: cadcUrl, success: success, statusCode: response.statusCode)
                 if (!success) {
                     def json = jsonSlurper.parse(response.responseBodyAsStream, "UTF-8")
                     sheetServiceResult.errors = json?.errors.collect { it.toString() }
                 } else {
                     sheetServiceResult.with {
-                        jsonUrl = repositoryFileServiceUrl.replace(":urn", urnStr)
+                        repoUrl = repositoryFileServiceUrl.replace(":urn", urnStr)
                     }
                 }
                 sheetServiceResult
@@ -85,7 +85,7 @@ class DeltaService {
         }).onErrorReturn({
             log.error "error for $urnStr", it
             def error = HandlerUtil.getErrorMessage(it)
-            new SheetServiceResult(urn: urnStr, success: false, errors: [error])
+            new SheetServiceResult(urnStr: urnStr, cadcUrl: cadcUrl, success: false, errors: [error])
         })
     }
 
@@ -106,8 +106,8 @@ class DeltaService {
             deltaUrlHelper.updateLastModified(delta)
         }).flatMap({
             rx.Observable.merge(
-                    delta.urlMap?.collect { URN urn, String sheetUrl ->
-                        importSingleSheet(delta.processId, urn, sheetUrl)
+                    delta.urlMap?.collect { URN urn, String cadcUrl ->
+                        importSingleSheet(delta.processId, urn, cadcUrl)
                     }
                     , 30)
         })

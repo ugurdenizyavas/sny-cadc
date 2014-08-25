@@ -110,8 +110,8 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.result.stats."number of success" == 4
     assert json.result.stats."number of errors" == 0
 
-    def getXmlUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getXmlUrl("a"), getXmlUrl("b"), getXmlUrl("c"), getXmlUrl("d")]
+    def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
+    assert json.result.success?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get last modified date save error") { String publication, String locale ->
@@ -138,12 +138,25 @@ Then(~"Delta for publication (.*) locale (.*) should get cadc delta service erro
 
 
 Given(~"Cadc services for locale (.*) with errors") { String locale ->
-    def deltaFeed = '{"skus":{"' + locale + '":["http://localhost:12306/a", "http://localhost:12306/c", "http://localhost:12306/b", "http://localhost:12306/d"]}}'
+    def deltaFeed = '{ "skus" : {"' + locale + '''" : [
+                "http://localhost:12306/a",
+                "http://localhost:12306/b",
+                "http://localhost:12306/c",
+                "http://localhost:12306/d",
+                "http://localhost:12306/e",
+                "http://localhost:12306/f",
+                "http://localhost:12306/g"
+            ]
+        }}
+        '''
     server.get(by(uri("/delta/$locale"))).response(deltaFeed)
     server.get(by(uri("/a"))).response("a")
     server.get(by(uri("/b"))).response("b")
     server.get(by(uri("/c"))).response("c")
     server.get(by(uri("/d"))).response(status(404))
+    server.get(by(uri("/e"))).response("e")
+    server.get(by(uri("/f"))).response(status(500))
+    server.get(by(uri("/g"))).response(status(404))
 }
 
 Given(~"Repo services for publication (.*) locale (.*) with save errors") { String publication, String locale ->
@@ -154,6 +167,7 @@ Given(~"Repo services for publication (.*) locale (.*) with save errors") { Stri
     server.post(by(uri("/repository/file/urn:global_sku:$values:a"))).response(status(200))
     server.post(by(uri("/repository/file/urn:global_sku:$values:b"))).response(status(500))
     server.post(by(uri("/repository/file/urn:global_sku:$values:c"))).response(status(200))
+    server.post(by(uri("/repository/file/urn:global_sku:$values:e"))).response(status(500))
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get save errors") { String publication, String locale ->
@@ -165,17 +179,18 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
     assert json.delta.publication == publication
     assert json.delta.locale == locale
 
-    assert json.result.stats."number of delta products" == 4
+    assert json.result.stats."number of delta products" == 7
     assert json.result.stats."number of success" == 2
-    assert json.result.stats."number of errors" == 2
+    assert json.result.stats."number of errors" == 5
 
-    def getURN = { "urn:global_sku:$values:$it".toString() }
-    def getXmlUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getXmlUrl("a"), getXmlUrl("c")]
+    def getCadcUrl = { "http://localhost:12306/$it".toString() }
+    def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
+    assert json.result.success?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
 
-    assert json.result.errors?.size() == 2
-    assert json.result.errors."HTTP 500 error saving sheet json to repo" == [getURN("b")]
-    assert json.result.errors."HTTP 404 error getting sheet json from cadc" == [getURN("d")]
+    assert json.result.errors?.size() == 3
+    assert json.result.errors."HTTP 500 error saving sheet json to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
+    assert json.result.errors."HTTP 404 error getting sheet json from cadc"?.sort() == [getCadcUrl("d"), getCadcUrl("g")]
+    assert json.result.errors."HTTP 500 error getting sheet json from cadc" == [getCadcUrl("f")]
 }
 
 When(~"I import delta with invalid (.*) parameter") { paramName ->
