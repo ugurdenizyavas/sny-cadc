@@ -1,6 +1,6 @@
 # language: en
-Feature: Delta
-  Delta service should be in sync with data-source (CADC)
+Feature: Delta Service
+  Tests the delta service which gets the delta from CADC starts the import of changed sheets from CADC to Octopus3
 
   Scenario: Delta flow successful
     Given Cadc services for locale en_GB with no errors
@@ -46,16 +46,3 @@ Feature: Delta
     When I import delta with invalid since parameter
     Then Import should give since parameter error
 
-  Scenario: Sheet flow correct
-    Given Cadc sheet z1.ceh
-    Given Repo save service for publication SCORE locale en_GB sku z1.ceh
-    When I import sheet with publication SCORE locale en_GB sku z1.ceh correctly
-    Then Sheet with publication SCORE locale en_GB sku z1.ceh should be imported successful
-
-  Scenario: Sheet flow invalid urn
-    When I import sheet with invalid urn parameter
-    Then Import should give urn parameter error
-
-  Scenario: Sheet flow invalid url
-    When I import sheet with invalid url parameter
-    Then Import should give url parameter error
