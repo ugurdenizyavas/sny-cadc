@@ -99,6 +99,7 @@ class DeltaService {
         rx.Observable.from("starting").flatMap({
             deltaUrlHelper.createDeltaUrl(delta)
         }).flatMap({ String deltaUrl ->
+            delta.finalCadcUrl = deltaUrl
             log.info "getting delta for {}", deltaUrl
             cadcHttpClient.doGet(deltaUrl)
         }).filter({ Response response ->

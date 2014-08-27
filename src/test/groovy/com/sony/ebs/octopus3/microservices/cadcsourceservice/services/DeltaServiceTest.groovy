@@ -105,6 +105,8 @@ class DeltaServiceTest {
         assert result[0].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
         assert result[1].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:b"
         assert result[2].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
+
+        assert delta.finalCadcUrl == "http://cadc/delta"
     }
 
     @Test
@@ -124,6 +126,7 @@ class DeltaServiceTest {
         }
         def result = runFlow()
         assert result.size() == 0
+        assert delta.finalCadcUrl == "http://cadc/delta"
     }
 
     @Test
