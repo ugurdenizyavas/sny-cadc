@@ -97,10 +97,12 @@ class DeltaService {
     rx.Observable deltaFlow(Delta delta) {
 
         rx.Observable.from("starting").flatMap({
-            deltaUrlHelper.createDeltaUrl(delta)
+            deltaUrlHelper.createSinceValue(delta)
+        }).flatMap({ String since ->
+            delta.finalSince = since
+            deltaUrlHelper.createDeltaUrl(delta.cadcUrl, delta.locale, since)
         }).flatMap({ String deltaUrl ->
             delta.finalCadcUrl = deltaUrl
-            log.info "getting delta for {}", deltaUrl
             cadcHttpClient.doGet(deltaUrl)
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response, "getting delta json from cadc", delta.errors)

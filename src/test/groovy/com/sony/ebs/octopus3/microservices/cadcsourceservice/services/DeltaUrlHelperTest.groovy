@@ -130,7 +130,7 @@ class DeltaUrlHelperTest {
         assert deltaUrlHelper.getSkuFromUrl("aa/x1.c") == "x1.c"
     }
 
-    def runCreateDeltaUrl(String since) {
+    def runCreateSinceValue(String since) {
         deltaUrlHelper.fileAttributesProvider = mockFileAttributesProvider.proxyInstance()
 
         def delta = new Delta(publication: "SCORE", locale: "fr_BE", cadcUrl: "http://cadc", since: since)
@@ -138,7 +138,7 @@ class DeltaUrlHelperTest {
         def result = new BlockingVariable<String>(5)
         boolean valueSet = false
         execController.start {
-            deltaUrlHelper.createDeltaUrl(delta).subscribe({
+            deltaUrlHelper.createSinceValue(delta).subscribe({
                 valueSet = true
                 result.set(it)
             }, {
@@ -152,40 +152,74 @@ class DeltaUrlHelperTest {
     }
 
     @Test
-    void "create delta url lmt found"() {
+    void "create since with last modified time"() {
         mockFileAttributesProvider.demand.with {
             getLastModifiedTime(1) { URN urn ->
                 assert urn.toString() == "urn:global_sku:last_modified:score:fr_be"
                 rx.Observable.just(new FileAttribute(found: true, value: "s1"))
             }
         }
-        assert runCreateDeltaUrl(null) == "http://cadc/changes/fr_BE?since=s1"
+        assert runCreateSinceValue(null) == "s1"
     }
 
     @Test
-    void "create delta url lmt not found"() {
+    void "create since no last modified time"() {
         mockFileAttributesProvider.demand.with {
             getLastModifiedTime(1) { URN urn ->
                 assert urn.toString() == "urn:global_sku:last_modified:score:fr_be"
                 rx.Observable.just(new FileAttribute(found: false))
             }
         }
-        assert runCreateDeltaUrl(null) == "http://cadc/fr_BE"
+        assert runCreateSinceValue(null) == ""
     }
 
     @Test
-    void "create delta url since all"() {
-        assert runCreateDeltaUrl("All") == "http://cadc/fr_BE"
+    void "create delta with value"() {
+        assert runCreateSinceValue("2014-07-17T14:35:25.089+03:00") == "2014-07-17T14:35:25.089+03:00"
     }
 
     @Test
-    void "create delta url since value"() {
-        assert runCreateDeltaUrl("s2") == "http://cadc/changes/fr_BE?since=s2"
+    void "create since with value all"() {
+        assert runCreateSinceValue("All") == "All"
+    }
+
+    def runCreateDeltaUrl(String cadcUrl, String locale, String since) {
+        deltaUrlHelper.fileAttributesProvider = mockFileAttributesProvider.proxyInstance()
+
+        def result = new BlockingVariable<String>(5)
+        boolean valueSet = false
+        execController.start {
+            deltaUrlHelper.createDeltaUrl(cadcUrl, locale, since).subscribe({
+                valueSet = true
+                result.set(it)
+            }, {
+                log.error "error", it
+                result.set("error")
+            }, {
+                if (!valueSet) result.set("outOfFlow")
+            })
+        }
+        result.get()
     }
 
     @Test
-    void "create delta url since value encoding"() {
-        assert runCreateDeltaUrl("2014-07-17T14:35:25.089+03:00") == "http://cadc/changes/fr_BE?since=2014-07-17T14%3A35%3A25.089%2B03%3A00"
+    void "create delta url with since"() {
+        assert runCreateDeltaUrl("http://cadc/delta", "fr_BE", "s1") == "http://cadc/delta/changes/fr_BE?since=s1"
+    }
+
+    @Test
+    void "create delta url null since"() {
+        assert runCreateDeltaUrl("http://cadc/delta", "fr_BE", null) == "http://cadc/delta/fr_BE"
+    }
+
+    @Test
+    void "create delta url empty since"() {
+        assert runCreateDeltaUrl("http://cadc/delta", "fr_BE", "") == "http://cadc/delta/fr_BE"
+    }
+
+    @Test
+    void "create delta url since encoded"() {
+        assert runCreateDeltaUrl("http://cadc/delta", "fr_BE", "2014-07-17T14:35:25.089+03:00") == "http://cadc/delta/changes/fr_BE?since=2014-07-17T14%3A35%3A25.089%2B03%3A00"
     }
 
 }

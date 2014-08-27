@@ -13,8 +13,11 @@ import ratpack.groovy.test.TestHttpClients
 import com.jayway.restassured.response.Response
 
 import static com.github.dreamhead.moco.Moco.by
+import static com.github.dreamhead.moco.Moco.eq
+import static com.github.dreamhead.moco.Moco.query
 import static com.github.dreamhead.moco.Moco.uri
 import static com.github.dreamhead.moco.Moco.status
+import static com.github.dreamhead.moco.Moco.and
 import static com.github.dreamhead.moco.Moco.with
 
 this.metaClass.mixin(Hooks)
@@ -63,7 +66,9 @@ After() {
 
 Given(~"Cadc services for locale (.*) with no errors") { String locale ->
     def deltaFeed = '{"skus":{"' + locale + '":["http://localhost:12306/a", "http://localhost:12306/c", "http://localhost:12306/b", "http://localhost:12306/d"]}}'
-    server.get(by(uri("/delta/$locale"))).response(deltaFeed)
+
+    //server.get(and(by(uri("/delta/changes/$locale")), eq(query("since"), "2014-08-27T09%3A31%3A17.000%2B02%3A00"))).response(deltaFeed)
+    server.get(by(uri("/delta/changes/$locale"))).response(deltaFeed)
     server.get(by(uri("/a"))).response("a")
     server.get(by(uri("/b"))).response("b")
     server.get(by(uri("/c"))).response("c")
@@ -77,7 +82,7 @@ Given(~"Cadc delta service error for locale (.*)") { String locale ->
 Given(~"Repo services for publication (.*) locale (.*) with no errors") { String publication, String locale ->
     def values = "${publication.toLowerCase()}:${locale.toLowerCase()}"
 
-    server.get(by(uri("/repository/fileattributes/urn:global_sku:last_modified:$values"))).response(status(404))
+    server.get(by(uri("/repository/fileattributes/urn:global_sku:last_modified:$values"))).response(with('{"result" : { "lastModifiedTime" : "2014-08-27T09:31:17.000+02:00" }}'), status(200))
     server.post(by(uri("/repository/file/urn:global_sku:last_modified:$values"))).response(status(200))
     server.post(by(uri("/repository/file/urn:global_sku:$values:a"))).response(status(200))
     server.post(by(uri("/repository/file/urn:global_sku:$values:b"))).response(status(200))
@@ -88,7 +93,7 @@ Given(~"Repo services for publication (.*) locale (.*) with no errors") { String
 Given(~"Repo services for publication (.*) locale (.*) with last modified date save error") { String publication, String locale ->
     def values = "${publication.toLowerCase()}:${locale.toLowerCase()}"
 
-    server.get(by(uri("/repository/fileattributes/urn:global_sku:last_modified:$values"))).response(status(404))
+    server.get(by(uri("/repository/fileattributes/urn:global_sku:last_modified:$values"))).response(with('{"result" : { "lastModifiedTime" : "2014-08-27T09:31:17.000+02:00" }}'), status(200))
     server.post(by(uri("/repository/file/urn:global_sku:last_modified:$values"))).response(status(500))
 }
 
@@ -105,6 +110,8 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.delta.publication == publication
     assert json.delta.locale == locale
     assert json.delta.cadcUrl == "http://localhost:12306/delta"
+    assert json.delta.finalSince == "2014-08-27T09:31:17.000+02:00"
+    assert json.delta.finalCadcUrl == "http://localhost:12306/delta/changes/$locale?since=2014-08-27T09%3A31%3A17.000%2B02%3A00"
 
     assert json.result.stats."number of delta products" == 4
     assert json.result.stats."number of success" == 4

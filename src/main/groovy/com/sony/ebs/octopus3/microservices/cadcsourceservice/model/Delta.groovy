@@ -16,6 +16,8 @@ class Delta {
     String locale
     String since
     String cadcUrl
+
+    String finalSince
     String finalCadcUrl
 
     @JsonIgnore

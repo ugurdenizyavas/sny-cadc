@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import ratpack.exec.ExecControl
 
+import static ratpack.rx.RxRatpack.observe
+
 @Slf4j
 @Service
 @org.springframework.context.annotation.Lazy
@@ -41,25 +43,26 @@ class DeltaUrlHelper {
         })
     }
 
-    String createDeltaUrlInner(String cadcUrl, String locale, String since) {
-        def url
-        if (!since || since.equalsIgnoreCase("all")) {
-            url = "$cadcUrl/$locale"
-        } else {
-            url = "$cadcUrl/changes/$locale?since=" + URLEncoder.encode(since, "UTF-8")
-        }
-        log.info "url inner for locale {} and since {} is {}", locale, since, url
-        url
+    rx.Observable<String> createDeltaUrl(String cadcUrl, String locale, String since) {
+        observe(execControl.blocking({
+            def url
+            if (!since || since.equalsIgnoreCase("all")) {
+                url = "$cadcUrl/$locale"
+            } else {
+                url = "$cadcUrl/changes/$locale?since=" + URLEncoder.encode(since, "UTF-8")
+            }
+            log.info "url inner for locale {} and since {} is {}", locale, since, url
+            url
+        }))
     }
 
-    rx.Observable<String> createDeltaUrl(Delta delta) {
+    rx.Observable<String> createSinceValue(Delta delta) {
         if (delta.since) {
-            rx.Observable.just(createDeltaUrlInner(delta.cadcUrl, delta.locale, delta.since))
+            rx.Observable.just(delta.since)
         } else {
             fileAttributesProvider.getLastModifiedTime(delta.lastModifiedUrn)
-                    .flatMap({ result ->
-                String since = result.found ? result.value : null
-                rx.Observable.just(createDeltaUrlInner(delta.cadcUrl, delta.locale, since))
+                    .map({ result ->
+                result.found ? result.value : ""
             })
         }
     }
