@@ -4,7 +4,7 @@ import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransfor
 // PROJECT
 //======================================================================
 
-version = '1.0-SNAPSHOT'
+version = '1.0'
 group = 'com.sony.ebs.octopus3'
 
 //======================================================================
@@ -131,8 +131,8 @@ publishing {
 dependencies {
     sshAntTask 'org.apache.ant:ant-jsch:1.9.2'
 
-    compile 'com.sony.ebs.octopus3:octopus3-commons:1.1-SNAPSHOT'
-    compile 'com.sony.ebs.octopus3:octopus3-commons-ratpack:1.0-SNAPSHOT'
+    compile 'com.sony.ebs.octopus3:octopus3-commons:1.1'
+    compile 'com.sony.ebs.octopus3:octopus3-commons-ratpack:1.0'
     compile 'commons-io:commons-io:2.4'
 
     // cucumber
