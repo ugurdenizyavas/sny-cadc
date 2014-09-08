@@ -76,6 +76,7 @@ idea {
 
 run {
     systemProperty('environment', System.getProperty('environment'))
+    systemProperty('logDirectory', System.getProperty('logDirectory'))
     systemProperty('logback.configurationFile', System.getProperty('logback.configurationFile'))
 }
 test { systemProperty('environment', System.getProperty('environment')) }
