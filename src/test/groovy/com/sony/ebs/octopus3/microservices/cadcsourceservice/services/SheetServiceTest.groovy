@@ -61,17 +61,26 @@ class SheetServiceTest {
         result.get()
     }
 
+    def createSheetResponse(sku) {
+        """
+        {
+            "skuName" : "$sku"
+        }
+        """
+    }
 
     @Test
     void "success"() {
+        def sku = "p+p/p.ceh"
+        def sheetResponse = createSheetResponse(sku)
         mockNingHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "eee"))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p"
-                assert data.text == "eee"
+                assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
+                assert data.text == sheetResponse
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
@@ -80,14 +89,16 @@ class SheetServiceTest {
 
     @Test
     void "success with process id"() {
+        def sheetResponse = createSheetResponse("p")
         deltaSheet.processId = "123"
         mockNingHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "eee"))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
             doPost(1) { url, data ->
                 assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p?processId=123"
+                assert data.text == sheetResponse
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
@@ -108,13 +119,15 @@ class SheetServiceTest {
 
     @Test
     void "sheet could not be saved"() {
+        def sheetResponse = createSheetResponse("p")
         mockNingHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "eee"))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
             doPost(1) { url, data ->
                 assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p"
+                assert data.text == sheetResponse
                 rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }
         }

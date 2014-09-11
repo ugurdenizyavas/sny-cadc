@@ -21,15 +21,8 @@ class DeltaSheet {
     @JsonIgnore
     List errors = []
 
-    String getSkuFromUrl(String url) {
-        def sku = url?.lastIndexOf('/') >= 0 && !url?.endsWith("/") ? url.substring(url.lastIndexOf('/') + 1) : null
-        log.trace "sku for {} is {}", url, sku
-        sku
-    }
-
-    void assignUrnStr() {
-        def sku = getSkuFromUrl(url)
-        urnStr = new URNImpl(DeltaUrnValue.global_sku.toString(), [publication, locale, sku]).toString()
+    void assignUrnStr(String materialName) {
+        urnStr = new URNImpl(DeltaUrnValue.global_sku.toString(), [publication, locale, materialName]).toString()
     }
 
 }

@@ -65,15 +65,23 @@ After() {
 * ******************** DELTA SERVICE ***********************************************************
 * */
 
+def createSheetResponse(sku) {
+    """
+        {
+            "skuName" : "$sku"
+        }
+    """
+}
+
 Given(~"Cadc services for locale (.*) with no errors") { String locale ->
     def deltaFeed = '{"skus":{"' + locale + '":["http://localhost:12306/a", "http://localhost:12306/c", "http://localhost:12306/b", "http://localhost:12306/d"]}}'
 
     //server.get(and(by(uri("/delta/changes/$locale")), eq(query("since"), "2014-08-27T09%3A31%3A17.000%2B02%3A00"))).response(deltaFeed)
     server.get(by(uri("/delta/changes/$locale"))).response(deltaFeed)
-    server.get(by(uri("/a"))).response("a")
-    server.get(by(uri("/b"))).response("b")
-    server.get(by(uri("/c"))).response("c")
-    server.get(by(uri("/d"))).response("d")
+    server.get(by(uri("/a"))).response(createSheetResponse("a"))
+    server.get(by(uri("/b"))).response(createSheetResponse("b"))
+    server.get(by(uri("/c"))).response(createSheetResponse("c"))
+    server.get(by(uri("/d"))).response(createSheetResponse("d"))
 }
 
 Given(~"Cadc delta service error for locale (.*)") { String locale ->
@@ -158,11 +166,11 @@ Given(~"Cadc services for locale (.*) with errors") { String locale ->
         }}
         '''
     server.get(by(uri("/delta/$locale"))).response(deltaFeed)
-    server.get(by(uri("/a"))).response("a")
-    server.get(by(uri("/b"))).response("b")
-    server.get(by(uri("/c"))).response("c")
+    server.get(by(uri("/a"))).response(createSheetResponse("a"))
+    server.get(by(uri("/b"))).response(createSheetResponse("b"))
+    server.get(by(uri("/c"))).response(createSheetResponse("c"))
     server.get(by(uri("/d"))).response(status(404))
-    server.get(by(uri("/e"))).response("e")
+    server.get(by(uri("/e"))).response(createSheetResponse("e"))
     server.get(by(uri("/f"))).response(status(500))
     server.get(by(uri("/g"))).response(status(404))
 }
@@ -238,7 +246,7 @@ Then(~"Import should give (.*) parameter error") { paramName ->
 * */
 
 Given(~"Cadc sheet (.*)") { name ->
-    server.request(by(uri("/cadc/sheet/$name"))).response("sheet $name")
+    server.request(by(uri("/cadc/sheet/$name"))).response(createSheetResponse(name))
 }
 
 Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String publication, String locale, String sku ->
