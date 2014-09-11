@@ -8,9 +8,13 @@ Feature: Sheet Service
     When I import sheet with publication SCORE locale en_GB sku z1.ceh correctly
     Then Sheet with publication SCORE locale en_GB sku z1.ceh should be imported successful
 
-  Scenario: Sheet flow invalid urn
-    When I import sheet with invalid urn parameter
-    Then Import should give urn parameter error
+  Scenario: Sheet flow invalid publication
+    When I import sheet with invalid publication parameter
+    Then Import should give publication parameter error
+
+  Scenario: Sheet flow invalid locale
+    When I import sheet with invalid locale parameter
+    Then Import should give locale parameter error
 
   Scenario: Sheet flow invalid url
     When I import sheet with invalid url parameter

@@ -14,7 +14,8 @@ import static ratpack.groovy.test.GroovyUnitTest.handle
 
 class SheetFlowHandlerTest {
 
-    final static String URN = "urn:global_sku:score:en_gb:a"
+    final static String PUBLICATION = "SCORE"
+    final static String LOCALE = "en_GB"
     final static String SHEET_URL = "http://cadc/a"
 
     StubFor mockSheetService, mockRequestValidator
@@ -28,7 +29,8 @@ class SheetFlowHandlerTest {
     void runFlow(ProcessId processId, String processIdPostfix) {
         mockSheetService.demand.with {
             sheetFlow(1) { DeltaSheet deltaSheet ->
-                assert deltaSheet.urnStr == URN
+                assert deltaSheet.publication == PUBLICATION
+                assert deltaSheet.locale == LOCALE
                 assert deltaSheet.url == SHEET_URL
                 assert deltaSheet.processId == processId?.id
                 rx.Observable.from("xxx")
@@ -40,13 +42,14 @@ class SheetFlowHandlerTest {
         }
 
         handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
-            pathBinding([urn: URN])
+            pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$SHEET_URL$processIdPostfix"
         }).with {
             assert status.code == 200
             def ren = rendered(DefaultJsonRender).object
             assert ren.status == 200
-            assert ren.deltaSheet.urnStr == URN
+            assert ren.deltaSheet.publication == PUBLICATION
+            assert ren.deltaSheet.locale == LOCALE
             assert ren.deltaSheet.url == SHEET_URL
             assert ren.deltaSheet.processId == processId?.id
             assert ren.result == ["xxx"]
@@ -71,7 +74,7 @@ class SheetFlowHandlerTest {
         }
 
         handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
-            pathBinding([urn: URN])
+            pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/"
         }).with {
             assert status.code == 400
@@ -96,13 +99,14 @@ class SheetFlowHandlerTest {
         }
 
         handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
-            pathBinding([urn: URN])
+            pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$SHEET_URL"
         }).with {
             assert status.code == 500
             def ren = rendered(DefaultJsonRender).object
             assert ren.status == 500
-            assert ren.deltaSheet.urnStr == URN
+            assert ren.deltaSheet.publication == PUBLICATION
+            assert ren.deltaSheet.locale == LOCALE
             assert ren.deltaSheet.url == SHEET_URL
             assert ren.errors == ["error in sheet flow"]
             assert !ren.result
@@ -123,13 +127,14 @@ class SheetFlowHandlerTest {
         }
 
         handle(new SheetFlowHandler(sheetService: mockSheetService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
-            pathBinding([urn: URN])
+            pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$SHEET_URL"
         }).with {
             assert status.code == 500
             def ren = rendered(DefaultJsonRender).object
             assert ren.status == 500
-            assert ren.deltaSheet.urnStr == URN
+            assert ren.deltaSheet.publication == PUBLICATION
+            assert ren.deltaSheet.locale == LOCALE
             assert ren.deltaSheet.url == SHEET_URL
             assert ren.errors == ["exp in sheet flow"]
             assert !ren.result

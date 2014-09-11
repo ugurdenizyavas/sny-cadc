@@ -9,11 +9,13 @@ class RequestValidatorTest {
 
     RequestValidator validator
     Delta delta
+    DeltaSheet deltaSheet
 
     @Before
     void before() {
         validator = new RequestValidator()
         delta = new Delta(publication: "SCORE", locale: "en_GB", cadcUrl: "http://aaa/bbb", since: "2014-07-05T00:00:00.000Z")
+        deltaSheet = new DeltaSheet(publication: "SCORE", locale: "en_GB", url: "//a")
     }
 
     @Test
@@ -130,23 +132,25 @@ class RequestValidatorTest {
     }
 
     @Test
-    void "sheet valid"() {
-        assert !validator.validateDeltaSheet(new DeltaSheet(url: "//a", urnStr: "urn:a:b"))
+    void "validate sheet"() {
+        assert !validator.validateDeltaSheet(deltaSheet)
     }
 
     @Test
-    void "sheet url invalid"() {
-        assert validator.validateDeltaSheet(new DeltaSheet(url: "/a", urnStr: "urn:a:b")) == ["url parameter is invalid"]
+    void "validate sheet invalid url"() {
+        deltaSheet.url = "/a"
+        assert validator.validateDeltaSheet(deltaSheet) == ["url parameter is invalid"]
     }
 
     @Test
-    void "sheet urn invalid"() {
-        assert validator.validateDeltaSheet(new DeltaSheet(url: "//a", urnStr: "urn:a")) == ["urn parameter is invalid"]
+    void "validate sheet invalid publication"() {
+        deltaSheet.publication = null
+        assert validator.validateDeltaSheet(deltaSheet) == ["publication parameter is invalid"]
     }
 
     @Test
-    void "sheet urn no prefix"() {
-        assert validator.validateDeltaSheet(new DeltaSheet(url: "//a", urnStr: "a")) == ["urn parameter is invalid"]
+    void "validate sheet invalid locale"() {
+        deltaSheet.locale = null
+        assert validator.validateDeltaSheet(deltaSheet) == ["locale parameter is invalid"]
     }
-
 }

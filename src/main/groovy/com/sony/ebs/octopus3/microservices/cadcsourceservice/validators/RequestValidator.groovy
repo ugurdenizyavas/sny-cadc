@@ -15,26 +15,35 @@ import org.springframework.stereotype.Component
 @org.springframework.context.annotation.Lazy
 class RequestValidator {
 
+
+    void validatePublication(String publication, List errors) {
+        if (!(publication ==~ /[a-zA-Z0-9\-\_]+/)) {
+            errors << "publication parameter is invalid"
+        }
+    }
+
+    void validateLocale(String locale, List errors) {
+        try {
+            if (!locale) {
+                errors << "locale parameter is invalid"
+            } else {
+                LocaleUtils.toLocale(locale)
+            }
+        } catch (e) {
+            errors << "locale parameter is invalid"
+        }
+    }
+
     /**
      * Validates all delta params
      * @param delta
      * @return
      */
     List validateDelta(Delta delta) {
-        def errors = []
+        List errors = []
 
-        if (!(delta.publication ==~ /[a-zA-Z0-9\-\_]+/)) {
-            errors << "publication parameter is invalid"
-        }
-        try {
-            if (!delta.locale) {
-                errors << "locale parameter is invalid"
-            } else {
-                LocaleUtils.toLocale(delta.locale)
-            }
-        } catch (e) {
-            errors << "locale parameter is invalid"
-        }
+        validatePublication(delta.publication, errors)
+        validateLocale(delta.locale, errors)
         try {
             if (delta.since && !delta.since.equalsIgnoreCase("all")) {
                 ISODateUtils.toISODate(delta.since)
@@ -54,14 +63,11 @@ class RequestValidator {
      * @return
      */
     List validateDeltaSheet(DeltaSheet deltaSheet) {
-        def errors = []
+        List errors = []
+        validatePublication(deltaSheet.publication, errors)
+        validateLocale(deltaSheet.locale, errors)
         if (!validateUrl(deltaSheet.url)) {
             errors << "url parameter is invalid"
-        }
-        try {
-            new URNImpl(deltaSheet.urnStr)
-        } catch (e) {
-            errors << "urn parameter is invalid"
         }
         errors
     }

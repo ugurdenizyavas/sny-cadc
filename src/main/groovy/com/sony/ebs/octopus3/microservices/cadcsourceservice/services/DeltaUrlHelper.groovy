@@ -1,10 +1,14 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.file.FileAttributesProvider
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.urn.URN
+import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaUrnValue
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -66,12 +70,6 @@ class DeltaUrlHelper {
                 result.found ? result.value : ""
             })
         }
-    }
-
-    String getSkuFromUrl(String url) {
-        def sku = url?.lastIndexOf('/') >= 0 && !url?.endsWith("/") ? url.substring(url.lastIndexOf('/') + 1) : null
-        log.trace "sku for {} is {}", url, sku
-        sku
     }
 
 }

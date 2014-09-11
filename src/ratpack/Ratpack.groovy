@@ -40,7 +40,7 @@ ratpack {
 
     handlers {
         get("healthcheck", healthCheckHandler)
-        get("cadcsource/sheet/:urn", sheetFlowHandler)
+        get("cadcsource/sheet/publication/:publication/locale/:locale", sheetFlowHandler)
         get("cadcsource/delta/publication/:publication/locale/:locale", deltaFlowHandler)
     }
 }

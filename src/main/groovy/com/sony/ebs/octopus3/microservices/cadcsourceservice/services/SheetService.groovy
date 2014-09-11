@@ -37,6 +37,7 @@ class SheetService {
             NingHttpClient.isSuccess(response, "getting sheet json from cadc", deltaSheet.errors)
         }).flatMap({ Response response ->
             log.info "saving sheet"
+            deltaSheet.assignUrnStr()
             String postUrl = repositoryFileServiceUrl.replace(":urn", deltaSheet.urnStr)
             if (deltaSheet.processId) postUrl += "?processId=$deltaSheet.processId"
 

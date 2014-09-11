@@ -15,10 +15,10 @@ class DeltaFlowHandlerTest {
 
     StubFor mockDeltaService, mockValidator
 
-    def sheetResultA = new SheetServiceResult(urnStr: "a", cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
-    def sheetResultB = new SheetServiceResult(urnStr: "b", cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
-    def sheetResultC = new SheetServiceResult(urnStr: "c", cadcUrl: "//cadc/c", success: true, repoUrl: "//repo/file/c")
-    def sheetResultD = new SheetServiceResult(urnStr: "d", cadcUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
+    def sheetResultA = new SheetServiceResult(cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
+    def sheetResultB = new SheetServiceResult(cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
+    def sheetResultC = new SheetServiceResult(cadcUrl: "//cadc/c", success: true, repoUrl: "//repo/file/c")
+    def sheetResultD = new SheetServiceResult(cadcUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
 
     @Before
     void before() {
@@ -35,7 +35,7 @@ class DeltaFlowHandlerTest {
                 assert delta.locale == "en_GB"
                 assert delta.since == "2014"
                 assert delta.cadcUrl == "http://cadc/skus"
-                delta.urlMap = [a: "/a", b: "/b", c: "/c", d: "/d"]
+                delta.urlList = ["/a", "/b", "/c", "/d"]
                 rx.Observable.from([sheetResultC, sheetResultA, sheetResultD, sheetResultB])
             }
         }

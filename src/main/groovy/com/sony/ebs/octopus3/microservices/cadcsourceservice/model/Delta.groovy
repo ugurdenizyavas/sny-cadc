@@ -21,7 +21,7 @@ class Delta {
     String finalCadcUrl
 
     @JsonIgnore
-    Map urlMap
+    List urlList
 
     @JsonIgnore
     List errors = []

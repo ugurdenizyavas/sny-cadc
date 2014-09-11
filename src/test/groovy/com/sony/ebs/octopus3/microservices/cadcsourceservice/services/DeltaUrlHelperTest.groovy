@@ -100,36 +100,6 @@ class DeltaUrlHelperTest {
         assert runUpdateLastModified() == "error"
     }
 
-    @Test
-    void "get sku for null"() {
-        assert deltaUrlHelper.getSkuFromUrl(null) == null
-    }
-
-    @Test
-    void "get sku for empty str"() {
-        assert deltaUrlHelper.getSkuFromUrl("") == null
-    }
-
-    @Test
-    void "get sku for no slash"() {
-        assert deltaUrlHelper.getSkuFromUrl("aa") == null
-    }
-
-    @Test
-    void "get sku for no sku"() {
-        assert deltaUrlHelper.getSkuFromUrl("/") == null
-    }
-
-    @Test
-    void "get sku for only sku"() {
-        assert deltaUrlHelper.getSkuFromUrl("/x1.c") == "x1.c"
-    }
-
-    @Test
-    void "get sku for prefix and sku"() {
-        assert deltaUrlHelper.getSkuFromUrl("aa/x1.c") == "x1.c"
-    }
-
     def runCreateSinceValue(String since) {
         deltaUrlHelper.fileAttributesProvider = mockFileAttributesProvider.proxyInstance()
 

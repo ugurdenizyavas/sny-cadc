@@ -41,7 +41,8 @@ class DeltaServiceTest {
     @Before
     void before() {
         deltaService = new DeltaService(execControl: execController.control
-                , cadcsourceSheetServiceUrl: "http://flix/sheet/:urn", repositoryFileServiceUrl: "http://repo/file/:urn")
+                , cadcsourceSheetServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale"
+                , repositoryFileServiceUrl: "http://repo/file/:urn")
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
         mockHttpClient = new MockFor(NingHttpClient)
 
@@ -66,6 +67,36 @@ class DeltaServiceTest {
         result.get()
     }
 
+    def createDeltaResponse() {
+        """
+        {
+            "skus" : {
+                "en_GB" : [
+                    "http://cadc/a",
+                    "http://cadc/c",
+                    "http://cadc/b"
+                ]
+            }
+        }
+        """
+    }
+
+    def createSheetResponse(sku) {
+        """
+        {
+            "deltaSheet" : {
+                "urnStr" : "urn:global_sku:score:en_gb:$sku"
+            }
+        }
+        """
+    }
+
+    def getSkuFromUrl(url) {
+        def importUrl = new URIBuilder(url).queryParams[0].value
+        def sku = importUrl.substring(importUrl.size() - 1)
+        sku
+    }
+
     @Test
     void "success"() {
         mockDeltaUrlHelper.demand.with {
@@ -79,11 +110,6 @@ class DeltaServiceTest {
                 assert since == "s1"
                 rx.Observable.just("http://cadc/delta")
             }
-            getSkuFromUrl(3) { String url ->
-                def sku = url.substring(url.size() - 1)
-                assert url == "http://cadc/$sku"
-                sku
-            }
             updateLastModified(1) {
                 rx.Observable.just("done")
             }
@@ -92,26 +118,22 @@ class DeltaServiceTest {
         mockHttpClient.demand.with {
             doGet(1) { String url ->
                 assert url == "http://cadc/delta"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createDeltaResponse()))
             }
             doGet(3) { String url ->
-                def importUrl = new URIBuilder(url).queryParams[0].value
-                def sku = importUrl.substring(importUrl.size() - 1)
-                assert url.startsWith("http://flix/sheet/urn:global_sku:score:en_gb:$sku?url=http://cadc/$sku&processId=123")
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: "success"))
+                def sku = getSkuFromUrl(url)
+                assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http://cadc/$sku&processId=123"
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createSheetResponse(sku)))
             }
         }
 
         delta.processId = new ProcessIdImpl("123")
-        def result = runFlow().sort()
+        List<SheetServiceResult> result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
-        assert result[1] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:b", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:b")
-        assert result[2] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
 
-        assert result[0].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
-        assert result[1].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:b"
-        assert result[2].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
+        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
+        assert result[1] == new SheetServiceResult(cadcUrl: "http://cadc/b", repoUrl: "http://repo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
+        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"
@@ -195,9 +217,6 @@ class DeltaServiceTest {
                     false
                 })
             }
-            getSkuFromUrl(3) { String url ->
-                url.substring(url.size() - 1)
-            }
         }
         mockHttpClient.demand.with {
             doGet(1) { String url ->
@@ -219,11 +238,6 @@ class DeltaServiceTest {
             createDeltaUrl(1) { cadcUrl, locale, since ->
                 rx.Observable.just("http://cadc/delta")
             }
-            getSkuFromUrl(3) { String url ->
-                def sku = url.substring(url.size() - 1)
-                assert url == "http://cadc/$sku"
-                sku
-            }
             updateLastModified(1) {
                 rx.Observable.just("done")
             }
@@ -235,22 +249,20 @@ class DeltaServiceTest {
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'))
             }
             doGet(3) { String url ->
-                if (url.endsWith("/b")) {
+                def sku = getSkuFromUrl(url)
+                assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http://cadc/$sku"
+                if (sku == "b") {
                     rx.Observable.from(new MockNingResponse(_statusCode: 500, _responseBody: '{ "errors" : ["err1", "err2"]}'))
                 } else {
-                    rx.Observable.from(new MockNingResponse(_statusCode: 200))
+                    rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createSheetResponse(sku)))
                 }
             }
         }
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:a", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
-        assert result[1] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:b", success: false, statusCode: 500, errors: ["err1", "err2"])
-        assert result[2] == new SheetServiceResult(urnStr: "urn:global_sku:score:en_gb:c", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
-
-        assert result[0].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:a"
-        assert result[1].repoUrl == null
-        assert result[2].repoUrl == "http://repo/file/urn:global_sku:score:en_gb:c"
+        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
+        assert result[1] == new SheetServiceResult(cadcUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
+        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"

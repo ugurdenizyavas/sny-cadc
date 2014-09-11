@@ -26,7 +26,7 @@ class SheetFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            DeltaSheet deltaSheet = new DeltaSheet(urnStr: pathTokens.urn, url: request.queryParams.url, processId: request.queryParams.processId)
+            DeltaSheet deltaSheet = new DeltaSheet(publication: pathTokens.publication, locale: pathTokens.locale, url: request.queryParams.url, processId: request.queryParams.processId)
             activity.debug "starting {}", deltaSheet
 
             List result = []

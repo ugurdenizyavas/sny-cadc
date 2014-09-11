@@ -19,6 +19,7 @@ import static com.github.dreamhead.moco.Moco.uri
 import static com.github.dreamhead.moco.Moco.status
 import static com.github.dreamhead.moco.Moco.and
 import static com.github.dreamhead.moco.Moco.with
+import static com.github.dreamhead.moco.Moco.with
 
 this.metaClass.mixin(Hooks)
 this.metaClass.mixin(EN)
@@ -244,14 +245,11 @@ Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String p
     def publicationLC = publication.toLowerCase()
     def localeLC = locale.toLowerCase()
     def skuLC = sku.toLowerCase()
-    server.post(by(uri("/repository/file/urn:global_sku:$publicationLC:$localeLC:$skuLC"))).response("")
+    server.post(by(uri("/repository/file/urn:global_sku:$publicationLC:$localeLC:$skuLC"))).response(status(200))
 }
 
 When(~"I import sheet with publication (.*) locale (.*) sku (.*) correctly") { String publication, String locale, String sku ->
-    def publicationLC = publication.toLowerCase()
-    def localeLC = locale.toLowerCase()
-    def skuLC = sku.toLowerCase()
-    get("cadcsource/sheet/urn:global_sku:$publicationLC:$localeLC:$skuLC?url=http://localhost:12306/cadc/sheet/$sku")
+    get("cadcsource/sheet/publication/$publication/locale/$locale?url=http://localhost:12306/cadc/sheet/$sku")
 }
 
 Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported successful") { String publication, String locale, String sku ->
@@ -264,14 +262,18 @@ Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported succe
     assert json.status == 200
     assert json?.deltaSheet.urnStr == "urn:global_sku:$publicationLC:$localeLC:$skuLC"
     assert json?.deltaSheet.url == "http://localhost:12306/cadc/sheet/$sku"
+    assert json?.deltaSheet.publication == publication
+    assert json?.deltaSheet.locale == locale
     assert json.result == ["success"]
 }
 
 When(~"I import sheet with invalid (.*) parameter") { paramName ->
-    if (paramName == "urn") {
-        get("cadcsource/sheet/a?url=http://sheet/a")
+    if (paramName == "publication") {
+        get("cadcsource/sheet/publication/,,/locale/en_GB?url=http://sheet/a")
+    } else if (paramName == "locale") {
+        get("cadcsource/sheet/publication/SCORE/locale/--?url=http://sheet/a")
     } else if (paramName == "url") {
-        get("cadcsource/sheet/urn:global_sku:score:en_gb:a?url=/sheet/a")
+        get("cadcsource/sheet/publication/SCORE/locale/en_GB?url=/sheet/a")
     }
 }
 

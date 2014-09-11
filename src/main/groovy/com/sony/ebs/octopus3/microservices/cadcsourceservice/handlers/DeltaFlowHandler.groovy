@@ -80,7 +80,7 @@ class DeltaFlowHandler extends GroovyHandler {
         }
         [
                 stats  : [
-                        "number of delta products": delta.urlMap?.size(),
+                        "number of delta products": delta.urlList?.size(),
                         "number of success"       : sheetServiceResults?.findAll({
                             it.success
                         }).size(),
