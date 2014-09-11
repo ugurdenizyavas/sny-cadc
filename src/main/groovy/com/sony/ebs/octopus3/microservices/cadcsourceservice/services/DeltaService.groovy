@@ -9,6 +9,7 @@ import com.sony.ebs.octopus3.commons.urn.URNImpl
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaUrnValue
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.util.CadcSourceUtil
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
@@ -52,7 +53,7 @@ class DeltaService {
     private def setUrlMap(Delta delta, InputStream feedInputStream) throws Exception {
         try {
             log.info "creating url map"
-            def json = jsonSlurper.parse(feedInputStream, "UTF-8")
+            def json = jsonSlurper.parse(feedInputStream, CadcSourceUtil.CHARSET_STR)
             def urlMap = [:]
             json.skus[delta.locale].each {
                 def sku = deltaUrlHelper.getSkuFromUrl(it)
@@ -78,7 +79,7 @@ class DeltaService {
                 boolean success = NingHttpClient.isSuccess(response)
                 def sheetServiceResult = new SheetServiceResult(urnStr: urnStr, cadcUrl: cadcUrl, success: success, statusCode: response.statusCode)
                 if (!success) {
-                    def json = jsonSlurper.parse(response.responseBodyAsStream, "UTF-8")
+                    def json = jsonSlurper.parse(response.responseBodyAsStream, CadcSourceUtil.CHARSET_STR)
                     sheetServiceResult.errors = json?.errors.collect { it.toString() }
                 } else {
                     sheetServiceResult.with {
