@@ -1,10 +1,10 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import com.ning.http.client.Response
+import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.file.FileAttributesProvider
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.util.CadcSourceUtil
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -50,7 +50,7 @@ class DeltaUrlHelper {
             if (!since || since.equalsIgnoreCase("all")) {
                 url = "$cadcUrl/$locale"
             } else {
-                url = "$cadcUrl/changes/$locale?since=" + URLEncoder.encode(since, CadcSourceUtil.CHARSET_STR)
+                url = "$cadcUrl/changes/$locale?since=" + URLEncoder.encode(since, EncodingUtil.CHARSET_STR)
             }
             log.info "url inner for locale {} and since {} is {}", locale, since, url
             url
