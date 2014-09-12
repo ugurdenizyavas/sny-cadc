@@ -40,9 +40,6 @@ class DeltaService {
     @Autowired
     DeltaUrlHelper deltaUrlHelper
 
-    @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
-    String repositoryFileServiceUrl
-
     @Value('${octopus3.sourceservice.cadcsourceSheetServiceUrl}')
     String cadcsourceSheetServiceUrl
 
@@ -71,7 +68,7 @@ class DeltaService {
                     sheetServiceResult.errors = json?.errors.collect { it.toString() }
                 } else {
                     sheetServiceResult.with {
-                        repoUrl = repositoryFileServiceUrl.replace(":urn", json?.deltaSheet?.urnStr)
+                        repoUrl = json?.result?.repoUrl
                     }
                 }
                 sheetServiceResult

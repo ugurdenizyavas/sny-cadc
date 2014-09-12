@@ -40,9 +40,8 @@ class DeltaServiceTest {
 
     @Before
     void before() {
-        deltaService = new DeltaService(execControl: execController.control
-                , cadcsourceSheetServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale"
-                , repositoryFileServiceUrl: "http://repo/file/:urn")
+        deltaService = new DeltaService(execControl: execController.control,
+                cadcsourceSheetServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale")
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
         mockHttpClient = new MockFor(NingHttpClient)
 
@@ -84,8 +83,9 @@ class DeltaServiceTest {
     def createSheetResponse(sku) {
         """
         {
-            "deltaSheet" : {
-                "urnStr" : "urn:global_sku:score:en_gb:$sku"
+            "result" : {
+                "urn" : "urn:global_sku:score:en_gb:$sku",
+                "repoUrl" : "http://myrepo/file/urn:global_sku:score:en_gb:$sku"
             }
         }
         """
@@ -131,9 +131,9 @@ class DeltaServiceTest {
         List<SheetServiceResult> result = runFlow().sort()
         assert result.size() == 3
 
-        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
-        assert result[1] == new SheetServiceResult(cadcUrl: "http://cadc/b", repoUrl: "http://repo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
-        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
+        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
+        assert result[1] == new SheetServiceResult(cadcUrl: "http://cadc/b", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
+        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"
@@ -260,9 +260,9 @@ class DeltaServiceTest {
         }
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:a")
+        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a")
         assert result[1] == new SheetServiceResult(cadcUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
-        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", success: true, statusCode: 200, repoUrl: "http://repo/file/urn:global_sku:score:en_gb:c")
+        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c")
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"

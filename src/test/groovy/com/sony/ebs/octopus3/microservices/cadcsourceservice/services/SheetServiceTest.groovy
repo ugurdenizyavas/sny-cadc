@@ -18,7 +18,7 @@ class SheetServiceTest {
 
     SheetService sheetService
     StubFor mockNingHttpClient
-    String SAVE_REPO_URL = "http://cadcsource/save/:urn"
+    String SAVE_REPO_URL = "http://cadcsource/repo/:urn"
     DeltaSheet deltaSheet
 
     static ExecController execController
@@ -79,12 +79,12 @@ class SheetServiceTest {
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
+                assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
                 assert data.text == sheetResponse
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
-        assert runFlow() == "success"
+        assert runFlow() == [urn: "urn:global_sku:score:en_gb:p_2bp_2fp.ceh", repoUrl: "http://cadcsource/repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"]
     }
 
     @Test
@@ -97,12 +97,12 @@ class SheetServiceTest {
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p?processId=123"
+                assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p?processId=123"
                 assert data.text == sheetResponse
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
-        assert runFlow() == "success"
+        assert runFlow() == [urn: "urn:global_sku:score:en_gb:p", repoUrl: "http://cadcsource/repo/urn:global_sku:score:en_gb:p"]
     }
 
     @Test
@@ -126,7 +126,7 @@ class SheetServiceTest {
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/save/urn:global_sku:score:en_gb:p"
+                assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p"
                 assert data.text == sheetResponse
                 rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }

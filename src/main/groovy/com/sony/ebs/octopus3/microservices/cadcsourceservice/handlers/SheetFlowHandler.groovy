@@ -29,7 +29,7 @@ class SheetFlowHandler extends GroovyHandler {
             DeltaSheet deltaSheet = new DeltaSheet(publication: pathTokens.publication, locale: pathTokens.locale, url: request.queryParams.url, processId: request.queryParams.processId)
             activity.debug "starting {}", deltaSheet
 
-            List result = []
+            def result
             List errors = validator.validateDeltaSheet(deltaSheet)
             if (errors) {
                 activity.error "error validating {} : {}", deltaSheet, errors
@@ -47,9 +47,8 @@ class SheetFlowHandler extends GroovyHandler {
                         render json(status: 200, result: result, deltaSheet: deltaSheet)
                     }
                 }).subscribe({
-                    def flowResult = it?.toString()
-                    result << flowResult
-                    activity.debug "sheet flow for {} emitted: {}", deltaSheet, flowResult
+                    result = it
+                    activity.debug "sheet flow for {} emitted: {}", deltaSheet, result
                 }, { e ->
                     deltaSheet.errors << HandlerUtil.getErrorMessage(e)
                     activity.error "error in $deltaSheet", e

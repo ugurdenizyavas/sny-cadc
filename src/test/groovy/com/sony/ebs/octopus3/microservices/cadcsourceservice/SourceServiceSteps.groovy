@@ -264,15 +264,17 @@ Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported succe
     def publicationLC = publication.toLowerCase()
     def localeLC = locale.toLowerCase()
     def skuLC = sku.toLowerCase()
+    def skuUrn = "urn:global_sku:$publicationLC:$localeLC:$skuLC"
 
     assert response.statusCode == 200
     def json = parseJson(response)
     assert json.status == 200
-    assert json?.deltaSheet.urnStr == "urn:global_sku:$publicationLC:$localeLC:$skuLC"
-    assert json?.deltaSheet.url == "http://localhost:12306/cadc/sheet/$sku"
-    assert json?.deltaSheet.publication == publication
-    assert json?.deltaSheet.locale == locale
-    assert json.result == ["success"]
+    assert json?.deltaSheet?.urnStr == skuUrn
+    assert json?.deltaSheet?.url == "http://localhost:12306/cadc/sheet/$sku"
+    assert json?.deltaSheet?.publication == publication
+    assert json?.deltaSheet?.locale == locale
+    assert json?.result?.urn == skuUrn
+    assert json?.result?.repoUrl == "http://localhost:12306/repository/file/$skuUrn"
 }
 
 When(~"I import sheet with invalid (.*) parameter") { paramName ->

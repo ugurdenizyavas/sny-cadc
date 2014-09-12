@@ -52,7 +52,7 @@ class SheetFlowHandlerTest {
             assert ren.deltaSheet.locale == LOCALE
             assert ren.deltaSheet.url == SHEET_URL
             assert ren.deltaSheet.processId == processId?.id
-            assert ren.result == ["xxx"]
+            assert ren.result == "xxx"
         }
     }
 

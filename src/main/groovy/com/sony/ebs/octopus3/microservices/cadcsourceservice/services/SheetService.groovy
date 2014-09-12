@@ -52,6 +52,7 @@ class SheetService {
 
     rx.Observable<String> sheetFlow(DeltaSheet deltaSheet) {
         String jsonStr
+        String repoUrl
         rx.Observable.from("starting").flatMap({
             cadcHttpClient.doGet(deltaSheet.url)
         }).filter({ Response response ->
@@ -63,15 +64,16 @@ class SheetService {
                 deltaSheet.assignUrnStr(materialName)
             }))
         }).flatMap({
-            String postUrl = repositoryFileServiceUrl.replace(":urn", deltaSheet.urnStr)
-            if (deltaSheet.processId) postUrl += "?processId=$deltaSheet.processId"
+            repoUrl = repositoryFileServiceUrl.replace(":urn", deltaSheet.urnStr)
+            def repoSaveUrl = repoUrl
+            if (deltaSheet.processId) repoSaveUrl += "?processId=$deltaSheet.processId"
 
-            localHttpClient.doPost(postUrl, IOUtils.toInputStream(jsonStr, EncodingUtil.CHARSET))
+            localHttpClient.doPost(repoSaveUrl, IOUtils.toInputStream(jsonStr, EncodingUtil.CHARSET))
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaSheet.errors)
         }).map({
             log.info "{} finished successfully", deltaSheet
-            "success"
+            [urn: deltaSheet.urnStr, repoUrl: repoUrl]
         })
     }
 
