@@ -80,7 +80,7 @@ class SheetServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
-                assert data.text == sheetResponse
+                assert data == sheetResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
@@ -98,7 +98,7 @@ class SheetServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p?processId=123"
-                assert data.text == sheetResponse
+                assert data == sheetResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
@@ -127,7 +127,7 @@ class SheetServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p"
-                assert data.text == sheetResponse
+                assert data == sheetResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }
         }

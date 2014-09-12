@@ -40,9 +40,9 @@ class SheetService {
     @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
     String repositoryFileServiceUrl
 
-    String getMaterialName(String jsonStr) throws Exception {
+    String getMaterialName(byte[] jsonBytes) throws Exception {
         try {
-            def json = jsonSlurper.parseText(jsonStr)
+            def json = jsonSlurper.parse(new ByteArrayInputStream(jsonBytes), EncodingUtil.CHARSET_STR)
             def skuName = json.skuName
             MaterialNameEncoder.encode(skuName)
         } catch (JsonException e) {
@@ -51,7 +51,7 @@ class SheetService {
     }
 
     rx.Observable<String> sheetFlow(DeltaSheet deltaSheet) {
-        String jsonStr
+        byte[] jsonBytes
         String repoUrl
         rx.Observable.from("starting").flatMap({
             cadcHttpClient.doGet(deltaSheet.url)
@@ -59,8 +59,8 @@ class SheetService {
             NingHttpClient.isSuccess(response, "getting sheet json from cadc", deltaSheet.errors)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
-                jsonStr = IOUtils.toString(response.responseBodyAsStream, EncodingUtil.CHARSET)
-                def materialName = getMaterialName(jsonStr)
+                jsonBytes = response.responseBodyAsBytes
+                def materialName = getMaterialName(jsonBytes)
                 deltaSheet.assignUrnStr(materialName)
             }))
         }).flatMap({
@@ -68,7 +68,7 @@ class SheetService {
             def repoSaveUrl = repoUrl
             if (deltaSheet.processId) repoSaveUrl += "?processId=$deltaSheet.processId"
 
-            localHttpClient.doPost(repoSaveUrl, IOUtils.toInputStream(jsonStr, EncodingUtil.CHARSET))
+            localHttpClient.doPost(repoSaveUrl, jsonBytes)
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaSheet.errors)
         }).map({
