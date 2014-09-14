@@ -1,9 +1,10 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaItem
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -26,32 +27,33 @@ class SheetFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            DeltaSheet deltaSheet = new DeltaSheet(publication: pathTokens.publication, locale: pathTokens.locale, url: request.queryParams.url, processId: request.queryParams.processId)
-            activity.debug "starting {}", deltaSheet
+            DeltaItem deltaItem = new DeltaItem(type: DeltaType.global_sku, publication: pathTokens.publication,
+                    locale: pathTokens.locale, url: request.queryParams.url, processId: request.queryParams.processId)
+            activity.debug "starting {}", deltaItem
 
             def result
-            List errors = validator.validateDeltaSheet(deltaSheet)
+            List errors = validator.validateDeltaItem(deltaItem)
             if (errors) {
-                activity.error "error validating {} : {}", deltaSheet, errors
+                activity.error "error validating {} : {}", deltaItem, errors
                 response.status(400)
-                render json(status: 400, errors: errors, deltaSheet: deltaSheet)
+                render json(status: 400, errors: errors, deltaItem: deltaItem)
             } else {
-                sheetService.sheetFlow(deltaSheet).finallyDo({
-                    if (deltaSheet.errors) {
-                        activity.error "finished {} with errors: {}", deltaSheet, deltaSheet.errors
+                sheetService.sheetFlow(deltaItem).finallyDo({
+                    if (deltaItem.errors) {
+                        activity.error "finished {} with errors: {}", deltaItem, deltaItem.errors
                         response.status(500)
-                        render json(status: 500, errors: deltaSheet.errors, deltaSheet: deltaSheet)
+                        render json(status: 500, errors: deltaItem.errors, deltaItem: deltaItem)
                     } else {
-                        activity.debug "finished {} with success", deltaSheet
+                        activity.debug "finished {} with success", deltaItem
                         response.status(200)
-                        render json(status: 200, result: result, deltaSheet: deltaSheet)
+                        render json(status: 200, result: result, deltaItem: deltaItem)
                     }
                 }).subscribe({
                     result = it
-                    activity.debug "sheet flow for {} emitted: {}", deltaSheet, result
+                    activity.debug "sheet flow for {} emitted: {}", deltaItem, result
                 }, { e ->
-                    deltaSheet.errors << HandlerUtil.getErrorMessage(e)
-                    activity.error "error in $deltaSheet", e
+                    deltaItem.errors << HandlerUtil.getErrorMessage(e)
+                    activity.error "error in $deltaItem", e
                 })
             }
         }

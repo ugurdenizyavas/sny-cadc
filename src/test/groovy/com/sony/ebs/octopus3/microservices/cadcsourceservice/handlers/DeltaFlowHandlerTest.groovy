@@ -1,9 +1,9 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.mock.interceptor.StubFor
 import org.junit.Before
 import org.junit.Test

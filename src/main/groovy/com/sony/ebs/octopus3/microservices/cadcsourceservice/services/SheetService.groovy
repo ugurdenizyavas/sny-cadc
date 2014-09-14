@@ -4,12 +4,10 @@ import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.encoding.MaterialNameEncoder
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaItem
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -50,30 +48,30 @@ class SheetService {
         }
     }
 
-    rx.Observable<String> sheetFlow(DeltaSheet deltaSheet) {
+    rx.Observable<String> sheetFlow(DeltaItem deltaItem) {
         byte[] jsonBytes
         String repoUrl
         rx.Observable.from("starting").flatMap({
-            cadcHttpClient.doGet(deltaSheet.url)
+            cadcHttpClient.doGet(deltaItem.url)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting sheet json from cadc", deltaSheet.errors)
+            NingHttpClient.isSuccess(response, "getting sheet json from cadc", deltaItem.errors)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
                 jsonBytes = response.responseBodyAsBytes
                 def materialName = getMaterialName(jsonBytes)
-                deltaSheet.assignUrnStr(materialName)
+                deltaItem.assignUrnStr(materialName)
             }))
         }).flatMap({
-            repoUrl = repositoryFileServiceUrl.replace(":urn", deltaSheet.urnStr)
+            repoUrl = repositoryFileServiceUrl.replace(":urn", deltaItem.urnStr)
             def repoSaveUrl = repoUrl
-            if (deltaSheet.processId) repoSaveUrl += "?processId=$deltaSheet.processId"
+            if (deltaItem.processId) repoSaveUrl += "?processId=$deltaItem.processId"
 
             localHttpClient.doPost(repoSaveUrl, jsonBytes)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaSheet.errors)
+            NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaItem.errors)
         }).map({
-            log.info "{} finished successfully", deltaSheet
-            [urn: deltaSheet.urnStr, repoUrl: repoUrl]
+            log.info "{} finished successfully", deltaItem
+            [urn: deltaItem.urnStr, repoUrl: repoUrl]
         })
     }
 

@@ -269,10 +269,10 @@ Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported succe
     assert response.statusCode == 200
     def json = parseJson(response)
     assert json.status == 200
-    assert json?.deltaSheet?.urnStr == skuUrn
-    assert json?.deltaSheet?.url == "http://localhost:12306/cadc/sheet/$sku"
-    assert json?.deltaSheet?.publication == publication
-    assert json?.deltaSheet?.locale == locale
+    assert json?.deltaItem?.urnStr == skuUrn
+    assert json?.deltaItem?.url == "http://localhost:12306/cadc/sheet/$sku"
+    assert json?.deltaItem?.publication == publication
+    assert json?.deltaItem?.locale == locale
     assert json?.result?.urn == skuUrn
     assert json?.result?.repoUrl == "http://localhost:12306/repository/file/$skuUrn"
 }

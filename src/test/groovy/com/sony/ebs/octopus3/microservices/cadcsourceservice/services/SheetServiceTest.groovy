@@ -2,7 +2,8 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
 
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.MockNingResponse
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaSheet
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaItem
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.junit.AfterClass
@@ -19,7 +20,7 @@ class SheetServiceTest {
     SheetService sheetService
     StubFor mockNingHttpClient
     String SAVE_REPO_URL = "http://cadcsource/repo/:urn"
-    DeltaSheet deltaSheet
+    DeltaItem deltaItem
 
     static ExecController execController
 
@@ -37,7 +38,7 @@ class SheetServiceTest {
     void before() {
         sheetService = new SheetService(repositoryFileServiceUrl: SAVE_REPO_URL, execControl: execController.control)
         mockNingHttpClient = new StubFor(NingHttpClient)
-        deltaSheet = new DeltaSheet(publication: "SCORE", locale: "en_GB", url: "http://cadc/p")
+        deltaItem = new DeltaItem(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p")
     }
 
     def runFlow() {
@@ -48,7 +49,7 @@ class SheetServiceTest {
         def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
-            sheetService.sheetFlow(deltaSheet).subscribe({
+            sheetService.sheetFlow(deltaItem).subscribe({
                 valueSet = true
                 result.set(it)
             }, {
@@ -90,7 +91,7 @@ class SheetServiceTest {
     @Test
     void "success with process id"() {
         def sheetResponse = createSheetResponse("p")
-        deltaSheet.processId = "123"
+        deltaItem.processId = "123"
         mockNingHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
@@ -114,7 +115,7 @@ class SheetServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert deltaSheet.errors == ["HTTP 404 error getting sheet json from cadc"]
+        assert deltaItem.errors == ["HTTP 404 error getting sheet json from cadc"]
     }
 
     @Test
@@ -132,7 +133,7 @@ class SheetServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert deltaSheet.errors == ["HTTP 500 error saving sheet json to repo"]
+        assert deltaItem.errors == ["HTTP 500 error saving sheet json to repo"]
     }
 
 }

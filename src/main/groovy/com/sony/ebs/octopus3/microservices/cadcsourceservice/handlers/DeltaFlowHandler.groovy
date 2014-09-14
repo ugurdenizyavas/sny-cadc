@@ -2,10 +2,11 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.Delta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.validators.RequestValidator
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,8 +30,8 @@ class DeltaFlowHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            Delta delta = new Delta(processId: new ProcessIdImpl(), publication: pathTokens.publication, locale: pathTokens.locale,
-                    since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
+            Delta delta = new Delta(type: DeltaType.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
+                    locale: pathTokens.locale, since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
             activity.info "starting {}", delta
 
             List sheetServiceResults = []
