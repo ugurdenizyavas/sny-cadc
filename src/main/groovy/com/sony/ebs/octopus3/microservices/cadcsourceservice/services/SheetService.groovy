@@ -58,11 +58,10 @@ class SheetService {
         }).flatMap({ Response response ->
             observe(execControl.blocking({
                 jsonBytes = response.responseBodyAsBytes
-                def materialName = getMaterialName(jsonBytes)
-                deltaItem.assignUrnStr(materialName)
+                deltaItem.materialName = getMaterialName(jsonBytes)
             }))
         }).flatMap({
-            repoUrl = repositoryFileServiceUrl.replace(":urn", deltaItem.urnStr)
+            repoUrl = repositoryFileServiceUrl.replace(":urn", deltaItem.urn?.toString())
             def repoSaveUrl = repoUrl
             if (deltaItem.processId) repoSaveUrl += "?processId=$deltaItem.processId"
 
@@ -71,7 +70,7 @@ class SheetService {
             NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaItem.errors)
         }).map({
             log.info "{} finished successfully", deltaItem
-            [urn: deltaItem.urnStr, repoUrl: repoUrl]
+            [urn: deltaItem.urn?.toString(), repoUrl: repoUrl]
         })
     }
 
