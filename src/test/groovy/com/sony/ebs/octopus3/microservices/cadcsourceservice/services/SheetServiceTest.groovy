@@ -84,7 +84,7 @@ class SheetServiceTest {
         }
         mockLocalHttpClient.demand.with {
             doGet(1) {
-                assert it == "http://repo/copy/source/urn:global_sku:score:en_gb:p_2bp_2fp.ceh/destination/urn:global_sku:old_json:score:en_gb:p_2bp_2fp.ceh?processId=123"
+                assert it == "http://repo/copy/source/urn:global_sku:score:en_gb:p_2bp_2fp.ceh/destination/urn:global_sku:previous:score:en_gb:p_2bp_2fp.ceh?processId=123"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
             doPost(1) { url, data ->
@@ -119,7 +119,7 @@ class SheetServiceTest {
         }
         mockLocalHttpClient.demand.with {
             doGet(1) {
-                assert it == "http://repo/copy/source/urn:global_sku:score:en_gb:p/destination/urn:global_sku:old_json:score:en_gb:p?processId=123"
+                assert it == "http://repo/copy/source/urn:global_sku:score:en_gb:p/destination/urn:global_sku:previous:score:en_gb:p?processId=123"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
             doPost(1) { url, data ->

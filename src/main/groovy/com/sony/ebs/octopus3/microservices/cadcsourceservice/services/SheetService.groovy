@@ -76,7 +76,7 @@ class SheetService {
         }).flatMap({
             String copyUrl = repositoryCopyServiceUrl
                     .replace(":source", deltaItem.urn?.toString())
-                    .replace(":destination", deltaItem.getUrnForSubType(DeltaType.old_json)?.toString())
+                    .replace(":destination", deltaItem.getUrnForSubType(DeltaType.previous)?.toString())
             localHttpClient.doGet(getUrlWithProcessId(copyUrl, deltaItem.processId))
         }).flatMap({
             repoUrl = repositoryFileServiceUrl.replace(":urn", deltaItem.urn?.toString())
