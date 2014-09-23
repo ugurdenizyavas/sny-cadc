@@ -6,7 +6,7 @@ import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaItemServiceResult
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
@@ -41,7 +41,7 @@ class DeltaServiceTest {
     @Before
     void before() {
         deltaService = new DeltaService(execControl: execController.control,
-                cadcsourceSheetServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale")
+                cadcsourceDeltaItemServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale")
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
         mockCadcHttpClient = new StubFor(NingHttpClient)
         mockLocalHttpClient = new StubFor(NingHttpClient)
@@ -80,7 +80,7 @@ class DeltaServiceTest {
         """
     }
 
-    def createSheetResponse(sku) {
+    def createDeltaItemResponse(sku) {
         """
         {
             "result" : {
@@ -123,17 +123,17 @@ class DeltaServiceTest {
             doGet(3) { String url ->
                 def sku = getSkuFromUrl(url)
                 assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku&processId=123"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createSheetResponse(sku)))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createDeltaItemResponse(sku)))
             }
         }
 
         delta.processId = new ProcessIdImpl("123")
-        List<SheetServiceResult> result = runFlow().sort()
+        List<DeltaItemServiceResult> result = runFlow().sort()
         assert result.size() == 3
 
-        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
-        assert result[1] == new SheetServiceResult(cadcUrl: "http://cadc/b", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
-        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
+        assert result[0] == new DeltaItemServiceResult(cadcUrl: "http://cadc/a", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
+        assert result[1] == new DeltaItemServiceResult(cadcUrl: "http://cadc/b", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
+        assert result[2] == new DeltaItemServiceResult(cadcUrl: "http://cadc/c", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"
@@ -230,7 +230,7 @@ class DeltaServiceTest {
     }
 
     @Test
-    void "one sheet is not imported"() {
+    void "one delta item is not imported"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
                 rx.Observable.just("s1")
@@ -255,15 +255,15 @@ class DeltaServiceTest {
                 if (sku == "b") {
                     rx.Observable.from(new MockNingResponse(_statusCode: 500, _responseBody: '{ "errors" : ["err1", "err2"]}'))
                 } else {
-                    rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createSheetResponse(sku)))
+                    rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createDeltaItemResponse(sku)))
                 }
             }
         }
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new SheetServiceResult(cadcUrl: "http://cadc/a", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a")
-        assert result[1] == new SheetServiceResult(cadcUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
-        assert result[2] == new SheetServiceResult(cadcUrl: "http://cadc/c", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c")
+        assert result[0] == new DeltaItemServiceResult(cadcUrl: "http://cadc/a", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a")
+        assert result[1] == new DeltaItemServiceResult(cadcUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
+        assert result[2] == new DeltaItemServiceResult(cadcUrl: "http://cadc/c", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c")
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"

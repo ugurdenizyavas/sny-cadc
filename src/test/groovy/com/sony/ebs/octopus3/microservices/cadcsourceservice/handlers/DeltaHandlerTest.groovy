@@ -2,7 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaItemServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import groovy.mock.interceptor.StubFor
 import org.junit.Before
@@ -11,14 +11,14 @@ import ratpack.jackson.internal.DefaultJsonRender
 
 import static ratpack.groovy.test.GroovyUnitTest.handle
 
-class DeltaFlowHandlerTest {
+class DeltaHandlerTest {
 
     StubFor mockDeltaService, mockValidator
 
-    def sheetResultA = new SheetServiceResult(cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
-    def sheetResultB = new SheetServiceResult(cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
-    def sheetResultC = new SheetServiceResult(cadcUrl: "//cadc/c", success: true, repoUrl: "//repo/file/c")
-    def sheetResultD = new SheetServiceResult(cadcUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
+    def deltaItemResultA = new DeltaItemServiceResult(cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
+    def deltaItemResultB = new DeltaItemServiceResult(cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
+    def deltaItemResultC = new DeltaItemServiceResult(cadcUrl: "//cadc/c", success: true, repoUrl: "//repo/file/c")
+    def deltaItemResultD = new DeltaItemServiceResult(cadcUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
 
     @Before
     void before() {
@@ -36,7 +36,7 @@ class DeltaFlowHandlerTest {
                 assert delta.since == "2014"
                 assert delta.cadcUrl == "http://cadc/skus"
                 delta.urlList = ["/a", "/b", "/c", "/d"]
-                rx.Observable.from([sheetResultC, sheetResultA, sheetResultD, sheetResultB])
+                rx.Observable.from([deltaItemResultC, deltaItemResultA, deltaItemResultD, deltaItemResultB])
             }
         }
 
@@ -44,7 +44,7 @@ class DeltaFlowHandlerTest {
             validateDelta(1) { [] }
         }
 
-        handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }).with {
@@ -75,7 +75,7 @@ class DeltaFlowHandlerTest {
         mockValidator.demand.with {
             validateDelta(1) { ["error"] }
         }
-        handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
             pathBinding([locale: "en_GB"])
             uri "/"
         }).with {
@@ -101,7 +101,7 @@ class DeltaFlowHandlerTest {
             validateDelta(1) { [] }
         }
 
-        handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }).with {
@@ -128,7 +128,7 @@ class DeltaFlowHandlerTest {
             validateDelta(1) { [] }
         }
 
-        handle(new DeltaFlowHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }).with {

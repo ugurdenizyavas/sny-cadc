@@ -5,7 +5,7 @@ import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.SheetServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaItemServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
@@ -19,7 +19,7 @@ import static ratpack.jackson.Jackson.json
 @Slf4j(value = "activity", category = "activity")
 @Component
 @org.springframework.context.annotation.Lazy
-class DeltaFlowHandler extends GroovyHandler {
+class DeltaHandler extends GroovyHandler {
 
     @Autowired
     DeltaService deltaService
@@ -34,7 +34,7 @@ class DeltaFlowHandler extends GroovyHandler {
                     locale: pathTokens.locale, since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
             activity.info "starting {}", delta
 
-            List sheetServiceResults = []
+            List deltaItemServiceResults = []
             List errors = validator.validateDelta(delta)
             if (errors) {
                 activity.error "error validating {} : {}", delta, errors
@@ -52,10 +52,10 @@ class DeltaFlowHandler extends GroovyHandler {
                     } else {
                         activity.info "finished {} with success", delta
                         response.status(200)
-                        render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, sheetServiceResults), delta: delta)
+                        render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, deltaItemServiceResults), delta: delta)
                     }
                 }).subscribe({
-                    sheetServiceResults << it
+                    deltaItemServiceResults << it
                     activity.debug "delta flow emitted: {}", it
                 }, { e ->
                     delta.errors << HandlerUtil.getErrorMessage(e)
@@ -65,13 +65,13 @@ class DeltaFlowHandler extends GroovyHandler {
         }
     }
 
-    Map createDeltaResult(Delta delta, List sheetServiceResults) {
+    Map createDeltaResult(Delta delta, List deltaItemServiceResults) {
         def createSuccess = {
-            sheetServiceResults.findAll({ it.success }).collect({ it.repoUrl })
+            deltaItemServiceResults.findAll({ it.success }).collect({ it.repoUrl })
         }
         def createErrors = {
             Map errorMap = [:]
-            sheetServiceResults.findAll({ !it.success }).each { SheetServiceResult serviceResult ->
+            deltaItemServiceResults.findAll({ !it.success }).each { DeltaItemServiceResult serviceResult ->
                 serviceResult.errors.each { error ->
                     if (errorMap[error] == null) errorMap[error] = []
                     errorMap[error] << serviceResult.cadcUrl
@@ -82,10 +82,10 @@ class DeltaFlowHandler extends GroovyHandler {
         [
                 stats  : [
                         "number of delta products": delta.urlList?.size(),
-                        "number of success"       : sheetServiceResults?.findAll({
+                        "number of success"       : deltaItemServiceResults?.findAll({
                             it.success
                         }).size(),
-                        "number of errors"        : sheetServiceResults?.findAll({
+                        "number of errors"        : deltaItemServiceResults?.findAll({
                             !it.success
                         }).size()
                 ],

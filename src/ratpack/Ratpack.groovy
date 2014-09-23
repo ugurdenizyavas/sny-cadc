@@ -17,8 +17,8 @@ Logger log = LoggerFactory.getLogger("ratpack");
 
 ratpack {
 
-    SheetFlowHandler sheetFlowHandler
-    DeltaFlowHandler deltaFlowHandler
+    DeltaItemHandler deltaItemHandler
+    DeltaHandler deltaHandler
     HealthCheckHandler healthCheckHandler
 
     bindings {
@@ -32,15 +32,15 @@ ratpack {
             ctx.beanFactory.registerSingleton "launchConfig", launchConfig
             ctx.beanFactory.registerSingleton "execControl", launchConfig.execController.control
 
-            deltaFlowHandler = ctx.getBean(DeltaFlowHandler.class)
-            sheetFlowHandler = ctx.getBean(SheetFlowHandler.class)
+            deltaHandler = ctx.getBean(DeltaHandler.class)
+            deltaItemHandler = ctx.getBean(DeltaItemHandler.class)
             healthCheckHandler = new HealthCheckHandler(monitoringService: new MonitoringService())
         }
     }
 
     handlers {
         get("healthcheck", healthCheckHandler)
-        get("cadcsource/sheet/publication/:publication/locale/:locale", sheetFlowHandler)
-        get("cadcsource/delta/publication/:publication/locale/:locale", deltaFlowHandler)
+        get("cadcsource/sheet/publication/:publication/locale/:locale", deltaItemHandler)
+        get("cadcsource/delta/publication/:publication/locale/:locale", deltaHandler)
     }
 }

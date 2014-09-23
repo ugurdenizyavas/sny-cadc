@@ -101,33 +101,6 @@ shadowJar {
     }
 }
 
-publishing {
-    publications {
-        shadow(MavenPublication) {
-            from components.shadow
-            artifactId = "${project.name}-app"
-        }
-    }
-    repositories {
-        maven {
-            credentials {
-                username project.getProperty('nexusUsername')
-                password project.getProperty('nexusPassword')
-            }
-            name = "releases"
-            url = "https://mvn.sony-europe.com/content/repositories/releases"
-        }
-        maven {
-            credentials {
-                username project.getProperty('nexusUsername')
-                password project.getProperty('nexusPassword')
-            }
-            name = "snapshots"
-            url = "https://mvn.sony-europe.com/content/repositories/snapshots"
-        }
-    }
-}
-
 //======================================================================
 // DEPENDENCIES
 //======================================================================

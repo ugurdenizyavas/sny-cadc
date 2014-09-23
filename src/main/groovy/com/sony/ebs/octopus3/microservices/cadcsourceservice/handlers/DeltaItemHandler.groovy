@@ -4,7 +4,7 @@ import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaItem
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.SheetService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaItemService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
@@ -16,10 +16,10 @@ import static ratpack.jackson.Jackson.json
 @Slf4j(value = "activity", category = "activity")
 @Component
 @org.springframework.context.annotation.Lazy
-class SheetFlowHandler extends GroovyHandler {
+class DeltaItemHandler extends GroovyHandler {
 
     @Autowired
-    SheetService sheetService
+    DeltaItemService deltaItemService
 
     @Autowired
     RequestValidator validator
@@ -38,7 +38,7 @@ class SheetFlowHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, errors: errors, deltaItem: deltaItem)
             } else {
-                sheetService.sheetFlow(deltaItem).finallyDo({
+                deltaItemService.deltaItemFlow(deltaItem).finallyDo({
                     if (deltaItem.errors) {
                         activity.error "finished {} with errors: {}", deltaItem, deltaItem.errors
                         response.status(500)
@@ -50,7 +50,7 @@ class SheetFlowHandler extends GroovyHandler {
                     }
                 }).subscribe({
                     result = it
-                    activity.debug "sheet flow for {} emitted: {}", deltaItem, result
+                    activity.debug "delta item flow for {} emitted: {}", deltaItem, result
                 }, { e ->
                     deltaItem.errors << HandlerUtil.getErrorMessage(e)
                     activity.error "error in $deltaItem", e

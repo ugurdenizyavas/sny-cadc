@@ -21,7 +21,7 @@ import static ratpack.rx.RxRatpack.observe
 @Slf4j
 @Service
 @org.springframework.context.annotation.Lazy
-class SheetService {
+class DeltaItemService {
 
     final JsonSlurper jsonSlurper = new JsonSlurper()
 
@@ -61,7 +61,7 @@ class SheetService {
         urlBuilder.toString()
     }
 
-    rx.Observable<String> sheetFlow(DeltaItem deltaItem) {
+    rx.Observable<String> deltaItemFlow(DeltaItem deltaItem) {
         byte[] jsonBytes
         String repoUrl
         rx.Observable.just("starting").flatMap({

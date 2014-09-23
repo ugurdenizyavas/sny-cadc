@@ -5,7 +5,6 @@ import com.github.dreamhead.moco.Moco
 import com.github.dreamhead.moco.Runner
 import cucumber.api.groovy.EN
 import cucumber.api.groovy.Hooks
-import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import ratpack.groovy.test.LocalScriptApplicationUnderTest
 import ratpack.groovy.test.TestHttpClient
@@ -13,12 +12,8 @@ import ratpack.groovy.test.TestHttpClients
 import com.jayway.restassured.response.Response
 
 import static com.github.dreamhead.moco.Moco.by
-import static com.github.dreamhead.moco.Moco.eq
-import static com.github.dreamhead.moco.Moco.query
 import static com.github.dreamhead.moco.Moco.uri
 import static com.github.dreamhead.moco.Moco.status
-import static com.github.dreamhead.moco.Moco.and
-import static com.github.dreamhead.moco.Moco.with
 import static com.github.dreamhead.moco.Moco.with
 
 this.metaClass.mixin(Hooks)
@@ -65,7 +60,7 @@ After() {
 * ******************** DELTA SERVICE ***********************************************************
 * */
 
-def createSheetResponse(sku) {
+def createDeltaItemResponse(sku) {
     """
         {
             "skuName" : "$sku"
@@ -78,10 +73,10 @@ Given(~"Cadc services for locale (.*) with no errors") { String locale ->
 
     //server.get(and(by(uri("/delta/changes/$locale")), eq(query("since"), "2014-08-27T09%3A31%3A17.000%2B02%3A00"))).response(deltaFeed)
     server.get(by(uri("/delta/changes/$locale"))).response(deltaFeed)
-    server.get(by(uri("/a"))).response(createSheetResponse("a"))
-    server.get(by(uri("/b"))).response(createSheetResponse("b"))
-    server.get(by(uri("/c"))).response(createSheetResponse("c"))
-    server.get(by(uri("/d"))).response(createSheetResponse("d"))
+    server.get(by(uri("/a"))).response(createDeltaItemResponse("a"))
+    server.get(by(uri("/b"))).response(createDeltaItemResponse("b"))
+    server.get(by(uri("/c"))).response(createDeltaItemResponse("c"))
+    server.get(by(uri("/d"))).response(createDeltaItemResponse("d"))
 }
 
 Given(~"Cadc delta service error for locale (.*)") { String locale ->
@@ -171,11 +166,11 @@ Given(~"Cadc services for locale (.*) with errors") { String locale ->
         }}
         '''
     server.get(by(uri("/delta/$locale"))).response(deltaFeed)
-    server.get(by(uri("/a"))).response(createSheetResponse("a"))
-    server.get(by(uri("/b"))).response(createSheetResponse("b"))
-    server.get(by(uri("/c"))).response(createSheetResponse("c"))
+    server.get(by(uri("/a"))).response(createDeltaItemResponse("a"))
+    server.get(by(uri("/b"))).response(createDeltaItemResponse("b"))
+    server.get(by(uri("/c"))).response(createDeltaItemResponse("c"))
     server.get(by(uri("/d"))).response(status(404))
-    server.get(by(uri("/e"))).response(createSheetResponse("e"))
+    server.get(by(uri("/e"))).response(createDeltaItemResponse("e"))
     server.get(by(uri("/f"))).response(status(500))
     server.get(by(uri("/g"))).response(status(404))
 }
@@ -256,7 +251,7 @@ Then(~"Import should give (.*) parameter error") { paramName ->
 * */
 
 Given(~"Cadc sheet (.*)") { name ->
-    server.request(by(uri("/cadc/sheet/$name"))).response(createSheetResponse(name))
+    server.request(by(uri("/cadc/sheet/$name"))).response(createDeltaItemResponse(name))
 }
 
 Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String publication, String locale, String sku ->

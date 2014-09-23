@@ -15,9 +15,9 @@ import ratpack.launch.LaunchConfigBuilder
 import spock.util.concurrent.BlockingVariable
 
 @Slf4j
-class SheetServiceTest {
+class DeltaItemServiceTest {
 
-    SheetService sheetService
+    DeltaItemService deltaItemService
     StubFor mockLocalHttpClient, mockCadcHttpClient
     DeltaItem deltaItem
 
@@ -35,7 +35,7 @@ class SheetServiceTest {
 
     @Before
     void before() {
-        sheetService = new SheetService(execControl: execController.control,
+        deltaItemService = new DeltaItemService(execControl: execController.control,
                 repositoryFileServiceUrl: "http://repo/:urn",
                 repositoryCopyServiceUrl: "http://repo/copy/source/:source/destination/:destination"
         )
@@ -45,13 +45,13 @@ class SheetServiceTest {
     }
 
     def runFlow() {
-        sheetService.cadcHttpClient = mockCadcHttpClient.proxyInstance()
-        sheetService.localHttpClient = mockLocalHttpClient.proxyInstance()
+        deltaItemService.cadcHttpClient = mockCadcHttpClient.proxyInstance()
+        deltaItemService.localHttpClient = mockLocalHttpClient.proxyInstance()
 
         def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
-            sheetService.sheetFlow(deltaItem).subscribe({
+            deltaItemService.deltaItemFlow(deltaItem).subscribe({
                 valueSet = true
                 result.set(it)
             }, {
@@ -64,7 +64,7 @@ class SheetServiceTest {
         result.get()
     }
 
-    def createSheetResponse(sku) {
+    def createDeltaItemResponse(sku) {
         """
         {
             "skuName" : "$sku"
@@ -75,11 +75,11 @@ class SheetServiceTest {
     @Test
     void "success"() {
         def sku = "p+p/p.ceh"
-        def sheetResponse = createSheetResponse(sku)
+        def deltaItemResponse = createDeltaItemResponse(sku)
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: deltaItemResponse))
             }
         }
         mockLocalHttpClient.demand.with {
@@ -89,7 +89,7 @@ class SheetServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh?processId=123"
-                assert data == sheetResponse?.getBytes("UTF-8")
+                assert data == deltaItemResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
@@ -97,7 +97,7 @@ class SheetServiceTest {
     }
 
     @Test
-    void "sheet not found"() {
+    void "delta item not found"() {
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
@@ -109,12 +109,12 @@ class SheetServiceTest {
     }
 
     @Test
-    void "sheet could not be saved"() {
-        def sheetResponse = createSheetResponse("p")
+    void "delta item could not be saved"() {
+        def deltaItemResponse = createDeltaItemResponse("p")
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: deltaItemResponse))
             }
         }
         mockLocalHttpClient.demand.with {
@@ -124,7 +124,7 @@ class SheetServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://repo/urn:global_sku:score:en_gb:p?processId=123"
-                assert data == sheetResponse?.getBytes("UTF-8")
+                assert data == deltaItemResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }
         }
