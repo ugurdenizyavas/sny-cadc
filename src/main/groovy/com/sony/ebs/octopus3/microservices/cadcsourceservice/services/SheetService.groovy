@@ -5,9 +5,11 @@ import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.encoding.MaterialNameEncoder
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaItem
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
+import org.apache.http.client.utils.URIBuilder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -38,6 +40,9 @@ class SheetService {
     @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
     String repositoryFileServiceUrl
 
+    @Value('${octopus3.sourceservice.repositoryCopyServiceUrl}')
+    String repositoryCopyServiceUrl
+
     String getMaterialName(byte[] jsonBytes) throws Exception {
         try {
             def json = jsonSlurper.parse(new ByteArrayInputStream(jsonBytes), EncodingUtil.CHARSET_STR)
@@ -46,6 +51,14 @@ class SheetService {
         } catch (JsonException e) {
             throw new Exception("error parsing cadc delta json", e)
         }
+    }
+
+    def getUrlWithProcessId = { String url, String processId ->
+        def urlBuilder = new URIBuilder(url)
+        if (processId) {
+            urlBuilder.addParameter("processId", processId)
+        }
+        urlBuilder.toString()
     }
 
     rx.Observable<String> sheetFlow(DeltaItem deltaItem) {
@@ -61,11 +74,13 @@ class SheetService {
                 deltaItem.materialName = getMaterialName(jsonBytes)
             }))
         }).flatMap({
+            String copyUrl = repositoryCopyServiceUrl
+                    .replace(":source", deltaItem.urn?.toString())
+                    .replace(":destination", deltaItem.getUrnForSubType(DeltaType.old_json)?.toString())
+            localHttpClient.doGet(getUrlWithProcessId(copyUrl, deltaItem.processId))
+        }).flatMap({
             repoUrl = repositoryFileServiceUrl.replace(":urn", deltaItem.urn?.toString())
-            def repoSaveUrl = repoUrl
-            if (deltaItem.processId) repoSaveUrl += "?processId=$deltaItem.processId"
-
-            localHttpClient.doPost(repoSaveUrl, jsonBytes)
+            localHttpClient.doPost(getUrlWithProcessId(repoUrl, deltaItem.processId), jsonBytes)
         }).filter({ Response response ->
             NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaItem.errors)
         }).map({

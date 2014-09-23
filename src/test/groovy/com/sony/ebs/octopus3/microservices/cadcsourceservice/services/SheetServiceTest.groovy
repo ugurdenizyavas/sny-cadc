@@ -18,8 +18,7 @@ import spock.util.concurrent.BlockingVariable
 class SheetServiceTest {
 
     SheetService sheetService
-    StubFor mockNingHttpClient
-    String SAVE_REPO_URL = "http://cadcsource/repo/:urn"
+    StubFor mockLocalHttpClient, mockCadcHttpClient
     DeltaItem deltaItem
 
     static ExecController execController
@@ -36,15 +35,18 @@ class SheetServiceTest {
 
     @Before
     void before() {
-        sheetService = new SheetService(repositoryFileServiceUrl: SAVE_REPO_URL, execControl: execController.control)
-        mockNingHttpClient = new StubFor(NingHttpClient)
-        deltaItem = new DeltaItem(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p")
+        sheetService = new SheetService(execControl: execController.control,
+                repositoryFileServiceUrl: "http://repo/:urn",
+                repositoryCopyServiceUrl: "http://repo/copy/source/:source/destination/:destination"
+        )
+        mockLocalHttpClient = new StubFor(NingHttpClient)
+        mockCadcHttpClient = new StubFor(NingHttpClient)
+        deltaItem = new DeltaItem(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
     }
 
     def runFlow() {
-        sheetService.localHttpClient = mockNingHttpClient.proxyInstance()
-        sheetService.cadcHttpClient = mockNingHttpClient.proxyInstance()
-
+        sheetService.cadcHttpClient = mockCadcHttpClient.proxyInstance()
+        sheetService.localHttpClient = mockLocalHttpClient.proxyInstance()
 
         def result = new BlockingVariable(5)
         boolean valueSet = false
@@ -74,41 +76,29 @@ class SheetServiceTest {
     void "success"() {
         def sku = "p+p/p.ceh"
         def sheetResponse = createSheetResponse(sku)
-        mockNingHttpClient.demand.with {
+        mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
-            doPost(1) { url, data ->
-                assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
-                assert data == sheetResponse?.getBytes("UTF-8")
-                rx.Observable.from(new MockNingResponse(_statusCode: 200))
-            }
         }
-        assert runFlow() == [urn: "urn:global_sku:score:en_gb:p_2bp_2fp.ceh", repoUrl: "http://cadcsource/repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"]
-    }
-
-    @Test
-    void "success with process id"() {
-        def sheetResponse = createSheetResponse("p")
-        deltaItem.processId = "123"
-        mockNingHttpClient.demand.with {
+        mockLocalHttpClient.demand.with {
             doGet(1) {
-                assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
+                assert it == "http://repo/copy/source/urn:global_sku:score:en_gb:p_2bp_2fp.ceh/destination/urn:global_sku:old_json:score:en_gb:p_2bp_2fp.ceh?processId=123"
+                rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p?processId=123"
+                assert url == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh?processId=123"
                 assert data == sheetResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
-        assert runFlow() == [urn: "urn:global_sku:score:en_gb:p", repoUrl: "http://cadcsource/repo/urn:global_sku:score:en_gb:p"]
+        assert runFlow() == [urn: "urn:global_sku:score:en_gb:p_2bp_2fp.ceh", repoUrl: "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"]
     }
 
     @Test
     void "sheet not found"() {
-        mockNingHttpClient.demand.with {
+        mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
                 rx.Observable.from(new MockNingResponse(_statusCode: 404))
@@ -121,13 +111,19 @@ class SheetServiceTest {
     @Test
     void "sheet could not be saved"() {
         def sheetResponse = createSheetResponse("p")
-        mockNingHttpClient.demand.with {
+        mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
                 rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: sheetResponse))
             }
+        }
+        mockLocalHttpClient.demand.with {
+            doGet(1) {
+                assert it == "http://repo/copy/source/urn:global_sku:score:en_gb:p/destination/urn:global_sku:old_json:score:en_gb:p?processId=123"
+                rx.Observable.from(new MockNingResponse(_statusCode: 200))
+            }
             doPost(1) { url, data ->
-                assert url == "http://cadcsource/repo/urn:global_sku:score:en_gb:p"
+                assert url == "http://repo/urn:global_sku:score:en_gb:p?processId=123"
                 assert data == sheetResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }
