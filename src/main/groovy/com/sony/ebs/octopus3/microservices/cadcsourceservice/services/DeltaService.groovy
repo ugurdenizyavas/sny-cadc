@@ -68,7 +68,7 @@ class DeltaService {
         deltaItemServiceResult
     }
 
-    rx.Observable<Object> doSingleDeltaItem(Delta delta, String cadcUrl) {
+    private rx.Observable<Object> doDeltaItem(Delta delta, String cadcUrl) {
         rx.Observable.just("starting").flatMap({
             def initialUrl = cadcsourceDeltaItemServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
             def urlBuilder = new URIBuilder(initialUrl)
@@ -107,7 +107,7 @@ class DeltaService {
         }).flatMap({
             deltaUrlHelper.updateLastModified(lastModifiedUrn, delta.errors)
         }).flatMap({
-            def list = delta.urlList.collect({ doSingleDeltaItem(delta, it) })
+            def list = delta.urlList.collect({ doDeltaItem(delta, it) })
             rx.Observable.merge(list, 30)
         })
     }
