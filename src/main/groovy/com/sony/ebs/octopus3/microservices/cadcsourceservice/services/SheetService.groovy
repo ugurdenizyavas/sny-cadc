@@ -49,7 +49,7 @@ class SheetService {
             def skuName = json.skuName
             MaterialNameEncoder.encode(skuName)
         } catch (JsonException e) {
-            throw new Exception("error parsing cadc delta json", e)
+            throw new Exception("error parsing delta", e)
         }
     }
 
@@ -64,10 +64,10 @@ class SheetService {
     rx.Observable<String> sheetFlow(DeltaItem deltaItem) {
         byte[] jsonBytes
         String repoUrl
-        rx.Observable.from("starting").flatMap({
+        rx.Observable.just("starting").flatMap({
             cadcHttpClient.doGet(deltaItem.url)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting sheet json from cadc", deltaItem.errors)
+            NingHttpClient.isSuccess(response, "getting sheet from cadc", deltaItem.errors)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
                 jsonBytes = response.responseBodyAsBytes
@@ -82,7 +82,7 @@ class SheetService {
             repoUrl = repositoryFileServiceUrl.replace(":urn", deltaItem.urn?.toString())
             localHttpClient.doPost(getUrlWithProcessId(repoUrl, deltaItem.processId), jsonBytes)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "saving sheet json to repo", deltaItem.errors)
+            NingHttpClient.isSuccess(response, "saving sheet to repo", deltaItem.errors)
         }).map({
             log.info "{} finished successfully", deltaItem
             [urn: deltaItem.urn?.toString(), repoUrl: repoUrl]

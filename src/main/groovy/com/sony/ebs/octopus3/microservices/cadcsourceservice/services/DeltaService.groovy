@@ -50,7 +50,7 @@ class DeltaService {
             log.debug "delta urls: {}", list
             list
         } catch (JsonException e) {
-            throw new Exception("error parsing cadc delta json", e)
+            throw new Exception("error parsing delta", e)
         }
     }
 
@@ -68,8 +68,8 @@ class DeltaService {
         sheetServiceResult
     }
 
-    rx.Observable<Object> importSingleSheet(Delta delta, String cadcUrl) {
-        rx.Observable.from("starting").flatMap({
+    rx.Observable<Object> doSingleSheet(Delta delta, String cadcUrl) {
+        rx.Observable.just("starting").flatMap({
             def initialUrl = cadcsourceSheetServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
             def urlBuilder = new URIBuilder(initialUrl)
             urlBuilder.addParameter("url", cadcUrl)
@@ -90,7 +90,7 @@ class DeltaService {
 
     rx.Observable<Object> deltaFlow(Delta delta) {
         def lastModifiedUrn = delta.lastModifiedUrn
-        rx.Observable.from("starting").flatMap({
+        rx.Observable.just("starting").flatMap({
             deltaUrlHelper.createSinceValue(delta.since, lastModifiedUrn)
         }).flatMap({ String since ->
             delta.finalSince = since
@@ -99,7 +99,7 @@ class DeltaService {
             delta.finalCadcUrl = deltaUrl
             cadcHttpClient.doGet(deltaUrl)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting delta json from cadc", delta.errors)
+            NingHttpClient.isSuccess(response, "getting delta from cadc", delta.errors)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
                 delta.urlList = parseDelta(delta.locale, response.responseBodyAsStream)
@@ -107,7 +107,7 @@ class DeltaService {
         }).flatMap({
             deltaUrlHelper.updateLastModified(lastModifiedUrn, delta.errors)
         }).flatMap({
-            def list = delta.urlList.collect({ importSingleSheet(delta, it) })
+            def list = delta.urlList.collect({ doSingleSheet(delta, it) })
             rx.Observable.merge(list, 30)
         })
     }

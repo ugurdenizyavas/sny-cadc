@@ -153,7 +153,7 @@ Then(~"Delta for publication (.*) locale (.*) should get cadc delta service erro
     assert json.delta.publication == publication
     assert json.delta.locale == locale
 
-    assert json.errors == ["HTTP 500 error getting delta json from cadc"]
+    assert json.errors == ["HTTP 500 error getting delta from cadc"]
     assert !json.result
 }
 
@@ -214,9 +214,9 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
     assert json.result.success?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
 
     assert json.result.errors?.size() == 3
-    assert json.result.errors."HTTP 500 error saving sheet json to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
-    assert json.result.errors."HTTP 404 error getting sheet json from cadc"?.sort() == [getCadcUrl("d"), getCadcUrl("g")]
-    assert json.result.errors."HTTP 500 error getting sheet json from cadc" == [getCadcUrl("f")]
+    assert json.result.errors."HTTP 500 error saving sheet to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
+    assert json.result.errors."HTTP 404 error getting sheet from cadc"?.sort() == [getCadcUrl("d"), getCadcUrl("g")]
+    assert json.result.errors."HTTP 500 error getting sheet from cadc" == [getCadcUrl("f")]
 }
 
 Given(~"Cadc services for locale (.*) with parse delta error") { String locale ->
@@ -230,7 +230,7 @@ Then(~"Delta for publication (.*) locale (.*) should get parse delta error") { S
     assert json.delta.publication == publication
     assert json.delta.locale == locale
 
-    assert json.errors == ["error parsing cadc delta json"]
+    assert json.errors == ["error parsing delta"]
     assert !json.result
 }
 

@@ -105,7 +105,7 @@ class SheetServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert deltaItem.errors == ["HTTP 404 error getting sheet json from cadc"]
+        assert deltaItem.errors == ["HTTP 404 error getting sheet from cadc"]
     }
 
     @Test
@@ -129,7 +129,7 @@ class SheetServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert deltaItem.errors == ["HTTP 500 error saving sheet json to repo"]
+        assert deltaItem.errors == ["HTTP 500 error saving sheet to repo"]
     }
 
 }

@@ -179,11 +179,11 @@ class DeltaServiceTest {
         }
         def result = runFlow()
         assert result.size() == 0
-        assert delta.errors == ["HTTP 500 error getting delta json from cadc"]
+        assert delta.errors == ["HTTP 500 error getting delta from cadc"]
     }
 
     @Test
-    void "error parsing cadc delta json"() {
+    void "error parsing delta"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
                 rx.Observable.just("s1")
@@ -199,7 +199,7 @@ class DeltaServiceTest {
             }
         }
         def result = runFlow()
-        assert result == ["error parsing cadc delta json"]
+        assert result == ["error parsing delta"]
     }
 
     @Test
