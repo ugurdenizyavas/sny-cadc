@@ -4,7 +4,7 @@ import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.encoding.MaterialNameEncoder
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaItem
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
@@ -21,7 +21,7 @@ import static ratpack.rx.RxRatpack.observe
 @Slf4j
 @Service
 @org.springframework.context.annotation.Lazy
-class DeltaItemService {
+class ProductService {
 
     final JsonSlurper jsonSlurper = new JsonSlurper()
 
@@ -61,31 +61,31 @@ class DeltaItemService {
         urlBuilder.toString()
     }
 
-    rx.Observable<String> process(DeltaItem deltaItem) {
+    rx.Observable<String> process(CadcProduct product) {
         byte[] jsonBytes
         String repoUrl
         rx.Observable.just("starting").flatMap({
-            cadcHttpClient.doGet(deltaItem.url)
+            cadcHttpClient.doGet(product.url)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting sheet from cadc", deltaItem.errors)
+            NingHttpClient.isSuccess(response, "getting sheet from cadc", product.errors)
         }).flatMap({ Response response ->
             observe(execControl.blocking({
                 jsonBytes = response.responseBodyAsBytes
-                deltaItem.materialName = getMaterialName(jsonBytes)
+                product.materialName = getMaterialName(jsonBytes)
             }))
         }).flatMap({
             String copyUrl = repositoryCopyServiceUrl
-                    .replace(":source", deltaItem.urn?.toString())
-                    .replace(":destination", deltaItem.getUrnForSubType(DeltaType.previous)?.toString())
-            localHttpClient.doGet(getUrlWithProcessId(copyUrl, deltaItem.processId))
+                    .replace(":source", product.urn?.toString())
+                    .replace(":destination", product.getUrnForSubType(DeltaType.previous)?.toString())
+            localHttpClient.doGet(getUrlWithProcessId(copyUrl, product.processId))
         }).flatMap({
-            repoUrl = repositoryFileServiceUrl.replace(":urn", deltaItem.urn?.toString())
-            localHttpClient.doPost(getUrlWithProcessId(repoUrl, deltaItem.processId), jsonBytes)
+            repoUrl = repositoryFileServiceUrl.replace(":urn", product.urn?.toString())
+            localHttpClient.doPost(getUrlWithProcessId(repoUrl, product.processId), jsonBytes)
         }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "saving sheet to repo", deltaItem.errors)
+            NingHttpClient.isSuccess(response, "saving sheet to repo", product.errors)
         }).map({
-            log.info "{} finished successfully", deltaItem
-            [urn: deltaItem.urn?.toString(), repoUrl: repoUrl]
+            log.info "{} finished successfully", product
+            [urn: product.urn?.toString(), repoUrl: repoUrl]
         })
     }
 

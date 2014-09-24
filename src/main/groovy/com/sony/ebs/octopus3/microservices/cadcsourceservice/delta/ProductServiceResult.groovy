@@ -9,7 +9,7 @@ import groovy.transform.ToString
 @Sortable(includes = ['cadcUrl', 'success', 'statusCode'])
 @EqualsAndHashCode(includes = ['cadcUrl', 'success', 'statusCode', 'errors', 'repoUrl'])
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class DeltaItemServiceResult {
+class ProductServiceResult {
 
     String cadcUrl
     boolean success

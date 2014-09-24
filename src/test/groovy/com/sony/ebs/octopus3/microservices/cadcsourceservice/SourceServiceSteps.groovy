@@ -60,7 +60,7 @@ After() {
 * ******************** DELTA SERVICE ***********************************************************
 * */
 
-def createDeltaItemResponse(sku) {
+def createProductServiceResponse(sku) {
     """
         {
             "skuName" : "$sku"
@@ -73,10 +73,10 @@ Given(~"Cadc services for locale (.*) with no errors") { String locale ->
 
     //server.get(and(by(uri("/delta/changes/$locale")), eq(query("since"), "2014-08-27T09%3A31%3A17.000%2B02%3A00"))).response(deltaFeed)
     server.get(by(uri("/delta/changes/$locale"))).response(deltaFeed)
-    server.get(by(uri("/a"))).response(createDeltaItemResponse("a"))
-    server.get(by(uri("/b"))).response(createDeltaItemResponse("b"))
-    server.get(by(uri("/c"))).response(createDeltaItemResponse("c"))
-    server.get(by(uri("/d"))).response(createDeltaItemResponse("d"))
+    server.get(by(uri("/a"))).response(createProductServiceResponse("a"))
+    server.get(by(uri("/b"))).response(createProductServiceResponse("b"))
+    server.get(by(uri("/c"))).response(createProductServiceResponse("c"))
+    server.get(by(uri("/d"))).response(createProductServiceResponse("d"))
 }
 
 Given(~"Cadc delta service error for locale (.*)") { String locale ->
@@ -166,11 +166,11 @@ Given(~"Cadc services for locale (.*) with errors") { String locale ->
         }}
         '''
     server.get(by(uri("/delta/$locale"))).response(deltaFeed)
-    server.get(by(uri("/a"))).response(createDeltaItemResponse("a"))
-    server.get(by(uri("/b"))).response(createDeltaItemResponse("b"))
-    server.get(by(uri("/c"))).response(createDeltaItemResponse("c"))
+    server.get(by(uri("/a"))).response(createProductServiceResponse("a"))
+    server.get(by(uri("/b"))).response(createProductServiceResponse("b"))
+    server.get(by(uri("/c"))).response(createProductServiceResponse("c"))
     server.get(by(uri("/d"))).response(status(404))
-    server.get(by(uri("/e"))).response(createDeltaItemResponse("e"))
+    server.get(by(uri("/e"))).response(createProductServiceResponse("e"))
     server.get(by(uri("/f"))).response(status(500))
     server.get(by(uri("/g"))).response(status(404))
 }
@@ -251,7 +251,7 @@ Then(~"Import should give (.*) parameter error") { paramName ->
 * */
 
 Given(~"Cadc sheet (.*)") { name ->
-    server.request(by(uri("/cadc/sheet/$name"))).response(createDeltaItemResponse(name))
+    server.request(by(uri("/cadc/sheet/$name"))).response(createProductServiceResponse(name))
 }
 
 Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String publication, String locale, String sku ->
@@ -276,10 +276,10 @@ Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported succe
     assert response.statusCode == 200
     def json = parseJson(response)
     assert json.status == 200
-    assert json?.deltaItem?.materialName.equalsIgnoreCase(sku)
-    assert json?.deltaItem?.url == "http://localhost:12306/cadc/sheet/$sku"
-    assert json?.deltaItem?.publication == publication
-    assert json?.deltaItem?.locale == locale
+    assert json?.product?.materialName.equalsIgnoreCase(sku)
+    assert json?.product?.url == "http://localhost:12306/cadc/sheet/$sku"
+    assert json?.product?.publication == publication
+    assert json?.product?.locale == locale
     assert json?.result?.urn == skuUrn
     assert json?.result?.repoUrl == "http://localhost:12306/repository/file/$skuUrn"
 }

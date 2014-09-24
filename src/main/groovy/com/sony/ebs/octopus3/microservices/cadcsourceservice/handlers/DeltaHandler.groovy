@@ -2,10 +2,10 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaItemServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
@@ -30,12 +30,12 @@ class DeltaHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            Delta delta = new Delta(type: DeltaType.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
+            CadcDelta delta = new CadcDelta(type: DeltaType.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
                     locale: pathTokens.locale, since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
             activity.info "starting {}", delta
 
-            List deltaItemServiceResults = []
-            List errors = validator.validateDelta(delta)
+            List productServiceResults = []
+            List errors = validator.validateCadcDelta(delta)
             if (errors) {
                 activity.error "error validating {} : {}", delta, errors
                 response.status(400)
@@ -52,10 +52,10 @@ class DeltaHandler extends GroovyHandler {
                     } else {
                         activity.info "finished {} with success", delta
                         response.status(200)
-                        render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, deltaItemServiceResults), delta: delta)
+                        render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, productServiceResults), delta: delta)
                     }
                 }).subscribe({
-                    deltaItemServiceResults << it
+                    productServiceResults << it
                     activity.debug "delta flow emitted: {}", it
                 }, { e ->
                     delta.errors << HandlerUtil.getErrorMessage(e)
@@ -65,13 +65,13 @@ class DeltaHandler extends GroovyHandler {
         }
     }
 
-    Map createDeltaResult(Delta delta, List deltaItemServiceResults) {
+    Map createDeltaResult(CadcDelta delta, List productServiceResults) {
         def createSuccess = {
-            deltaItemServiceResults.findAll({ it.success }).collect({ it.repoUrl })
+            productServiceResults.findAll({ it.success }).collect({ it.repoUrl })
         }
         def createErrors = {
             Map errorMap = [:]
-            deltaItemServiceResults.findAll({ !it.success }).each { DeltaItemServiceResult serviceResult ->
+            productServiceResults.findAll({ !it.success }).each { ProductServiceResult serviceResult ->
                 serviceResult.errors.each { error ->
                     if (errorMap[error] == null) errorMap[error] = []
                     errorMap[error] << serviceResult.cadcUrl
@@ -82,10 +82,10 @@ class DeltaHandler extends GroovyHandler {
         [
                 stats  : [
                         "number of delta products": delta.urlList?.size(),
-                        "number of success"       : deltaItemServiceResults?.findAll({
+                        "number of success"       : productServiceResults?.findAll({
                             it.success
                         }).size(),
-                        "number of errors"        : deltaItemServiceResults?.findAll({
+                        "number of errors"        : productServiceResults?.findAll({
                             !it.success
                         }).size()
                 ],

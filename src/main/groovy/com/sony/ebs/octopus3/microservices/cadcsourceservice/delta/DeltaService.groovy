@@ -4,7 +4,7 @@ import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
@@ -36,8 +36,8 @@ class DeltaService {
     @Qualifier("cadcHttpClient")
     NingHttpClient cadcHttpClient
 
-    @Value('${octopus3.sourceservice.cadcsourceDeltaItemServiceUrl}')
-    String cadcsourceDeltaItemServiceUrl
+    @Value('${octopus3.sourceservice.cadcsourceProductServiceUrl}')
+    String cadcsourceProductServiceUrl
 
     @Autowired
     DeltaUrlHelper deltaUrlHelper
@@ -55,21 +55,21 @@ class DeltaService {
 
     Object createServiceResult(Response response, String cadcUrl) {
         boolean success = NingHttpClient.isSuccess(response)
-        def deltaItemServiceResult = new DeltaItemServiceResult(cadcUrl: cadcUrl, success: success, statusCode: response.statusCode)
+        def serviceResult = new ProductServiceResult(cadcUrl: cadcUrl, success: success, statusCode: response.statusCode)
         def json = jsonSlurper.parse(response.responseBodyAsStream, EncodingUtil.CHARSET_STR)
         if (!success) {
-            deltaItemServiceResult.errors = json?.errors.collect { it.toString() }
+            serviceResult.errors = json?.errors.collect { it.toString() }
         } else {
-            deltaItemServiceResult.with {
+            serviceResult.with {
                 repoUrl = json?.result?.repoUrl
             }
         }
-        deltaItemServiceResult
+        serviceResult
     }
 
-    private rx.Observable<Object> doDeltaItem(Delta delta, String cadcUrl) {
+    private rx.Observable<Object> doProduct(CadcDelta delta, String cadcUrl) {
         rx.Observable.just("starting").flatMap({
-            def initialUrl = cadcsourceDeltaItemServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
+            def initialUrl = cadcsourceProductServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
             def urlBuilder = new URIBuilder(initialUrl)
             urlBuilder.addParameter("url", cadcUrl)
             if (delta.processId?.id) {
@@ -83,11 +83,11 @@ class DeltaService {
         }).onErrorReturn({
             log.error "error for $cadcUrl", it
             def error = HandlerUtil.getErrorMessage(it)
-            new DeltaItemServiceResult(cadcUrl: cadcUrl, success: false, errors: [error])
+            new ProductServiceResult(cadcUrl: cadcUrl, success: false, errors: [error])
         })
     }
 
-    rx.Observable<Object> process(Delta delta) {
+    rx.Observable<Object> process(CadcDelta delta) {
         def lastModifiedUrn = delta.lastModifiedUrn
         rx.Observable.just("starting").flatMap({
             deltaUrlHelper.createSinceValue(delta.since, lastModifiedUrn)
@@ -106,7 +106,7 @@ class DeltaService {
         }).flatMap({
             deltaUrlHelper.updateLastModified(lastModifiedUrn, delta.errors)
         }).flatMap({
-            def list = delta.urlList.collect({ doDeltaItem(delta, it) })
+            def list = delta.urlList.collect({ doProduct(delta, it) })
             rx.Observable.merge(list, 30)
         })
     }

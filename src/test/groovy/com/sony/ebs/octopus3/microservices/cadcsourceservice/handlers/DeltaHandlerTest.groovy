@@ -1,8 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaItemServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
 import groovy.mock.interceptor.StubFor
 import org.junit.Before
@@ -15,10 +15,10 @@ class DeltaHandlerTest {
 
     StubFor mockDeltaService, mockValidator
 
-    def deltaItemResultA = new DeltaItemServiceResult(cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
-    def deltaItemResultB = new DeltaItemServiceResult(cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
-    def deltaItemResultC = new DeltaItemServiceResult(cadcUrl: "//cadc/c", success: true, repoUrl: "//repo/file/c")
-    def deltaItemResultD = new DeltaItemServiceResult(cadcUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
+    def productServiceResultA = new ProductServiceResult(cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
+    def productServiceResultB = new ProductServiceResult(cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
+    def productServiceResultC = new ProductServiceResult(cadcUrl: "//cadc/c", success: true, repoUrl: "//repo/file/c")
+    def productServiceResultD = new ProductServiceResult(cadcUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
 
     @Before
     void before() {
@@ -29,19 +29,19 @@ class DeltaHandlerTest {
     @Test
     void "main flow"() {
         mockDeltaService.demand.with {
-            process(1) { Delta delta ->
+            process(1) { CadcDelta delta ->
                 assert delta.processId != null
                 assert delta.publication == "SCORE"
                 assert delta.locale == "en_GB"
                 assert delta.since == "2014"
                 assert delta.cadcUrl == "http://cadc/skus"
                 delta.urlList = ["/a", "/b", "/c", "/d"]
-                rx.Observable.from([deltaItemResultC, deltaItemResultA, deltaItemResultD, deltaItemResultB])
+                rx.Observable.from([productServiceResultC, productServiceResultA, productServiceResultD, productServiceResultB])
             }
         }
 
         mockValidator.demand.with {
-            validateDelta(1) { [] }
+            validateCadcDelta(1) { [] }
         }
 
         handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
@@ -73,7 +73,7 @@ class DeltaHandlerTest {
     @Test
     void "invalid parameter"() {
         mockValidator.demand.with {
-            validateDelta(1) { ["error"] }
+            validateCadcDelta(1) { ["error"] }
         }
         handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
             pathBinding([locale: "en_GB"])
@@ -91,14 +91,14 @@ class DeltaHandlerTest {
     @Test
     void "error in delta flow"() {
         mockDeltaService.demand.with {
-            process(1) { Delta delta ->
+            process(1) { CadcDelta delta ->
                 delta.errors << "error in delta flow"
                 rx.Observable.just(null)
             }
         }
 
         mockValidator.demand.with {
-            validateDelta(1) { [] }
+            validateCadcDelta(1) { [] }
         }
 
         handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
@@ -125,7 +125,7 @@ class DeltaHandlerTest {
             }
         }
         mockValidator.demand.with {
-            validateDelta(1) { [] }
+            validateCadcDelta(1) { [] }
         }
 
         handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {

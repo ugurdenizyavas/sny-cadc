@@ -2,7 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
 
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.MockNingResponse
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaItem
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
@@ -15,11 +15,11 @@ import ratpack.launch.LaunchConfigBuilder
 import spock.util.concurrent.BlockingVariable
 
 @Slf4j
-class DeltaItemServiceTest {
+class ProductServiceTest {
 
-    DeltaItemService deltaItemService
+    ProductService productService
     StubFor mockLocalHttpClient, mockCadcHttpClient
-    DeltaItem deltaItem
+    CadcProduct product
 
     static ExecController execController
 
@@ -35,23 +35,23 @@ class DeltaItemServiceTest {
 
     @Before
     void before() {
-        deltaItemService = new DeltaItemService(execControl: execController.control,
+        productService = new ProductService(execControl: execController.control,
                 repositoryFileServiceUrl: "http://repo/:urn",
                 repositoryCopyServiceUrl: "http://repo/copy/source/:source/destination/:destination"
         )
         mockLocalHttpClient = new StubFor(NingHttpClient)
         mockCadcHttpClient = new StubFor(NingHttpClient)
-        deltaItem = new DeltaItem(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
+        product = new CadcProduct(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
     }
 
     def runFlow() {
-        deltaItemService.cadcHttpClient = mockCadcHttpClient.proxyInstance()
-        deltaItemService.localHttpClient = mockLocalHttpClient.proxyInstance()
+        productService.cadcHttpClient = mockCadcHttpClient.proxyInstance()
+        productService.localHttpClient = mockLocalHttpClient.proxyInstance()
 
         def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
-            deltaItemService.process(deltaItem).subscribe({
+            productService.process(product).subscribe({
                 valueSet = true
                 result.set(it)
             }, {
@@ -64,7 +64,7 @@ class DeltaItemServiceTest {
         result.get()
     }
 
-    def createDeltaItemResponse(sku) {
+    def createProductServiceResponse(sku) {
         """
         {
             "skuName" : "$sku"
@@ -75,11 +75,11 @@ class DeltaItemServiceTest {
     @Test
     void "success"() {
         def sku = "p+p/p.ceh"
-        def deltaItemResponse = createDeltaItemResponse(sku)
+        def productServiceResponse = createProductServiceResponse(sku)
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: deltaItemResponse))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: productServiceResponse))
             }
         }
         mockLocalHttpClient.demand.with {
@@ -89,7 +89,7 @@ class DeltaItemServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh?processId=123"
-                assert data == deltaItemResponse?.getBytes("UTF-8")
+                assert data == productServiceResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 200))
             }
         }
@@ -105,16 +105,16 @@ class DeltaItemServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert deltaItem.errors == ["HTTP 404 error getting sheet from cadc"]
+        assert product.errors == ["HTTP 404 error getting sheet from cadc"]
     }
 
     @Test
     void "delta item could not be saved"() {
-        def deltaItemResponse = createDeltaItemResponse("p")
+        def productServiceResponse = createProductServiceResponse("p")
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: deltaItemResponse))
+                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: productServiceResponse))
             }
         }
         mockLocalHttpClient.demand.with {
@@ -124,12 +124,12 @@ class DeltaItemServiceTest {
             }
             doPost(1) { url, data ->
                 assert url == "http://repo/urn:global_sku:score:en_gb:p?processId=123"
-                assert data == deltaItemResponse?.getBytes("UTF-8")
+                assert data == productServiceResponse?.getBytes("UTF-8")
                 rx.Observable.from(new MockNingResponse(_statusCode: 500))
             }
         }
         assert runFlow() == "outOfFlow"
-        assert deltaItem.errors == ["HTTP 500 error saving sheet to repo"]
+        assert product.errors == ["HTTP 500 error saving sheet to repo"]
     }
 
 }
