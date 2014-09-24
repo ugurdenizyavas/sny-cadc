@@ -1,4 +1,4 @@
-package com.sony.ebs.octopus3.microservices.cadcsourceservice.model
+package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import groovy.transform.EqualsAndHashCode

@@ -1,4 +1,4 @@
-package com.sony.ebs.octopus3.microservices.cadcsourceservice.services
+package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
 
 import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
@@ -6,7 +6,6 @@ import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaItemServiceResult
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j

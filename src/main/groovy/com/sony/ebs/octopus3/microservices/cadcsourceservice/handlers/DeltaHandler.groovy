@@ -5,8 +5,8 @@ import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.Delta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.DeltaItemServiceResult
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.services.DeltaService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaItemServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Autowired
