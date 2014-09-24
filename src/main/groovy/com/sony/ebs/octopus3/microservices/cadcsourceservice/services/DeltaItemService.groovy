@@ -61,7 +61,7 @@ class DeltaItemService {
         urlBuilder.toString()
     }
 
-    rx.Observable<String> deltaItemFlow(DeltaItem deltaItem) {
+    rx.Observable<String> process(DeltaItem deltaItem) {
         byte[] jsonBytes
         String repoUrl
         rx.Observable.just("starting").flatMap({

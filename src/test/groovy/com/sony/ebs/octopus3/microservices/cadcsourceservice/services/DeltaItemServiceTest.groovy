@@ -51,7 +51,7 @@ class DeltaItemServiceTest {
         def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
-            deltaItemService.deltaItemFlow(deltaItem).subscribe({
+            deltaItemService.process(deltaItem).subscribe({
                 valueSet = true
                 result.set(it)
             }, {

@@ -28,7 +28,7 @@ class DeltaItemHandlerTest {
 
     void runFlow(ProcessId processId, String processIdPostfix) {
         mockDeltaItemService.demand.with {
-            deltaItemFlow(1) { DeltaItem deltaItem ->
+            process(1) { DeltaItem deltaItem ->
                 assert deltaItem.publication == PUBLICATION
                 assert deltaItem.locale == LOCALE
                 assert deltaItem.url == DELTA_ITEM_URL
@@ -88,7 +88,7 @@ class DeltaItemHandlerTest {
     @Test
     void "error in delta item flow"() {
         mockDeltaItemService.demand.with {
-            deltaItemFlow(1) { DeltaItem deltaItem ->
+            process(1) { DeltaItem deltaItem ->
                 deltaItem.errors << "error in delta item flow"
                 rx.Observable.just(null)
             }
@@ -116,7 +116,7 @@ class DeltaItemHandlerTest {
     @Test
     void "exception in delta item flow"() {
         mockDeltaItemService.demand.with {
-            deltaItemFlow(1) {
+            process(1) {
                 rx.Observable.just("starting").map({
                     throw new Exception("exp in delta item flow")
                 })

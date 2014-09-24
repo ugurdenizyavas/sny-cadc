@@ -88,7 +88,7 @@ class DeltaService {
         })
     }
 
-    rx.Observable<Object> deltaFlow(Delta delta) {
+    rx.Observable<Object> process(Delta delta) {
         def lastModifiedUrn = delta.lastModifiedUrn
         rx.Observable.just("starting").flatMap({
             deltaUrlHelper.createSinceValue(delta.since, lastModifiedUrn)

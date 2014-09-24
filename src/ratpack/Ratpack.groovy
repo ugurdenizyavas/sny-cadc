@@ -1,10 +1,9 @@
 import com.sony.ebs.octopus3.commons.ratpack.handlers.ErrorHandler
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HealthCheckHandler
 import com.sony.ebs.octopus3.commons.ratpack.monitoring.MonitoringService
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.SpringConfig
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.*
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.DeltaHandler
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.DeltaItemHandler
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.spring.config.SpringConfig
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import ratpack.error.ClientErrorHandler
 import ratpack.error.ServerErrorHandler
@@ -12,8 +11,6 @@ import ratpack.jackson.JacksonModule
 import ratpack.rx.RxRatpack
 
 import static ratpack.groovy.Groovy.ratpack
-
-Logger log = LoggerFactory.getLogger("ratpack");
 
 ratpack {
 

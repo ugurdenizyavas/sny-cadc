@@ -38,7 +38,7 @@ class DeltaItemHandler extends GroovyHandler {
                 response.status(400)
                 render json(status: 400, errors: errors, deltaItem: deltaItem)
             } else {
-                deltaItemService.deltaItemFlow(deltaItem).finallyDo({
+                deltaItemService.process(deltaItem).finallyDo({
                     if (deltaItem.errors) {
                         activity.error "finished {} with errors: {}", deltaItem, deltaItem.errors
                         response.status(500)

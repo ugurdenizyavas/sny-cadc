@@ -42,7 +42,7 @@ class DeltaHandler extends GroovyHandler {
                 render json(status: 400, errors: errors, delta: delta)
             } else {
                 def startTime = new DateTime()
-                deltaService.deltaFlow(delta).finallyDo({
+                deltaService.process(delta).finallyDo({
                     def endTime = new DateTime()
                     def timeStats = HandlerUtil.getTimeStats(startTime, endTime)
                     if (delta.errors) {

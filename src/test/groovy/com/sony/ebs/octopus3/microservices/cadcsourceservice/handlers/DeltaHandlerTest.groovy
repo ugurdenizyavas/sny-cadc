@@ -29,7 +29,7 @@ class DeltaHandlerTest {
     @Test
     void "main flow"() {
         mockDeltaService.demand.with {
-            deltaFlow(1) { Delta delta ->
+            process(1) { Delta delta ->
                 assert delta.processId != null
                 assert delta.publication == "SCORE"
                 assert delta.locale == "en_GB"
@@ -91,7 +91,7 @@ class DeltaHandlerTest {
     @Test
     void "error in delta flow"() {
         mockDeltaService.demand.with {
-            deltaFlow(1) { Delta delta ->
+            process(1) { Delta delta ->
                 delta.errors << "error in delta flow"
                 rx.Observable.just(null)
             }
@@ -118,7 +118,7 @@ class DeltaHandlerTest {
     @Test
     void "exception in delta flow"() {
         mockDeltaService.demand.with {
-            deltaFlow(1) {
+            process(1) {
                 rx.Observable.just("starting").map({
                     throw new Exception("exp in delta flow")
                 })

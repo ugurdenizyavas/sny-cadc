@@ -56,7 +56,7 @@ class DeltaServiceTest {
 
         def result = new BlockingVariable(5)
         execController.start {
-            deltaService.deltaFlow(delta).toList().subscribe({
+            deltaService.process(delta).toList().subscribe({
                 result.set(it)
             }, {
                 log.error "error in flow", it
