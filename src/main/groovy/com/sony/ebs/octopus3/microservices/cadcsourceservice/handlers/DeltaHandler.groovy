@@ -1,12 +1,14 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
+import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
+import groovy.json.JsonOutput
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,6 +29,9 @@ class DeltaHandler extends GroovyHandler {
     @Autowired
     RequestValidator validator
 
+    @Autowired
+    ResponseStorage responseStorage
+
     @Override
     protected void handle(GroovyContext context) {
         context.with {
@@ -39,7 +44,14 @@ class DeltaHandler extends GroovyHandler {
             if (errors) {
                 activity.error "error validating {} : {}", delta, errors
                 response.status(400)
-                render json(status: 400, errors: errors, delta: delta)
+
+                def responseJson = json(status: 400, errors: errors, delta: delta)
+                responseStorage.store(
+                        delta.processId.id,
+                        ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
+                        JsonOutput.toJson(responseJson.object)
+                )
+                render responseJson
             } else {
                 def startTime = new DateTime()
                 deltaService.process(delta).finallyDo({
@@ -48,11 +60,27 @@ class DeltaHandler extends GroovyHandler {
                     if (delta.errors) {
                         activity.error "finished {} with errors: {}", delta, delta.errors
                         response.status(500)
-                        render json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
+
+                        def responseJson = json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
+
+                        responseStorage.store(
+                                delta.processId.id,
+                                ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
+                                JsonOutput.toJson(responseJson.object)
+                        )
+                        render responseJson
                     } else {
                         activity.info "finished {} with success", delta
                         response.status(200)
-                        render json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, productServiceResults), delta: delta)
+
+                        def responseJson = json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, productServiceResults), delta: delta)
+
+                        responseStorage.store(
+                                delta.processId.id,
+                                ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
+                                JsonOutput.toJson(responseJson.object)
+                        )
+                        render responseJson
                     }
                 }).subscribe({
                     productServiceResults << it
@@ -65,7 +93,7 @@ class DeltaHandler extends GroovyHandler {
         }
     }
 
-    Map createDeltaResult(CadcDelta delta, List productServiceResults) {
+    Map createDeltaResult(CadcDelta delta, List<ProductServiceResult> productServiceResults) {
         def createSuccess = {
             productServiceResults.findAll({ it.success }).collect({ it.repoUrl })
         }

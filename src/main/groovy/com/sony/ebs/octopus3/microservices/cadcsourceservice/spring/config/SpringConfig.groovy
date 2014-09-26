@@ -1,6 +1,7 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.spring.config
 
 import com.sony.ebs.octopus3.commons.ratpack.file.FileAttributesProvider
+import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
@@ -63,5 +64,16 @@ class SpringConfig {
                 httpClient: localHttpClient)
     }
 
-}
 
+    @Bean
+    @Qualifier('fileStorage')
+    @org.springframework.context.annotation.Lazy
+    public ResponseStorage responseStorage(
+            @Value('${octopus3.sourceservice.repositoryFileServiceUrl}') String saveUrl) {
+        new ResponseStorage(
+                ningHttpClient: localHttpClient,
+                saveUrl: saveUrl
+        )
+    }
+
+}
