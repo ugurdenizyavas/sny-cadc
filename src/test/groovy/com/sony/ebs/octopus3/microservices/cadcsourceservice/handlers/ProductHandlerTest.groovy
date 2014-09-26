@@ -2,6 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
+import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductService
@@ -18,12 +19,13 @@ class ProductHandlerTest {
     final static String LOCALE = "en_GB"
     final static String DELTA_ITEM_URL = "http://cadc/a"
 
-    StubFor mockProductService, mockRequestValidator
+    StubFor mockProductService, mockRequestValidator, mockResponseStorage
 
     @Before
     void before() {
         mockProductService = new StubFor(ProductService)
         mockRequestValidator = new StubFor(RequestValidator)
+        mockResponseStorage = new StubFor(ResponseStorage)
     }
 
     void runFlow(ProcessId processId, String processIdPostfix) {
@@ -41,7 +43,13 @@ class ProductHandlerTest {
             validateCadcProduct(1) { [] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$DELTA_ITEM_URL$processIdPostfix"
         }).with {
@@ -73,7 +81,19 @@ class ProductHandlerTest {
             validateCadcProduct(1) { ["error"] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/"
         }).with {
@@ -98,7 +118,13 @@ class ProductHandlerTest {
             validateCadcProduct(1) { [] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$DELTA_ITEM_URL"
         }).with {
@@ -126,7 +152,13 @@ class ProductHandlerTest {
             validateCadcProduct(1) { [] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$DELTA_ITEM_URL"
         }).with {

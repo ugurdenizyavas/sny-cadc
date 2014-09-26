@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductServiceResult
@@ -13,7 +14,7 @@ import static ratpack.groovy.test.GroovyUnitTest.handle
 
 class DeltaHandlerTest {
 
-    StubFor mockDeltaService, mockValidator
+    StubFor mockDeltaService, mockValidator, mockResponseStorage
 
     def productServiceResultA = new ProductServiceResult(cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
     def productServiceResultB = new ProductServiceResult(cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
@@ -24,6 +25,7 @@ class DeltaHandlerTest {
     void before() {
         mockDeltaService = new StubFor(DeltaService)
         mockValidator = new StubFor(RequestValidator)
+        mockResponseStorage = new StubFor(ResponseStorage)
     }
 
     @Test
@@ -44,7 +46,13 @@ class DeltaHandlerTest {
             validateCadcDelta(1) { [] }
         }
 
-        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }).with {
@@ -75,7 +83,14 @@ class DeltaHandlerTest {
         mockValidator.demand.with {
             validateCadcDelta(1) { ["error"] }
         }
-        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([locale: "en_GB"])
             uri "/"
         }).with {
@@ -101,7 +116,13 @@ class DeltaHandlerTest {
             validateCadcDelta(1) { [] }
         }
 
-        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }).with {
@@ -128,7 +149,13 @@ class DeltaHandlerTest {
             validateCadcDelta(1) { [] }
         }
 
-        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance()), {
+        mockResponseStorage.demand.with {
+            store(1) { String st1, List list1, String st2 ->
+                true
+            }
+        }
+
+        handle(new DeltaHandler(deltaService: mockDeltaService.proxyInstance(), validator: mockValidator.proxyInstance(), responseStorage: mockResponseStorage.proxyInstance()), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
             uri "/?cadcUrl=http://cadc/skus&since=2014"
         }).with {
