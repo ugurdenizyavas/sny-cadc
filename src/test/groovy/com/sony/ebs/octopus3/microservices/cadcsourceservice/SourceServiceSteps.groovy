@@ -92,11 +92,6 @@ Given(~"Repo services for publication (.*) locale (.*) with no errors") { String
     server.post(by(uri("/repository/file/urn:global_sku:$values:b"))).response(status(200))
     server.post(by(uri("/repository/file/urn:global_sku:$values:c"))).response(status(200))
     server.post(by(uri("/repository/file/urn:global_sku:$values:d"))).response(status(200))
-
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:a/destination/urn:global_sku:previous:$values:a"))).response(status(200))
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:b/destination/urn:global_sku:previous:$values:b"))).response(status(200))
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:c/destination/urn:global_sku:previous:$values:c"))).response(status(200))
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:d/destination/urn:global_sku:previous:$values:d"))).response(status(200))
 }
 
 Given(~"Repo services for publication (.*) locale (.*) with last modified date save error") { String publication, String locale ->
@@ -184,11 +179,6 @@ Given(~"Repo services for publication (.*) locale (.*) with save errors") { Stri
     server.post(by(uri("/repository/file/urn:global_sku:$values:b"))).response(status(500))
     server.post(by(uri("/repository/file/urn:global_sku:$values:c"))).response(status(200))
     server.post(by(uri("/repository/file/urn:global_sku:$values:e"))).response(status(500))
-
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:a/destination/urn:global_sku:previous:$values:a"))).response(status(200))
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:b/destination/urn:global_sku:previous:$values:b"))).response(status(200))
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:c/destination/urn:global_sku:previous:$values:c"))).response(status(500))
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values:e/destination/urn:global_sku:previous:$values:e"))).response(status(200))
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get save errors") { String publication, String locale ->
@@ -260,7 +250,6 @@ Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String p
     def skuLC = sku.toLowerCase()
     def values = "$publicationLC:$localeLC:$skuLC"
     server.post(by(uri("/repository/file/urn:global_sku:$values"))).response(status(200))
-    server.get(by(uri("/repository/copy/source/urn:global_sku:$values/destination/urn:global_sku:previous:$values"))).response(status(200))
 }
 
 When(~"I import sheet with publication (.*) locale (.*) sku (.*) correctly") { String publication, String locale, String sku ->

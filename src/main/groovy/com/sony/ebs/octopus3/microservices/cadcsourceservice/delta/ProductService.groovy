@@ -53,7 +53,7 @@ class ProductService {
         }
     }
 
-    def getUrlWithProcessId = { String url, String processId ->
+    def getUrlWithProcessId(String url, String processId) {
         def urlBuilder = new URIBuilder(url)
         if (processId) {
             urlBuilder.addParameter("processId", processId)
@@ -73,11 +73,6 @@ class ProductService {
                 jsonBytes = response.responseBodyAsBytes
                 product.materialName = getMaterialName(jsonBytes)
             }))
-        }).flatMap({
-            String copyUrl = repositoryCopyServiceUrl
-                    .replace(":source", product.urn?.toString())
-                    .replace(":destination", product.getUrnForSubType(DeltaType.previous)?.toString())
-            localHttpClient.doGet(getUrlWithProcessId(copyUrl, product.processId))
         }).flatMap({
             repoUrl = repositoryFileServiceUrl.replace(":urn", product.urn?.toString())
             localHttpClient.doPost(getUrlWithProcessId(repoUrl, product.processId), jsonBytes)
