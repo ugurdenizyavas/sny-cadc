@@ -1,45 +1,43 @@
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.SpringConfig
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.DeltaFlowHandler
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.SaveFlowHandler
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.SheetFlowHandler
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.sony.ebs.octopus3.commons.ratpack.handlers.ErrorHandler
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HealthCheckHandler
+import com.sony.ebs.octopus3.commons.ratpack.monitoring.MonitoringService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.DeltaHandler
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.ProductHandler
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.spring.config.SpringConfig
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
-import ratpack.error.DebugErrorHandler
+import ratpack.error.ClientErrorHandler
 import ratpack.error.ServerErrorHandler
 import ratpack.jackson.JacksonModule
 import ratpack.rx.RxRatpack
 
 import static ratpack.groovy.Groovy.ratpack
 
-Logger log = LoggerFactory.getLogger("ratpack");
-
 ratpack {
 
-    SheetFlowHandler sheetFlowHandler
-    DeltaFlowHandler deltaFlowHandler
-    SaveFlowHandler saveFlowHandler
+    ProductHandler productHandler
+    DeltaHandler deltaHandler
+    HealthCheckHandler healthCheckHandler
 
     bindings {
         add new JacksonModule()
-        bind ServerErrorHandler, new DebugErrorHandler()
+        bind ClientErrorHandler, new ErrorHandler()
+        bind ServerErrorHandler, new ErrorHandler()
         init {
+            RxRatpack.initialize()
+
             AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(SpringConfig.class)
             ctx.beanFactory.registerSingleton "launchConfig", launchConfig
+            ctx.beanFactory.registerSingleton "execControl", launchConfig.execController.control
 
-            deltaFlowHandler = ctx.getBean(DeltaFlowHandler.class)
-            sheetFlowHandler = ctx.getBean(SheetFlowHandler.class)
-            saveFlowHandler = ctx.getBean(SaveFlowHandler.class)
-
-            RxRatpack.initialize()
+            deltaHandler = ctx.getBean(DeltaHandler.class)
+            productHandler = ctx.getBean(ProductHandler.class)
+            healthCheckHandler = new HealthCheckHandler(monitoringService: new MonitoringService())
         }
     }
 
     handlers {
-        post("save/repo", saveFlowHandler)
-
-        get("import/sheet", sheetFlowHandler)
-
-        get("import/delta/publication/:publication/locale/:locale", deltaFlowHandler)
+        get("healthcheck", healthCheckHandler)
+        get("cadcsource/sheet/publication/:publication/locale/:locale", productHandler)
+        get("cadcsource/delta/publication/:publication/locale/:locale", deltaHandler)
     }
 }
