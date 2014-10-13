@@ -108,8 +108,8 @@ shadowJar {
 dependencies {
     sshAntTask 'org.apache.ant:ant-jsch:1.9.2'
 
-    compile 'com.sony.ebs.octopus3:octopus3-commons:1.2-SNAPSHOT'
-    compile 'com.sony.ebs.octopus3:octopus3-commons-ratpack:1.2-SNAPSHOT'
+    compile 'com.sony.ebs.octopus3:octopus3-commons:1.4-SNAPSHOT'
+    compile 'com.sony.ebs.octopus3:octopus3-commons-ratpack:1.4-SNAPSHOT'
     compile 'commons-io:commons-io:2.4'
 
     // cucumber
