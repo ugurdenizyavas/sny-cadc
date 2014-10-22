@@ -1,7 +1,7 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
 
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.MockNingResponse
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import groovy.mock.interceptor.StubFor
@@ -39,8 +39,8 @@ class ProductServiceTest {
                 repositoryFileServiceUrl: "http://repo/:urn",
                 repositoryCopyServiceUrl: "http://repo/copy/source/:source/destination/:destination"
         )
-        mockLocalHttpClient = new StubFor(NingHttpClient)
-        mockCadcHttpClient = new StubFor(NingHttpClient)
+        mockLocalHttpClient = new StubFor(Oct3HttpClient)
+        mockCadcHttpClient = new StubFor(Oct3HttpClient)
         product = new CadcProduct(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
     }
 
@@ -69,7 +69,7 @@ class ProductServiceTest {
         {
             "skuName" : "$sku"
         }
-        """
+        """.bytes
     }
 
     @Test
@@ -79,14 +79,14 @@ class ProductServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: productServiceResponse))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: productServiceResponse))
             }
         }
         mockLocalHttpClient.demand.with {
             doPost(1) { url, data ->
                 assert url == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh?processId=123"
-                assert data == productServiceResponse?.getBytes("UTF-8")
-                rx.Observable.from(new MockNingResponse(_statusCode: 200))
+                assert data == productServiceResponse
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200))
             }
         }
         assert runFlow() == [urn: "urn:global_sku:score:en_gb:p_2bp_2fp.ceh", repoUrl: "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"]
@@ -97,7 +97,7 @@ class ProductServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 404))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 404))
             }
         }
         assert runFlow() == "outOfFlow"
@@ -110,14 +110,14 @@ class ProductServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: productServiceResponse))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: productServiceResponse))
             }
         }
         mockLocalHttpClient.demand.with {
             doPost(1) { url, data ->
                 assert url == "http://repo/urn:global_sku:score:en_gb:p?processId=123"
-                assert data == productServiceResponse?.getBytes("UTF-8")
-                rx.Observable.from(new MockNingResponse(_statusCode: 500))
+                assert data == productServiceResponse
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 500))
             }
         }
         assert runFlow() == "outOfFlow"

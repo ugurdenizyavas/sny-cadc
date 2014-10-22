@@ -1,9 +1,9 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
 
-import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import groovy.json.JsonException
@@ -30,11 +30,11 @@ class DeltaService {
 
     @Autowired
     @Qualifier("localHttpClient")
-    NingHttpClient localHttpClient
+    Oct3HttpClient localHttpClient
 
     @Autowired
     @Qualifier("cadcHttpClient")
-    NingHttpClient cadcHttpClient
+    Oct3HttpClient cadcHttpClient
 
     @Value('${octopus3.sourceservice.cadcsourceProductServiceUrl}')
     String cadcsourceProductServiceUrl
@@ -53,11 +53,10 @@ class DeltaService {
         }
     }
 
-    Object createServiceResult(Response response, String cadcUrl) {
-        boolean success = NingHttpClient.isSuccess(response)
-        def serviceResult = new ProductServiceResult(cadcUrl: cadcUrl, success: success, statusCode: response.statusCode)
-        def json = jsonSlurper.parse(response.responseBodyAsStream, EncodingUtil.CHARSET_STR)
-        if (!success) {
+    Object createServiceResult(Oct3HttpResponse response, String cadcUrl) {
+        def serviceResult = new ProductServiceResult(cadcUrl: cadcUrl, success: response.success, statusCode: response.statusCode)
+        def json = jsonSlurper.parse(response.bodyAsStream, EncodingUtil.CHARSET_STR)
+        if (!response.success) {
             serviceResult.errors = json?.errors.collect { it.toString() }
         } else {
             serviceResult.with {
@@ -76,7 +75,7 @@ class DeltaService {
                 urlBuilder.addParameter("processId", delta.processId?.id)
             }
             localHttpClient.doGet(urlBuilder.toString())
-        }).flatMap({ Response response ->
+        }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
                 createServiceResult(response, cadcUrl)
             }))
@@ -97,11 +96,11 @@ class DeltaService {
         }).flatMap({ String deltaUrl ->
             delta.finalCadcUrl = deltaUrl
             cadcHttpClient.doGet(deltaUrl)
-        }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting delta from cadc", delta.errors)
-        }).flatMap({ Response response ->
+        }).filter({ Oct3HttpResponse response ->
+            response.isSuccessful("getting delta from cadc", delta.errors)
+        }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
-                delta.urlList = parseDelta(delta.locale, response.responseBodyAsStream)
+                delta.urlList = parseDelta(delta.locale, response.bodyAsStream)
             }))
         }).flatMap({
             deltaUrlHelper.updateLastModified(lastModifiedUrn, delta.errors)

@@ -1,8 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.MockNingResponse
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
@@ -42,8 +42,8 @@ class DeltaServiceTest {
         deltaService = new DeltaService(execControl: execController.control,
                 cadcsourceProductServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale")
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
-        mockCadcHttpClient = new StubFor(NingHttpClient)
-        mockLocalHttpClient = new StubFor(NingHttpClient)
+        mockCadcHttpClient = new StubFor(Oct3HttpClient)
+        mockLocalHttpClient = new StubFor(Oct3HttpClient)
 
         delta = new CadcDelta(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", since: "2014", cadcUrl: "http://cadc")
     }
@@ -76,7 +76,7 @@ class DeltaServiceTest {
                 ]
             }
         }
-        """
+        """.bytes
     }
 
     def createProductServiceResponse(sku) {
@@ -87,7 +87,7 @@ class DeltaServiceTest {
                 "repoUrl" : "http://myrepo/file/urn:global_sku:score:en_gb:$sku"
             }
         }
-        """
+        """.bytes
     }
 
     String getSkuFromUrl(url) {
@@ -115,14 +115,14 @@ class DeltaServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) { url ->
                 assert url == "http://cadc/delta"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createDeltaResponse()))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createDeltaResponse()))
             }
         }
         mockLocalHttpClient.demand.with {
             doGet(3) { String url ->
                 def sku = getSkuFromUrl(url)
                 assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku&processId=123"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createProductServiceResponse(sku)))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createProductServiceResponse(sku)))
             }
         }
 
@@ -153,7 +153,7 @@ class DeltaServiceTest {
         }
         mockCadcHttpClient.demand.with {
             doGet(1) { String url ->
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: '{"skus":{"en_GB":[]}}'))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: '{"skus":{"en_GB":[]}}'.bytes))
             }
         }
         def result = runFlow()
@@ -173,7 +173,7 @@ class DeltaServiceTest {
         }
         mockCadcHttpClient.demand.with {
             doGet(1) {
-                rx.Observable.from(new MockNingResponse(_statusCode: 500))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 500))
             }
         }
         def result = runFlow()
@@ -194,7 +194,7 @@ class DeltaServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) { String url ->
                 assert url == "http://cadc/delta"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: 'invalid json'))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: 'invalid json'.bytes))
             }
         }
         def result = runFlow()
@@ -220,7 +220,7 @@ class DeltaServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) { String url ->
                 assert url == "http://cadc/delta"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'.bytes))
             }
         }
         def result = runFlow()
@@ -244,7 +244,7 @@ class DeltaServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) { String url ->
                 assert url == "http://cadc/delta"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'.bytes))
             }
         }
         mockLocalHttpClient.demand.with {
@@ -252,9 +252,9 @@ class DeltaServiceTest {
                 def sku = getSkuFromUrl(url)
                 assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku"
                 if (sku == "b") {
-                    rx.Observable.from(new MockNingResponse(_statusCode: 500, _responseBody: '{ "errors" : ["err1", "err2"]}'))
+                    rx.Observable.from(new Oct3HttpResponse(statusCode: 500, bodyAsBytes: '{ "errors" : ["err1", "err2"]}'.bytes))
                 } else {
-                    rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: createProductServiceResponse(sku)))
+                    rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createProductServiceResponse(sku)))
                 }
             }
         }

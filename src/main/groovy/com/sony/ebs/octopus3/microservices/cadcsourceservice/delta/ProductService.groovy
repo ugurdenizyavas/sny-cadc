@@ -1,11 +1,10 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
 
-import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.encoding.MaterialNameEncoder
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
@@ -31,11 +30,11 @@ class ProductService {
 
     @Autowired
     @Qualifier("localHttpClient")
-    NingHttpClient localHttpClient
+    Oct3HttpClient localHttpClient
 
     @Autowired
     @Qualifier("cadcHttpClient")
-    NingHttpClient cadcHttpClient
+    Oct3HttpClient cadcHttpClient
 
     @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
     String repositoryFileServiceUrl
@@ -66,18 +65,18 @@ class ProductService {
         String repoUrl
         rx.Observable.just("starting").flatMap({
             cadcHttpClient.doGet(product.url)
-        }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting sheet from cadc", product.errors)
-        }).flatMap({ Response response ->
+        }).filter({ Oct3HttpResponse response ->
+            response.isSuccessful("getting sheet from cadc", product.errors)
+        }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
-                jsonBytes = response.responseBodyAsBytes
+                jsonBytes = response.bodyAsBytes
                 product.materialName = getMaterialName(jsonBytes)
             }))
         }).flatMap({
             repoUrl = repositoryFileServiceUrl.replace(":urn", product.urn?.toString())
             localHttpClient.doPost(getUrlWithProcessId(repoUrl, product.processId), jsonBytes)
-        }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "saving sheet to repo", product.errors)
+        }).filter({ Oct3HttpResponse response ->
+            response.isSuccessful("saving sheet to repo", product.errors)
         }).map({
             log.info "{} finished successfully", product
             [urn: product.urn?.toString(), repoUrl: repoUrl]
