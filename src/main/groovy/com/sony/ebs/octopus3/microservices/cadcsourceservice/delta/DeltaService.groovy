@@ -39,6 +39,10 @@ class DeltaService {
     @Value('${octopus3.sourceservice.cadcsourceProductServiceUrl}')
     String cadcsourceProductServiceUrl
 
+    @Value('${octopus3.sourceservice.cadcsourceDeltaServiceUrl}')
+    String cadcsourceDeltaServiceUrl
+
+
     @Autowired
     DeltaUrlHelper deltaUrlHelper
 
@@ -83,6 +87,26 @@ class DeltaService {
             log.error "error for $cadcUrl", it
             def error = HandlerUtil.getErrorMessage(it)
             new ProductServiceResult(cadcUrl: cadcUrl, success: false, errors: [error])
+        })
+    }
+
+    public rx.Observable<Object> doDelta(CadcDelta delta) {
+        rx.Observable.just("starting").flatMap({
+            def deltaHandlerUrl = cadcsourceDeltaServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
+            def urlBuilder = new URIBuilder(deltaHandlerUrl)
+            urlBuilder.addParameter("url", delta.cadcUrl)
+            if (delta.processId?.id) {
+                urlBuilder.addParameter("processId", delta.processId?.id)
+            }
+            localHttpClient.doGet(urlBuilder.toString())
+        }).flatMap({ Oct3HttpResponse response ->
+            observe(execControl.blocking({
+                createServiceResult(response, delta.cadcUrl)
+            }))
+        }).onErrorReturn({
+            log.error "error for $delta", it
+            def error = HandlerUtil.getErrorMessage(it)
+            error
         })
     }
 
