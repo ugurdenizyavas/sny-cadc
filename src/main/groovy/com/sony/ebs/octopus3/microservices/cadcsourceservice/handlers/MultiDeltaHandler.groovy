@@ -34,7 +34,7 @@ class MultiDeltaHandler extends GroovyHandler {
                 deltaService.doDelta(new CadcDelta(type: DeltaType.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
                         locale: it.toString(), since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl))
             }).finallyDo({
-                render "Multi Delta Handler finished"
+                render json(result: deltaServiceResults)
             }).subscribe({
                 deltaServiceResults << it
                 activity.debug "multi delta flow emitted: {}", it
