@@ -94,7 +94,7 @@ class DeltaService {
         rx.Observable.just("starting").flatMap({
             def deltaHandlerUrl = cadcsourceDeltaServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
             def urlBuilder = new URIBuilder(deltaHandlerUrl)
-            urlBuilder.addParameter("url", delta.cadcUrl)
+            urlBuilder.addParameter("cadcUrl", delta.cadcUrl)
             if (delta.processId?.id) {
                 urlBuilder.addParameter("processId", delta.processId?.id)
             }
