@@ -35,6 +35,7 @@ ratpack {
 
             deltaHandler = ctx.getBean(DeltaHandler.class)
             productHandler = ctx.getBean(ProductHandler.class)
+            multiProductHandler = ctx.getBean(MultiProductHandler.class)
             multiDeltaHandler = ctx.getBean(MultiDeltaHandler.class)
             healthCheckHandler = new HealthCheckHandler(monitoringService: new MonitoringService())
         }
