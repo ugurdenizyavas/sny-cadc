@@ -3,6 +3,7 @@ import com.sony.ebs.octopus3.commons.ratpack.handlers.HealthCheckHandler
 import com.sony.ebs.octopus3.commons.ratpack.monitoring.MonitoringService
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.DeltaHandler
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.MultiDeltaHandler
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.MultiProductHandler
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers.ProductHandler
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.spring.config.SpringConfig
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
@@ -16,6 +17,7 @@ import static ratpack.groovy.Groovy.ratpack
 ratpack {
 
     ProductHandler productHandler
+    MultiProductHandler multiProductHandler
     DeltaHandler deltaHandler
     MultiDeltaHandler multiDeltaHandler
     HealthCheckHandler healthCheckHandler
@@ -41,6 +43,7 @@ ratpack {
     handlers {
         get("healthcheck", healthCheckHandler)
         get("cadcsource/sheet/publication/:publication/locale/:locale", productHandler)
+        get("cadcsource/sheet/publication/:publication/locales/:locale", multiProductHandler)
         get("cadcsource/delta/publication/:publication/locale/:locale", deltaHandler)
         get("cadcsource/delta/publication/:publication/locales/:locales", multiDeltaHandler)
     }
