@@ -3,6 +3,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.spring.config
 import com.sony.ebs.octopus3.commons.ratpack.file.FileAttributesProvider
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import org.springframework.beans.factory.annotation.Autowired
@@ -73,6 +74,12 @@ class SpringConfig {
                 httpClient: localHttpClient,
                 saveUrl: saveUrl
         )
+    }
+
+    @Bean
+    @org.springframework.context.annotation.Lazy
+    public DeltaResultService deltaResultService() {
+        new DeltaResultService()
     }
 
 }

@@ -5,6 +5,7 @@ import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
@@ -31,6 +32,9 @@ class DeltaHandler extends GroovyHandler {
 
     @Autowired
     ResponseStorage responseStorage
+
+    @Autowired
+    DeltaResultService deltaResultService
 
     @Override
     protected void handle(GroovyContext context) {

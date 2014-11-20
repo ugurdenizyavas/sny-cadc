@@ -3,6 +3,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 import com.sony.ebs.octopus3.commons.process.ProcessId
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductService
 import groovy.mock.interceptor.StubFor
@@ -19,11 +20,13 @@ class ProductHandlerTest {
     final static String DELTA_ITEM_URL = "http://cadc/a"
 
     StubFor mockProductService, mockRequestValidator
+    def deltaResultService
 
     @Before
     void before() {
         mockProductService = new StubFor(ProductService)
         mockRequestValidator = new StubFor(RequestValidator)
+        deltaResultService = new DeltaResultService()
     }
 
     void runFlow(ProcessId processId, String processIdPostfix) {
@@ -41,7 +44,11 @@ class ProductHandlerTest {
             validateCadcProduct(1) { [] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        handle(new ProductHandler(
+                productService: mockProductService.proxyInstance(),
+                validator: mockRequestValidator.proxyInstance(),
+                deltaResultService: deltaResultService
+        ), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$DELTA_ITEM_URL$processIdPostfix"
         }).with {
@@ -73,7 +80,11 @@ class ProductHandlerTest {
             validateCadcProduct(1) { ["error"] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        handle(new ProductHandler(
+                productService: mockProductService.proxyInstance(),
+                validator: mockRequestValidator.proxyInstance(),
+                deltaResultService: deltaResultService
+        ), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/"
         }).with {
@@ -98,7 +109,11 @@ class ProductHandlerTest {
             validateCadcProduct(1) { [] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        handle(new ProductHandler(
+                productService: mockProductService.proxyInstance(),
+                validator: mockRequestValidator.proxyInstance(),
+                deltaResultService: deltaResultService
+        ), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$DELTA_ITEM_URL"
         }).with {
@@ -126,7 +141,11 @@ class ProductHandlerTest {
             validateCadcProduct(1) { [] }
         }
 
-        handle(new ProductHandler(productService: mockProductService.proxyInstance(), validator: mockRequestValidator.proxyInstance()), {
+        handle(new ProductHandler(
+                productService: mockProductService.proxyInstance(),
+                validator: mockRequestValidator.proxyInstance(),
+                deltaResultService: deltaResultService
+        ), {
             pathBinding([publication: PUBLICATION, locale: LOCALE])
             uri "/?url=$DELTA_ITEM_URL"
         }).with {
