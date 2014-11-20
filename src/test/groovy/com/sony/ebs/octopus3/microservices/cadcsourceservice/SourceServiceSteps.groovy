@@ -118,11 +118,11 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.delta.finalCadcUrl == "http://localhost:12306/delta/changes/$locale?since=2014-08-27T09%3A31%3A17.000%2B02%3A00"
 
     assert json.result.stats."number of delta products" == 4
-    assert json.result.stats."number of success" == 4
-    assert json.result.stats."number of errors" == 0
+    assert json.result.stats."number of successful" == 4
+    assert json.result.stats."number of unsuccessful" == 0
 
     def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
+    assert json.result.other.repoUrls?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get last modified date save error") { String publication, String locale ->
@@ -191,17 +191,17 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
     assert json.delta.locale == locale
 
     assert json.result.stats."number of delta products" == 7
-    assert json.result.stats."number of success" == 2
-    assert json.result.stats."number of errors" == 5
+    assert json.result.stats."number of successful" == 2
+    assert json.result.stats."number of unsuccessful" == 5
 
     def getCadcUrl = { "http://localhost:12306/$it".toString() }
     def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
+    assert json.result.other.repoUrls?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
 
-    assert json.result.errors?.size() == 3
-    assert json.result.errors."HTTP 500 error saving sheet to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
-    assert json.result.errors."HTTP 404 error getting sheet from cadc"?.sort() == [getCadcUrl("d"), getCadcUrl("g")]
-    assert json.result.errors."HTTP 500 error getting sheet from cadc" == [getCadcUrl("f")]
+    assert json.result.productErrors?.size() == 3
+    assert json.result.productErrors."HTTP 500 error saving sheet to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
+    assert json.result.productErrors."HTTP 404 error getting sheet from cadc"?.sort() == [getCadcUrl("d"), getCadcUrl("g")]
+    assert json.result.productErrors."HTTP 500 error getting sheet from cadc" == [getCadcUrl("f")]
 }
 
 Given(~"Cadc services for locale (.*) with parse delta error") { String locale ->

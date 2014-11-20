@@ -4,6 +4,7 @@ import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
@@ -44,12 +45,12 @@ class DeltaHandler extends GroovyHandler {
             activity.info "starting {}", delta
 
             List productServiceResults = []
-            List errors = validator.validateCadcDelta(delta)
-            if (errors) {
-                activity.error "error validating {} : {}", delta, errors
+            delta.errors = validator.validateCadcDelta(delta)
+            if (delta.errors) {
+                activity.error "error validating {} : {}", delta, delta.errors
                 response.status(400)
 
-                def responseJson = json(status: 400, errors: errors, delta: delta)
+                def responseJson = deltaResultService.createDeltaResultInvalid(delta, delta.errors)
                 responseStorage.store(
                         delta.processId.id,
                         ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
@@ -60,12 +61,11 @@ class DeltaHandler extends GroovyHandler {
                 def startTime = new DateTime()
                 deltaService.process(delta).finallyDo({
                     def endTime = new DateTime()
-                    def timeStats = HandlerUtil.getTimeStats(startTime, endTime)
                     if (delta.errors) {
                         activity.error "finished {} with errors: {}", delta, delta.errors
                         response.status(500)
 
-                        def responseJson = json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
+                        def responseJson = deltaResultService.createDeltaResultWithErrors(delta, delta.errors, startTime, endTime)
 
                         responseStorage.store(
                                 delta.processId.id,
@@ -77,7 +77,7 @@ class DeltaHandler extends GroovyHandler {
                         activity.info "finished {} with success", delta
                         response.status(200)
 
-                        def responseJson = json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, productServiceResults), delta: delta)
+                        def responseJson = deltaResultService.createDeltaResult(delta, createDeltaResult(delta, productServiceResults), startTime, endTime)
 
                         responseStorage.store(
                                 delta.processId.id,
@@ -97,33 +97,31 @@ class DeltaHandler extends GroovyHandler {
         }
     }
 
-    Map createDeltaResult(CadcDelta delta, List<ProductServiceResult> productServiceResults) {
-        def createSuccess = {
-            productServiceResults.findAll({ it.success }).collect({ it.repoUrl })
-        }
-        def createErrors = {
-            Map errorMap = [:]
-            productServiceResults.findAll({ !it.success }).each { ProductServiceResult serviceResult ->
-                serviceResult.errors.each { error ->
-                    if (errorMap[error] == null) errorMap[error] = []
-                    errorMap[error] << serviceResult.cadcUrl
-                }
+    DeltaResult createDeltaResult(CadcDelta delta, List<ProductServiceResult> productServiceResults) {
+        Map productErrors = [:]
+        productServiceResults.findAll({ !it.success }).each { ProductServiceResult serviceResult ->
+            serviceResult.errors.each { error ->
+                if (productErrors[error] == null) productErrors[error] = []
+                productErrors[error] << serviceResult.cadcUrl
             }
-            errorMap
         }
-        [
-                stats  : [
-                        "number of delta products": delta.urlList?.size(),
-                        "number of success"       : productServiceResults?.findAll({
-                            it.success
-                        }).size(),
-                        "number of errors"        : productServiceResults?.findAll({
-                            !it.success
-                        }).size()
-                ],
-                success: createSuccess(),
-                errors : createErrors()
-        ]
+
+        def successfulUrns = productServiceResults.findAll({ it.success }).collect({ it.cadcUrl })
+        def unsuccessfulUrns = productServiceResults.findAll({ !it.success }).collect({ it.cadcUrl })
+
+        def repoUrls = productServiceResults.findAll({ it.success }).collect({ it.repoUrl })
+
+        new DeltaResult(
+                productErrors: productErrors,
+                deltaUrns: delta.urlList,
+                successfulUrns: successfulUrns,
+                unsuccessfulUrns: unsuccessfulUrns,
+                other: [
+                        repoUrls: repoUrls
+                ]
+
+        )
+
     }
 
 }

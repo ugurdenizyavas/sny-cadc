@@ -73,16 +73,16 @@ class DeltaHandlerTest {
             assert ren.delta.cadcUrl == "http://cadc/skus"
             assert ren.delta.processId != null
 
-            assert ren.result.success?.sort() == ["//repo/file/a", "//repo/file/c"]
+            assert ren.result.other.repoUrls?.sort() == ["//repo/file/a", "//repo/file/c"]
 
-            assert ren.result.errors?.size() == 3
-            assert ren.result.errors.err1?.sort() == ["//cadc/b", "//cadc/d"]
-            assert ren.result.errors.err2 == ["//cadc/d"]
-            assert ren.result.errors.err3 == ["//cadc/b"]
+            assert ren.result.productErrors?.size() == 3
+            assert ren.result.productErrors.err1?.sort() == ["//cadc/b", "//cadc/d"]
+            assert ren.result.productErrors.err2 == ["//cadc/d"]
+            assert ren.result.productErrors.err3 == ["//cadc/b"]
 
             assert ren.result.stats."number of delta products" == 4
-            assert ren.result.stats."number of success" == 2
-            assert ren.result.stats."number of errors" == 2
+            assert ren.result.stats."number of successful" == 2
+            assert ren.result.stats."number of unsuccessful" == 2
         }
     }
 
