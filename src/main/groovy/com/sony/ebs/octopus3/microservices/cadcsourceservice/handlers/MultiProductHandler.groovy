@@ -1,8 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.flows.RepoValue
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.DeltaService
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,7 +25,7 @@ class MultiProductHandler extends GroovyHandler {
         context.with {
             List productServiceResults = []
             rx.Observable.from(pathTokens.locales?.split(",") as List).flatMap({
-                deltaService.doProduct(new CadcDelta(type: DeltaType.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
+                deltaService.doProduct(new CadcDelta(type: RepoValue.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
                         locale: it.toString(), since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl))
             }).finallyDo({
                 render json(result: productServiceResults)

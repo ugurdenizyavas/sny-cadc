@@ -1,11 +1,11 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.flows.RepoValue
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaResult
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
@@ -38,7 +38,7 @@ class DeltaHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            CadcDelta delta = new CadcDelta(type: DeltaType.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
+            CadcDelta delta = new CadcDelta(type: RepoValue.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
                     locale: pathTokens.locale, since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
             activity.info "starting {}", delta
 

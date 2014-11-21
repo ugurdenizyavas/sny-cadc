@@ -1,10 +1,10 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.service
 
+import com.sony.ebs.octopus3.commons.flows.RepoValue
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
 import groovy.mock.interceptor.StubFor
@@ -46,7 +46,7 @@ class DeltaServiceTest {
         mockCadcHttpClient = new StubFor(Oct3HttpClient)
         mockLocalHttpClient = new StubFor(Oct3HttpClient)
 
-        delta = new CadcDelta(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", since: "2014", cadcUrl: "http://cadc")
+        delta = new CadcDelta(type: RepoValue.global_sku, publication: "SCORE", locale: "en_GB", since: "2014", cadcUrl: "http://cadc")
     }
 
     List runFlow() {

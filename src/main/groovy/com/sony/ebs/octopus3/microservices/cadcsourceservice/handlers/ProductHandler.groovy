@@ -1,8 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.flows.RepoValue
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.ProductService
@@ -30,7 +30,7 @@ class ProductHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         context.with {
-            CadcProduct product = new CadcProduct(type: DeltaType.global_sku, publication: pathTokens.publication,
+            CadcProduct product = new CadcProduct(type: RepoValue.global_sku, publication: pathTokens.publication,
                     locale: pathTokens.locale, url: request.queryParams.url, processId: request.queryParams.processId)
             activity.debug "starting {}", product
 

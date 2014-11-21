@@ -1,9 +1,9 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.service
 
+import com.sony.ebs.octopus3.commons.flows.RepoValue
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.junit.AfterClass
@@ -41,7 +41,7 @@ class ProductServiceTest {
         )
         mockLocalHttpClient = new StubFor(Oct3HttpClient)
         mockCadcHttpClient = new StubFor(Oct3HttpClient)
-        product = new CadcProduct(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
+        product = new CadcProduct(type: RepoValue.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
     }
 
     def runFlow() {
