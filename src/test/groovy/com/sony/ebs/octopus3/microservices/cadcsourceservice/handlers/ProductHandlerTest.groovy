@@ -5,7 +5,7 @@ import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.ProductService
 import groovy.mock.interceptor.StubFor
 import org.junit.Before
 import org.junit.Test

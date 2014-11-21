@@ -1,4 +1,4 @@
-package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
+package com.sony.ebs.octopus3.microservices.cadcsourceservice.service
 
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.encoding.MaterialNameEncoder

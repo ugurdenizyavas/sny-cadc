@@ -8,8 +8,8 @@ import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaResul
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductServiceResult
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.DeltaService
 import groovy.json.JsonOutput
 import groovy.util.logging.Slf4j
 import org.joda.time.DateTime
@@ -17,8 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import ratpack.groovy.handling.GroovyContext
 import ratpack.groovy.handling.GroovyHandler
-
-import static ratpack.jackson.Jackson.json
 
 @Slf4j(value = "activity", category = "activity")
 @Component

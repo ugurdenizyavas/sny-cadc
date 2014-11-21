@@ -4,8 +4,8 @@ import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.ProductServiceResult
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.DeltaService
 import groovy.mock.interceptor.StubFor
 import org.junit.Before
 import org.junit.Test

@@ -1,7 +1,7 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.github.dreamhead.moco.Runner
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.delta.DeltaService
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.DeltaService
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.apache.commons.lang.math.RandomUtils

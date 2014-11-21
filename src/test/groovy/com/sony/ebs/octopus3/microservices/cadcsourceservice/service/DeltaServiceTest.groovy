@@ -1,4 +1,4 @@
-package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
+package com.sony.ebs.octopus3.microservices.cadcsourceservice.service
 
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
@@ -6,6 +6,7 @@ import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
