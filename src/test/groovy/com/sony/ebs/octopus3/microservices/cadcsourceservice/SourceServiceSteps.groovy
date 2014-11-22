@@ -122,7 +122,7 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.result.stats."number of unsuccessful" == 0
 
     def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.other.repoUrls?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
+    assert json.result.other.outputUrls?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get last modified date save error") { String publication, String locale ->
@@ -196,7 +196,7 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
 
     def getCadcUrl = { "http://localhost:12306/$it".toString() }
     def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.other.repoUrls?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
+    assert json.result.other.outputUrls?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
 
     assert json.result.productErrors?.size() == 3
     assert json.result.productErrors."HTTP 500 error saving sheet to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
@@ -269,8 +269,10 @@ Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported succe
     assert json?.product?.url == "http://localhost:12306/cadc/sheet/$sku"
     assert json?.product?.publication == publication
     assert json?.product?.locale == locale
-    assert json?.result?.urn == skuUrn
-    assert json?.result?.repoUrl == "http://localhost:12306/repository/file/$skuUrn"
+
+    assert json?.result?.inputUrl == "http://localhost:12306/cadc/sheet/$sku"
+    assert json?.result?.outputUrn == skuUrn
+    assert json?.result?.outputUrl == "http://localhost:12306/repository/file/$skuUrn"
 }
 
 When(~"I import sheet with invalid (.*) parameter") { paramName ->

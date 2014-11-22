@@ -4,6 +4,7 @@ import com.sony.ebs.octopus3.commons.flows.RepoValue
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.junit.AfterClass
@@ -20,6 +21,7 @@ class ProductServiceTest {
     ProductService productService
     StubFor mockLocalHttpClient, mockCadcHttpClient
     CadcProduct product
+    ProductResult productResult
 
     static ExecController execController
 
@@ -42,6 +44,7 @@ class ProductServiceTest {
         mockLocalHttpClient = new StubFor(Oct3HttpClient)
         mockCadcHttpClient = new StubFor(Oct3HttpClient)
         product = new CadcProduct(type: RepoValue.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
+        productResult = new ProductResult()
     }
 
     def runFlow() {
@@ -51,7 +54,7 @@ class ProductServiceTest {
         def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
-            productService.process(product).subscribe({
+            productService.process(product, productResult).subscribe({
                 valueSet = true
                 result.set(it)
             }, {
@@ -89,7 +92,15 @@ class ProductServiceTest {
                 rx.Observable.from(new Oct3HttpResponse(statusCode: 200))
             }
         }
-        assert runFlow() == [urn: "urn:global_sku:score:en_gb:p_2bp_2fp.ceh", repoUrl: "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"]
+
+        runFlow() == "success"
+
+        productResult.with {
+            assert !inputUrn
+            assert inputUrl == "http://cadc/p"
+            assert outputUrn == "urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
+            assert outputUrl == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
+        }
     }
 
     @Test
@@ -101,7 +112,7 @@ class ProductServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert product.errors == ["HTTP 404 error getting sheet from cadc"]
+        assert productResult.errors == ["HTTP 404 error getting sheet from cadc"]
     }
 
     @Test
@@ -121,7 +132,7 @@ class ProductServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert product.errors == ["HTTP 500 error saving sheet to repo"]
+        assert productResult.errors == ["HTTP 500 error saving sheet to repo"]
     }
 
 }

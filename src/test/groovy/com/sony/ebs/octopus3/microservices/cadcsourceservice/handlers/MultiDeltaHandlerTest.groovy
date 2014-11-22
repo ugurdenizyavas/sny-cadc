@@ -1,7 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.github.dreamhead.moco.Runner
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.DeltaService
+import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingOct3HttpClient
+import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.MultiDeltaService
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.apache.commons.lang.math.RandomUtils
@@ -92,16 +93,21 @@ class MultiDeltaHandlerTest {
                 add new JacksonModule()
                 def execControl = launchConfig.execController.control
 
-                def deltaService = new DeltaService(execControl: execControl,
-                        cadcsourceDeltaServiceUrl: externalResourceServerUrl + "/cadcsource/delta/publication/:publication/locale/:locale")
+                def httpClient = new NingOct3HttpClient(launchConfig)
 
-                bind(DeltaService, deltaService)
+                def multiDeltaService = new MultiDeltaService(
+                        execControl: execControl,
+                        localHttpClient: httpClient,
+                        cadcsourceDeltaServiceUrl: externalResourceServerUrl + "/cadcsource/delta/publication/:publication/locale/:locale"
+                )
+
+                bind(MultiDeltaService, multiDeltaService)
             }
 
-            handlers { DeltaService deltaService->
+            handlers { MultiDeltaService multiDeltaService ->
 
                 def multiDeltaHandler = new MultiDeltaHandler(
-                        deltaService: deltaService
+                        multiDeltaService: multiDeltaService
                 )
                 get("cadcsource/delta/publication/:publication/locales/:locales", multiDeltaHandler)
             }

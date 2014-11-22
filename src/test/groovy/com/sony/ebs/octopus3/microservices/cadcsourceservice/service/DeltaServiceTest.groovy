@@ -5,8 +5,8 @@ import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.apache.http.client.utils.URIBuilder
@@ -40,8 +40,11 @@ class DeltaServiceTest {
 
     @Before
     void before() {
-        deltaService = new DeltaService(execControl: execController.control,
-                cadcsourceProductServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale")
+        deltaService = new DeltaService(
+                execControl: execController.control,
+                cadcsourceProductServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale",
+                repositoryFileServiceUrl: "/repo/file/:urn"
+        )
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
         mockCadcHttpClient = new StubFor(Oct3HttpClient)
         mockLocalHttpClient = new StubFor(Oct3HttpClient)
@@ -80,15 +83,16 @@ class DeltaServiceTest {
         """.bytes
     }
 
-    def createProductServiceResponse(sku) {
+    def createProductResponse(sku) {
         """
-        {
+         {
             "result" : {
-                "urn" : "urn:global_sku:score:en_gb:$sku",
-                "repoUrl" : "http://myrepo/file/urn:global_sku:score:en_gb:$sku"
+                "inputUrl" : "http://cadc/${sku}",
+                "outputUrn" : "urn:global_sku:score:en_gb:${sku}",
+                "outputUrl" : "/file/urn:global_sku:score:en_gb:${sku}"
             }
-        }
-        """.bytes
+         }'
+        """
     }
 
     String getSkuFromUrl(url) {
@@ -123,17 +127,17 @@ class DeltaServiceTest {
             doGet(3) { String url ->
                 def sku = getSkuFromUrl(url)
                 assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku&processId=123"
-                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createProductServiceResponse(sku)))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createProductResponse(sku).bytes))
             }
         }
 
         delta.processId = new ProcessIdImpl("123")
-        List<ProductServiceResult> result = runFlow().sort()
+        List<ProductResult> result = runFlow().sort()
         assert result.size() == 3
 
-        assert result[0] == new ProductServiceResult(cadcUrl: "http://cadc/a", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
-        assert result[1] == new ProductServiceResult(cadcUrl: "http://cadc/b", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
-        assert result[2] == new ProductServiceResult(cadcUrl: "http://cadc/c", repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
+        assert result[0] == new ProductResult(inputUrl: "http://cadc/a", outputUrn: "urn:global_sku:score:en_gb:a", outputUrl: "/repo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
+        assert result[1] == new ProductResult(inputUrl: "http://cadc/b", outputUrn: "urn:global_sku:score:en_gb:b", outputUrl: "/repo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
+        assert result[2] == new ProductResult(inputUrl: "http://cadc/c", outputUrn: "urn:global_sku:score:en_gb:c", outputUrl: "/repo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"
@@ -255,15 +259,15 @@ class DeltaServiceTest {
                 if (sku == "b") {
                     rx.Observable.from(new Oct3HttpResponse(statusCode: 500, bodyAsBytes: '{ "errors" : ["err1", "err2"]}'.bytes))
                 } else {
-                    rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createProductServiceResponse(sku)))
+                    rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createProductResponse(sku).bytes))
                 }
             }
         }
         def result = runFlow().sort()
         assert result.size() == 3
-        assert result[0] == new ProductServiceResult(cadcUrl: "http://cadc/a", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:a")
-        assert result[1] == new ProductServiceResult(cadcUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
-        assert result[2] == new ProductServiceResult(cadcUrl: "http://cadc/c", success: true, statusCode: 200, repoUrl: "http://myrepo/file/urn:global_sku:score:en_gb:c")
+        assert result[0] == new ProductResult(inputUrl: "http://cadc/a", success: true, statusCode: 200, outputUrn: "urn:global_sku:score:en_gb:a", outputUrl: "/repo/file/urn:global_sku:score:en_gb:a")
+        assert result[1] == new ProductResult(inputUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
+        assert result[2] == new ProductResult(inputUrl: "http://cadc/c", success: true, statusCode: 200, outputUrn: "urn:global_sku:score:en_gb:c", outputUrl: "/repo/file//urn:global_sku:score:en_gb:c")
 
         assert delta.finalCadcUrl == "http://cadc/delta"
         assert delta.finalSince == "s1"

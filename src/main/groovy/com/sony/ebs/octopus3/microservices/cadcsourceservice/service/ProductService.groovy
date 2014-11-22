@@ -2,13 +2,14 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.service
 
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.encoding.MaterialNameEncoder
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import org.apache.http.client.utils.URIBuilder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -52,34 +53,30 @@ class ProductService {
         }
     }
 
-    def getUrlWithProcessId(String url, String processId) {
-        def urlBuilder = new URIBuilder(url)
-        if (processId) {
-            urlBuilder.addParameter("processId", processId)
-        }
-        urlBuilder.toString()
-    }
-
-    rx.Observable<String> process(CadcProduct product) {
+    rx.Observable<String> process(CadcProduct product, ProductResult productResult) {
         byte[] jsonBytes
-        String repoUrl
+        String outputUrn, outputUrl
         rx.Observable.just("starting").flatMap({
+            productResult.inputUrl = product.url
             cadcHttpClient.doGet(product.url)
         }).filter({ Oct3HttpResponse response ->
-            response.isSuccessful("getting sheet from cadc", product.errors)
+            response.isSuccessful("getting sheet from cadc", productResult.errors)
         }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
                 jsonBytes = response.bodyAsBytes
                 product.materialName = getMaterialName(jsonBytes)
             }))
         }).flatMap({
-            repoUrl = repositoryFileServiceUrl.replace(":urn", product.urn?.toString())
-            localHttpClient.doPost(getUrlWithProcessId(repoUrl, product.processId), jsonBytes)
+            outputUrn = product.urn?.toString()
+            outputUrl = repositoryFileServiceUrl.replace(":urn", outputUrn)
+            localHttpClient.doPost(HandlerUtil.addProcessId(outputUrl, product.processId), jsonBytes)
         }).filter({ Oct3HttpResponse response ->
-            response.isSuccessful("saving sheet to repo", product.errors)
+            response.isSuccessful("saving sheet to repo", productResult.errors)
         }).map({
+            productResult.outputUrn = outputUrn
+            productResult.outputUrl = outputUrl
             log.info "{} finished successfully", product
-            [urn: product.urn?.toString(), repoUrl: repoUrl]
+            "success"
         })
     }
 

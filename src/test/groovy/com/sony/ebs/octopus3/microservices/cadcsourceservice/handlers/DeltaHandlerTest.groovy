@@ -2,9 +2,9 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.DeltaService
 import groovy.mock.interceptor.StubFor
 import org.junit.Before
@@ -18,10 +18,10 @@ class DeltaHandlerTest {
     StubFor mockDeltaService, mockValidator, mockResponseStorage
     def deltaResultService
 
-    def productServiceResultA = new ProductServiceResult(cadcUrl: "//cadc/a", success: true, repoUrl: "//repo/file/a")
-    def productServiceResultB = new ProductServiceResult(cadcUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
-    def productServiceResultC = new ProductServiceResult(cadcUrl: "//cadc/c", success: true, repoUrl: "//repo/file/c")
-    def productServiceResultD = new ProductServiceResult(cadcUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
+    def productResultA = new ProductResult(inputUrl: "//cadc/a", success: true, outputUrl: "//repo/file/a")
+    def productResultB = new ProductResult(inputUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
+    def productResultC = new ProductResult(inputUrl: "//cadc/c", success: true, outputUrl: "//repo/file/c")
+    def productResultD = new ProductResult(inputUrl: "//cadc/d", success: false, errors: ["err1", "err2"])
 
     @Before
     void before() {
@@ -32,7 +32,7 @@ class DeltaHandlerTest {
     }
 
     @Test
-    void "main flow"() {
+    void "success"() {
         mockDeltaService.demand.with {
             process(1) { CadcDelta delta ->
                 assert delta.processId != null
@@ -41,7 +41,7 @@ class DeltaHandlerTest {
                 assert delta.since == "2014"
                 assert delta.cadcUrl == "http://cadc/skus"
                 delta.urlList = ["/a", "/b", "/c", "/d"]
-                rx.Observable.from([productServiceResultC, productServiceResultA, productServiceResultD, productServiceResultB])
+                rx.Observable.from([productResultC, productResultA, productResultD, productResultB])
             }
         }
 
@@ -73,7 +73,7 @@ class DeltaHandlerTest {
             assert ren.delta.cadcUrl == "http://cadc/skus"
             assert ren.delta.processId != null
 
-            assert ren.result.other.repoUrls?.sort() == ["//repo/file/a", "//repo/file/c"]
+            assert ren.result.other.outputUrls?.sort() == ["//repo/file/a", "//repo/file/c"]
 
             assert ren.result.productErrors?.size() == 3
             assert ren.result.productErrors.err1?.sort() == ["//cadc/b", "//cadc/d"]

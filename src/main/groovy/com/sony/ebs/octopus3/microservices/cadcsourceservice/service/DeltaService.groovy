@@ -5,8 +5,8 @@ import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
-import com.sony.ebs.octopus3.microservices.cadcsourceservice.model.ProductServiceResult
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
@@ -40,9 +40,8 @@ class DeltaService {
     @Value('${octopus3.sourceservice.cadcsourceProductServiceUrl}')
     String cadcsourceProductServiceUrl
 
-    @Value('${octopus3.sourceservice.cadcsourceDeltaServiceUrl}')
-    String cadcsourceDeltaServiceUrl
-
+    @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
+    String repositoryFileServiceUrl
 
     @Autowired
     DeltaUrlHelper deltaUrlHelper
@@ -58,56 +57,51 @@ class DeltaService {
         }
     }
 
-    Object createServiceResult(Oct3HttpResponse response, String cadcUrl) {
-        def serviceResult = new ProductServiceResult(cadcUrl: cadcUrl, success: response.success, statusCode: response.statusCode)
-        def json = jsonSlurper.parse(response.bodyAsStream, EncodingUtil.CHARSET_STR)
-        if (!response.success) {
-            serviceResult.errors = json?.errors.collect { it.toString() }
-        } else {
-            serviceResult.with {
-                repoUrl = json?.result?.repoUrl
-            }
+    def createProductResult(Oct3HttpResponse response, String inputUrl) {
+        def productResult = new ProductResult(
+                inputUrl: inputUrl,
+                success: response.success,
+                statusCode: response.statusCode
+        )
+        def json = HandlerUtil.parseOct3ResponseQuiet(response)
+        productResult.errors = json?.errors
+        if (response.success) {
+            productResult.outputUrn = json?.result?.outputUrn
+            productResult.outputUrl = json?.result?.outputUrl
         }
-        serviceResult
+        productResult
     }
 
-    private rx.Observable<Object> doProduct(CadcDelta delta, String cadcUrl) {
-        rx.Observable.just("starting").flatMap({
-            def initialUrl = cadcsourceProductServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
-            def urlBuilder = new URIBuilder(initialUrl)
-            urlBuilder.addParameter("url", cadcUrl)
+    def createProductServiceUrl(CadcDelta delta, String inputUrl) {
+        def initialUrl = cadcsourceProductServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
+        new URIBuilder(initialUrl).with {
+            addParameter("url", inputUrl)
             if (delta.processId?.id) {
-                urlBuilder.addParameter("processId", delta.processId?.id)
+                addParameter("processId", delta.processId?.id)
             }
-            localHttpClient.doGet(urlBuilder.toString())
-        }).flatMap({ Oct3HttpResponse response ->
-            observe(execControl.blocking({
-                createServiceResult(response, cadcUrl)
-            }))
-        }).onErrorReturn({
-            log.error "error for $cadcUrl", it
-            def error = HandlerUtil.getErrorMessage(it)
-            new ProductServiceResult(cadcUrl: cadcUrl, success: false, errors: [error])
-        })
+            it.toString()
+        }
     }
 
-    public rx.Observable<Object> doDelta(CadcDelta delta) {
+    rx.Observable<ProductResult> doProduct(CadcDelta delta, String inputUrl) {
         rx.Observable.just("starting").flatMap({
-            def deltaHandlerUrl = cadcsourceDeltaServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
-            def urlBuilder = new URIBuilder(deltaHandlerUrl)
-            urlBuilder.addParameter("cadcUrl", delta.cadcUrl)
-            if (delta.processId?.id) {
-                urlBuilder.addParameter("processId", delta.processId?.id)
-            }
-            localHttpClient.doGet(urlBuilder.toString())
+            observe(execControl.blocking({
+                createProductServiceUrl(delta, inputUrl)
+            }))
+        }).flatMap({
+            localHttpClient.doGet(it)
         }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
-                createServiceResult(response, delta.cadcUrl)
+                createProductResult(response, inputUrl)
             }))
         }).onErrorReturn({
-            log.error "error for $delta", it
+            log.error "error for $inputUrl", it
             def error = HandlerUtil.getErrorMessage(it)
-            error
+            new ProductResult(
+                    success: false,
+                    inputUrl: inputUrl,
+                    errors: [error]
+            )
         })
     }
 
