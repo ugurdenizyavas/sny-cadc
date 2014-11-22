@@ -1,21 +1,21 @@
 # language: en
-Feature: Sheet Service
-  Tests the sheet service which imports a single sheet from CADC to Octopus3
+Feature: Product Service
+  Tests the product service which imports a single product from CADC to Octopus3
 
-  Scenario: Sheet flow correct
-    Given Cadc sheet z1.ceh
+  Scenario: Product flow correct
+    Given Cadc product z1.ceh
     Given Repo save service for publication SCORE locale en_GB sku z1.ceh
-    When I import sheet with publication SCORE locale en_GB sku z1.ceh correctly
-    Then Sheet with publication SCORE locale en_GB sku z1.ceh should be imported successful
+    When I import product with publication SCORE locale en_GB sku z1.ceh correctly
+    Then Product with publication SCORE locale en_GB sku z1.ceh should be imported successful
 
-  Scenario: Sheet flow invalid publication
-    When I import sheet with invalid publication parameter
+  Scenario: Product flow invalid publication
+    When I import product with invalid publication parameter
     Then Import should give publication parameter error
 
-  Scenario: Sheet flow invalid locale
-    When I import sheet with invalid locale parameter
+  Scenario: Product flow invalid locale
+    When I import product with invalid locale parameter
     Then Import should give locale parameter error
 
-  Scenario: Sheet flow invalid url
-    When I import sheet with invalid url parameter
+  Scenario: Product flow invalid url
+    When I import product with invalid url parameter
     Then Import should give url parameter error

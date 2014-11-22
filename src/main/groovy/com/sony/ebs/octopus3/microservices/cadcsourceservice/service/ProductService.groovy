@@ -60,7 +60,7 @@ class ProductService {
             productResult.inputUrl = product.url
             cadcHttpClient.doGet(product.url)
         }).filter({ Oct3HttpResponse response ->
-            response.isSuccessful("getting sheet from cadc", productResult.errors)
+            response.isSuccessful("getting product from cadc", productResult.errors)
         }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
                 jsonBytes = response.bodyAsBytes
@@ -72,7 +72,7 @@ class ProductService {
         }).flatMap({ url ->
             localHttpClient.doPost(url, jsonBytes)
         }).filter({ Oct3HttpResponse response ->
-            response.isSuccessful("saving sheet to repo", productResult.errors)
+            response.isSuccessful("saving product to repo", productResult.errors)
         }).map({
             productResult.outputUrn = outputUrn
             productResult.outputUrl = outputUrl

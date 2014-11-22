@@ -43,8 +43,8 @@ ratpack {
 
     handlers {
         get("healthcheck", healthCheckHandler)
-        get("cadcsource/sheet/publication/:publication/locale/:locale", productHandler)
-        get("cadcsource/sheet/publication/:publication/locales/:locale", multiProductHandler)
+        get("cadcsource/product/publication/:publication/locale/:locale", productHandler)
+        get("cadcsource/product/publication/:publication/locales/:locale", multiProductHandler)
         get("cadcsource/delta/publication/:publication/locale/:locale", deltaHandler)
         get("cadcsource/delta/publication/:publication/locales/:locales", multiDeltaHandler)
     }

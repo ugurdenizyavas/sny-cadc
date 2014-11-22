@@ -112,7 +112,7 @@ class ProductServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert productResult.errors == ["HTTP 404 error getting sheet from cadc"]
+        assert productResult.errors == ["HTTP 404 error getting product from cadc"]
     }
 
     @Test
@@ -132,7 +132,7 @@ class ProductServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert productResult.errors == ["HTTP 500 error saving sheet to repo"]
+        assert productResult.errors == ["HTTP 500 error saving product to repo"]
     }
 
 }

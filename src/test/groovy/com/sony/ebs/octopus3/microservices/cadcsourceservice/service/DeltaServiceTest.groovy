@@ -42,7 +42,7 @@ class DeltaServiceTest {
     void before() {
         deltaService = new DeltaService(
                 execControl: execController.control,
-                cadcsourceProductServiceUrl: "http://cadcsource/sheet/publication/:publication/locale/:locale",
+                cadcsourceProductServiceUrl: "http://cadcsource/product/publication/:publication/locale/:locale",
                 repositoryFileServiceUrl: "/repo/file/:urn"
         )
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
@@ -126,7 +126,7 @@ class DeltaServiceTest {
         mockLocalHttpClient.demand.with {
             doGet(3) { String url ->
                 def sku = getSkuFromUrl(url)
-                assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku&processId=123"
+                assert url == "http://cadcsource/product/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku&processId=123"
                 rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createProductResponse(sku).bytes))
             }
         }
@@ -255,7 +255,7 @@ class DeltaServiceTest {
         mockLocalHttpClient.demand.with {
             doGet(3) { String url ->
                 def sku = getSkuFromUrl(url)
-                assert url == "http://cadcsource/sheet/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku"
+                assert url == "http://cadcsource/product/publication/SCORE/locale/en_GB?url=http%3A%2F%2Fcadc%2F$sku"
                 if (sku == "b") {
                     rx.Observable.from(new Oct3HttpResponse(statusCode: 500, bodyAsBytes: '{ "errors" : ["err1", "err2"]}'.bytes))
                 } else {

@@ -1,6 +1,6 @@
 # language: en
 Feature: Delta Service
-  Tests the delta service which gets the delta from CADC starts the import of changed sheets from CADC to Octopus3
+  Tests the delta service which gets the delta from CADC starts the import of changed products from CADC to Octopus3
 
   Scenario: Delta flow successful
     Given Cadc services for locale en_GB with no errors
