@@ -65,11 +65,12 @@ class ProductService {
             observe(execControl.blocking({
                 jsonBytes = response.bodyAsBytes
                 product.materialName = getMaterialName(jsonBytes)
+                outputUrn = product.urn?.toString()
+                outputUrl = repositoryFileServiceUrl.replace(":urn", outputUrn)
+                HandlerUtil.addProcessId(outputUrl, product.processId)
             }))
-        }).flatMap({
-            outputUrn = product.urn?.toString()
-            outputUrl = repositoryFileServiceUrl.replace(":urn", outputUrn)
-            localHttpClient.doPost(HandlerUtil.addProcessId(outputUrl, product.processId), jsonBytes)
+        }).flatMap({ url ->
+            localHttpClient.doPost(url, jsonBytes)
         }).filter({ Oct3HttpResponse response ->
             response.isSuccessful("saving sheet to repo", productResult.errors)
         }).map({
