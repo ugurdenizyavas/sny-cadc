@@ -5,6 +5,7 @@ import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import groovy.json.JsonException
@@ -105,26 +106,26 @@ class DeltaService {
         })
     }
 
-    rx.Observable<Object> process(CadcDelta delta) {
+    rx.Observable<Object> processDelta(CadcDelta delta, DeltaResult deltaResult) {
         def lastModifiedUrn = delta.lastModifiedUrn
         rx.Observable.just("starting").flatMap({
             deltaUrlHelper.createSinceValue(delta.since, lastModifiedUrn)
         }).flatMap({ String since ->
-            delta.finalSince = since
+            deltaResult.finalStartDate = since
             deltaUrlHelper.createCadcDeltaUrl(delta.cadcUrl, delta.locale, since)
         }).flatMap({ String deltaUrl ->
-            delta.finalCadcUrl = deltaUrl
+            deltaResult.finalDeltaUrl = deltaUrl
             cadcHttpClient.doGet(deltaUrl)
         }).filter({ Oct3HttpResponse response ->
-            response.isSuccessful("getting delta from cadc", delta.errors)
+            response.isSuccessful("getting delta from cadc", deltaResult.errors)
         }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
-                delta.urlList = parseDelta(delta.locale, response.bodyAsStream)
+                deltaResult.deltaUrls = parseDelta(delta.locale, response.bodyAsStream)
             }))
         }).flatMap({
-            deltaUrlHelper.updateLastModified(lastModifiedUrn, delta.errors)
+            deltaUrlHelper.updateLastModified(lastModifiedUrn, deltaResult.errors)
         }).flatMap({
-            def list = delta.urlList.collect({ doProduct(delta, it) })
+            def list = deltaResult.deltaUrls.collect({ doProduct(delta, it) })
             rx.Observable.merge(list, 30)
         })
     }

@@ -54,7 +54,7 @@ class ProductServiceTest {
         def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
-            productService.process(product, productResult).subscribe({
+            productService.processProduct(product, productResult).subscribe({
                 valueSet = true
                 result.set(it)
             }, {
@@ -77,8 +77,7 @@ class ProductServiceTest {
 
     @Test
     void "success"() {
-        def sku = "p+p/p.ceh"
-        def productServiceResponse = createProductServiceResponse(sku)
+        def productServiceResponse = createProductServiceResponse("p+p/p.ceh")
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
@@ -98,6 +97,8 @@ class ProductServiceTest {
         productResult.with {
             assert !inputUrn
             assert inputUrl == "http://cadc/p"
+            assert sku == "p_2bp_2fp.ceh"
+            assert !errors
             assert outputUrn == "urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
             assert outputUrl == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
         }
@@ -112,12 +113,20 @@ class ProductServiceTest {
             }
         }
         assert runFlow() == "outOfFlow"
-        assert productResult.errors == ["HTTP 404 error getting product from cadc"]
+
+        productResult.with {
+            assert !inputUrn
+            assert inputUrl == "http://cadc/p"
+            assert !sku
+            assert errors == ["HTTP 404 error getting product from cadc"]
+            assert !outputUrn
+            assert !outputUrl
+        }
     }
 
     @Test
     void "delta item could not be saved"() {
-        def productServiceResponse = createProductServiceResponse("p")
+        def productServiceResponse = createProductServiceResponse("p+p/p.ceh")
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
@@ -126,13 +135,22 @@ class ProductServiceTest {
         }
         mockLocalHttpClient.demand.with {
             doPost(1) { url, data ->
-                assert url == "http://repo/urn:global_sku:score:en_gb:p?processId=123"
+                assert url == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh?processId=123"
                 assert data == productServiceResponse
                 rx.Observable.from(new Oct3HttpResponse(statusCode: 500))
             }
         }
         assert runFlow() == "outOfFlow"
-        assert productResult.errors == ["HTTP 500 error saving product to repo"]
+
+        productResult.with {
+            assert !inputUrn
+            assert inputUrl == "http://cadc/p"
+            assert sku == "p_2bp_2fp.ceh"
+            assert errors ==  ["HTTP 500 error saving product to repo"]
+            assert !outputUrn
+            assert !outputUrl
+        }
+
     }
 
 }

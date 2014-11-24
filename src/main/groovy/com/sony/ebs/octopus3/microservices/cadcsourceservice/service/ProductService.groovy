@@ -43,17 +43,17 @@ class ProductService {
     @Value('${octopus3.sourceservice.repositoryCopyServiceUrl}')
     String repositoryCopyServiceUrl
 
-    String getMaterialName(byte[] jsonBytes) throws Exception {
+    String createSku(byte[] jsonBytes) throws Exception {
         try {
             def json = jsonSlurper.parse(new ByteArrayInputStream(jsonBytes), EncodingUtil.CHARSET_STR)
             def skuName = json.skuName
-            MaterialNameEncoder.encode(skuName)
+            MaterialNameEncoder.encode(skuName)?.toLowerCase()
         } catch (JsonException e) {
             throw new Exception("error parsing delta", e)
         }
     }
 
-    rx.Observable<String> process(CadcProduct product, ProductResult productResult) {
+    rx.Observable<String> processProduct(CadcProduct product, ProductResult productResult) {
         byte[] jsonBytes
         String outputUrn, outputUrl
         rx.Observable.just("starting").flatMap({
@@ -64,8 +64,8 @@ class ProductService {
         }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
                 jsonBytes = response.bodyAsBytes
-                product.materialName = getMaterialName(jsonBytes)
-                outputUrn = product.urn?.toString()
+                productResult.sku = createSku(jsonBytes)
+                outputUrn = product.getOutputUrn(productResult.sku).toString()
                 outputUrl = repositoryFileServiceUrl.replace(":urn", outputUrn)
                 HandlerUtil.addProcessId(outputUrl, product.processId)
             }))

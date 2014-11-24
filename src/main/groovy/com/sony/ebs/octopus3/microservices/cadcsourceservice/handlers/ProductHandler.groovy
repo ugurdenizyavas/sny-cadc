@@ -48,7 +48,7 @@ class ProductHandler extends GroovyHandler {
             context.render deltaResultService.createProductResultInvalid(product, errors)
         } else {
             ProductResult productResult = new ProductResult()
-            productService.process(product, productResult).finallyDo({
+            productService.processProduct(product, productResult).finallyDo({
                 def endTime = new DateTime()
                 if (productResult.errors) {
                     activity.error "finished {} with errors: {}", product, productResult.errors

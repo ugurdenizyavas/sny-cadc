@@ -114,12 +114,12 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.delta.publication == publication
     assert json.delta.locale == locale
     assert json.delta.cadcUrl == "http://localhost:12306/delta"
-    assert json.delta.finalSince == "2014-08-27T09:31:17.000+02:00"
-    assert json.delta.finalCadcUrl == "http://localhost:12306/delta/changes/$locale?since=2014-08-27T09%3A31%3A17.000%2B02%3A00"
 
     assert json.result.stats."number of delta products" == 4
     assert json.result.stats."number of successful" == 4
     assert json.result.stats."number of unsuccessful" == 0
+    assert json.result.finalStartDate == "2014-08-27T09:31:17.000+02:00"
+    assert json.result.finalDeltaUrl == "http://localhost:12306/delta/changes/$locale?since=2014-08-27T09%3A31%3A17.000%2B02%3A00"
 
     def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
     assert json.result.other.outputUrls?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
@@ -265,11 +265,11 @@ Then(~"Product with publication (.*) locale (.*) sku (.*) should be imported suc
     assert response.statusCode == 200
     def json = parseJson(response)
     assert json.status == 200
-    assert json?.product?.materialName.equalsIgnoreCase(sku)
     assert json?.product?.url == "http://localhost:12306/cadc/product/$sku"
     assert json?.product?.publication == publication
     assert json?.product?.locale == locale
 
+    assert json?.result?.sku.equalsIgnoreCase(sku)
     assert json?.result?.inputUrl == "http://localhost:12306/cadc/product/$sku"
     assert json?.result?.outputUrn == skuUrn
     assert json?.result?.outputUrl == "http://localhost:12306/repository/file/$skuUrn"

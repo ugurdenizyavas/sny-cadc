@@ -5,6 +5,7 @@ import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
 import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import groovy.mock.interceptor.StubFor
@@ -21,10 +22,14 @@ import spock.util.concurrent.BlockingVariable
 @Slf4j
 class DeltaServiceTest {
 
+    final static String DELTA_URL = "http://cadc/delta"
+    final static String START_DATE = "s1"
+
     DeltaService deltaService
     StubFor mockDeltaUrlHelper, mockCadcHttpClient, mockLocalHttpClient
 
     CadcDelta delta
+    DeltaResult deltaResult
 
     static ExecController execController
 
@@ -50,6 +55,7 @@ class DeltaServiceTest {
         mockLocalHttpClient = new StubFor(Oct3HttpClient)
 
         delta = new CadcDelta(type: RepoValue.global_sku, publication: "SCORE", locale: "en_GB", since: "2014", cadcUrl: "http://cadc")
+        deltaResult = new DeltaResult()
     }
 
     List runFlow() {
@@ -59,7 +65,7 @@ class DeltaServiceTest {
 
         def result = new BlockingVariable(5)
         execController.start {
-            deltaService.process(delta).toList().subscribe({
+            deltaService.processDelta(delta, deltaResult).toList().subscribe({
                 result.set(it)
             }, {
                 log.error "error in flow", it
@@ -105,13 +111,13 @@ class DeltaServiceTest {
     void "success"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
-                rx.Observable.just("s1")
+                rx.Observable.just(START_DATE)
             }
             createCadcDeltaUrl(1) { cadcUrl, locale, since ->
                 assert cadcUrl == "http://cadc"
                 assert locale == "en_GB"
-                assert since == "s1"
-                rx.Observable.just("http://cadc/delta")
+                assert since == START_DATE
+                rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->
                 rx.Observable.just("done")
@@ -119,7 +125,7 @@ class DeltaServiceTest {
         }
         mockCadcHttpClient.demand.with {
             doGet(1) { url ->
-                assert url == "http://cadc/delta"
+                assert url == DELTA_URL
                 rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: createDeltaResponse()))
             }
         }
@@ -139,18 +145,19 @@ class DeltaServiceTest {
         assert result[1] == new ProductResult(inputUrl: "http://cadc/b", outputUrn: "urn:global_sku:score:en_gb:b", outputUrl: "/repo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
         assert result[2] == new ProductResult(inputUrl: "http://cadc/c", outputUrn: "urn:global_sku:score:en_gb:c", outputUrl: "/repo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
 
-        assert delta.finalCadcUrl == "http://cadc/delta"
-        assert delta.finalSince == "s1"
+        assert deltaResult.deltaUrls == ["http://cadc/a", "http://cadc/c", "http://cadc/b"]
+        assert deltaResult.finalDeltaUrl == DELTA_URL
+        assert deltaResult.finalStartDate == START_DATE
     }
 
     @Test
     void "no products to import"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
-                rx.Observable.just("s1")
+                rx.Observable.just(START_DATE)
             }
             createCadcDeltaUrl(1) { cadcUrl, locale, since ->
-                rx.Observable.just("http://cadc/delta")
+                rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->
                 rx.Observable.just("done")
@@ -163,17 +170,20 @@ class DeltaServiceTest {
         }
         def result = runFlow()
         assert result.size() == 0
-        assert delta.finalCadcUrl == "http://cadc/delta"
+
+        assert !deltaResult.deltaUrls
+        assert deltaResult.finalDeltaUrl == DELTA_URL
+        assert deltaResult.finalStartDate == START_DATE
     }
 
     @Test
     void "error getting delta"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
-                rx.Observable.just("s1")
+                rx.Observable.just(START_DATE)
             }
             createCadcDeltaUrl(1) { cadcUrl, locale, since ->
-                rx.Observable.just("http://cadc/delta")
+                rx.Observable.just(DELTA_URL)
             }
         }
         mockCadcHttpClient.demand.with {
@@ -183,64 +193,74 @@ class DeltaServiceTest {
         }
         def result = runFlow()
         assert result.size() == 0
-        assert delta.errors == ["HTTP 500 error getting delta from cadc"]
+        assert deltaResult.errors == ["HTTP 500 error getting delta from cadc"]
+        assert !deltaResult.deltaUrls
+        assert deltaResult.finalDeltaUrl == DELTA_URL
+        assert deltaResult.finalStartDate == START_DATE
     }
 
     @Test
     void "error parsing delta"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
-                rx.Observable.just("s1")
+                rx.Observable.just(START_DATE)
             }
             createCadcDeltaUrl(1) { cadcUrl, locale, since ->
-                rx.Observable.just("http://cadc/delta")
+                rx.Observable.just(DELTA_URL)
             }
         }
         mockCadcHttpClient.demand.with {
             doGet(1) { String url ->
-                assert url == "http://cadc/delta"
+                assert url == DELTA_URL
                 rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: 'invalid json'.bytes))
             }
         }
         def result = runFlow()
         assert result == ["error parsing delta"]
+        assert !deltaResult.deltaUrls
+        assert deltaResult.errors == []
+        assert deltaResult.finalDeltaUrl == DELTA_URL
+        assert deltaResult.finalStartDate == START_DATE
     }
 
     @Test
     void "error updating last modified date"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
-                rx.Observable.just("s1")
+                rx.Observable.just(START_DATE)
             }
             createCadcDeltaUrl(1) { cadcUrl, locale, since ->
-                rx.Observable.just("http://cadc/delta")
+                rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->
                 rx.Observable.just("error").filter({
-                    delta.errors << "error updating last modified date"
+                    deltaResult.errors << "error updating last modified date"
                     false
                 })
             }
         }
         mockCadcHttpClient.demand.with {
             doGet(1) { String url ->
-                assert url == "http://cadc/delta"
+                assert url == DELTA_URL
                 rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'.bytes))
             }
         }
         def result = runFlow()
         assert result.size() == 0
-        assert delta.errors == ["error updating last modified date"]
+        assert deltaResult.deltaUrls == ["http://cadc/a", "http://cadc/c", "http://cadc/b"]
+        assert deltaResult.errors == ["error updating last modified date"]
+        assert deltaResult.finalDeltaUrl == DELTA_URL
+        assert deltaResult.finalStartDate == START_DATE
     }
 
     @Test
     void "one delta item is not imported"() {
         mockDeltaUrlHelper.demand.with {
             createSinceValue(1) { since, lastModifiedUrn ->
-                rx.Observable.just("s1")
+                rx.Observable.just(START_DATE)
             }
             createCadcDeltaUrl(1) { cadcUrl, locale, since ->
-                rx.Observable.just("http://cadc/delta")
+                rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->
                 rx.Observable.just("done")
@@ -248,7 +268,7 @@ class DeltaServiceTest {
         }
         mockCadcHttpClient.demand.with {
             doGet(1) { String url ->
-                assert url == "http://cadc/delta"
+                assert url == DELTA_URL
                 rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: '{"skus":{"en_GB":["http://cadc/a", "http://cadc/c", "http://cadc/b"]}}'.bytes))
             }
         }
@@ -269,8 +289,10 @@ class DeltaServiceTest {
         assert result[1] == new ProductResult(inputUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
         assert result[2] == new ProductResult(inputUrl: "http://cadc/c", success: true, statusCode: 200, outputUrn: "urn:global_sku:score:en_gb:c", outputUrl: "/repo/file//urn:global_sku:score:en_gb:c")
 
-        assert delta.finalCadcUrl == "http://cadc/delta"
-        assert delta.finalSince == "s1"
+        assert deltaResult.deltaUrls == ["http://cadc/a", "http://cadc/c", "http://cadc/b"]
+        assert deltaResult.errors == []
+        assert deltaResult.finalDeltaUrl == DELTA_URL
+        assert deltaResult.finalStartDate == START_DATE
     }
 
 }

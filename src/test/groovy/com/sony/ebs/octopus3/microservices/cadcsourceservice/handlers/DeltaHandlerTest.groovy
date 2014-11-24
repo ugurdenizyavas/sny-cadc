@@ -2,6 +2,7 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
@@ -17,6 +18,7 @@ class DeltaHandlerTest {
 
     StubFor mockDeltaService, mockValidator, mockResponseStorage
     def deltaResultService
+    DeltaResult deltaResult
 
     def productResultA = new ProductResult(inputUrl: "//cadc/a", success: true, outputUrl: "//repo/file/a")
     def productResultB = new ProductResult(inputUrl: "//cadc/b", success: false, errors: ["err3", "err1"])
@@ -29,18 +31,19 @@ class DeltaHandlerTest {
         mockValidator = new StubFor(RequestValidator)
         mockResponseStorage = new StubFor(ResponseStorage)
         deltaResultService = new DeltaResultService()
+        deltaResult = new DeltaResult()
     }
 
     @Test
     void "success"() {
         mockDeltaService.demand.with {
-            process(1) { CadcDelta delta ->
+            processDelta(1) { CadcDelta delta, DeltaResult dr ->
                 assert delta.processId != null
                 assert delta.publication == "SCORE"
                 assert delta.locale == "en_GB"
                 assert delta.since == "2014"
                 assert delta.cadcUrl == "http://cadc/skus"
-                delta.urlList = ["/a", "/b", "/c", "/d"]
+                dr.deltaUrls = ["/a", "/b", "/c", "/d"]
                 rx.Observable.from([productResultC, productResultA, productResultD, productResultB])
             }
         }
@@ -119,8 +122,8 @@ class DeltaHandlerTest {
     @Test
     void "error in delta flow"() {
         mockDeltaService.demand.with {
-            process(1) { CadcDelta delta ->
-                delta.errors << "error in delta flow"
+            processDelta(1) { CadcDelta delta, DeltaResult dr ->
+                dr.errors << "error in delta flow"
                 rx.Observable.just(null)
             }
         }
@@ -157,7 +160,7 @@ class DeltaHandlerTest {
     @Test
     void "exception in delta flow"() {
         mockDeltaService.demand.with {
-            process(1) {
+            processDelta(1) { CadcDelta delta, DeltaResult dr ->
                 rx.Observable.just("starting").map({
                     throw new Exception("exp in delta flow")
                 })

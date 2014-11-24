@@ -32,7 +32,7 @@ class ProductHandlerTest {
 
     void runFlow(ProcessId processId, String processIdPostfix) {
         mockProductService.demand.with {
-            process(1) { CadcProduct product, ProductResult productResult ->
+            processProduct(1) { CadcProduct product, ProductResult productResult ->
                 assert product.publication == PUBLICATION
                 assert product.locale == LOCALE
                 assert product.url == DELTA_ITEM_URL
@@ -110,7 +110,7 @@ class ProductHandlerTest {
     @Test
     void "error in delta item flow"() {
         mockProductService.demand.with {
-            process(1) { CadcProduct product, ProductResult productResult ->
+            processProduct(1) { CadcProduct product, ProductResult productResult ->
                 productResult.inputUrl = DELTA_ITEM_URL
                 productResult.errors << "error in delta item flow"
                 rx.Observable.just(null)
@@ -150,7 +150,7 @@ class ProductHandlerTest {
     @Test
     void "exception in delta item flow"() {
         mockProductService.demand.with {
-            process(1) { CadcProduct product, ProductResult productResult ->
+            processProduct(1) { CadcProduct product, ProductResult productResult ->
                 productResult.inputUrl = DELTA_ITEM_URL
                 rx.Observable.just("starting").map({
                     throw new Exception("exp in delta item flow")

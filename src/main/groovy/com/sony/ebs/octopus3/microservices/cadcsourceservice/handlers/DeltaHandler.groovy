@@ -35,91 +35,81 @@ class DeltaHandler extends GroovyHandler {
     @Autowired
     DeltaResultService deltaResultService
 
+    def storeResponse(CadcDelta delta, responseJson) {
+        responseStorage.store(
+                delta.processId.id,
+                ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
+                JsonOutput.toJson(responseJson.object)
+        )
+    }
+
     @Override
     protected void handle(GroovyContext context) {
-        context.with {
-            CadcDelta delta = new CadcDelta(type: RepoValue.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
-                    locale: pathTokens.locale, since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl)
-            activity.info "starting {}", delta
+        CadcDelta delta = new CadcDelta(
+                type: RepoValue.global_sku,
+                processId: new ProcessIdImpl(),
+                publication: context.pathTokens.publication,
+                locale: context.pathTokens.locale,
+                since: context.request.queryParams.since,
+                cadcUrl: context.request.queryParams.cadcUrl
+        )
+        activity.info "starting {}", delta
 
+        List errors = validator.validateCadcDelta(delta)
+        if (errors) {
+            activity.error "error validating {} : {}", delta, errors
+            context.response.status(400)
+            def responseJson = deltaResultService.createDeltaResultInvalid(delta, errors)
+            storeResponse(delta, responseJson)
+            context.render responseJson
+        } else {
+            def startTime = new DateTime()
+            DeltaResult deltaResult = new DeltaResult()
             List<ProductResult> productResults = []
-            delta.errors = validator.validateCadcDelta(delta)
-            if (delta.errors) {
-                activity.error "error validating {} : {}", delta, delta.errors
-                response.status(400)
+            deltaService.processDelta(delta, deltaResult).finallyDo({
+                def endTime = new DateTime()
+                if (deltaResult.errors) {
+                    activity.error "finished {} with errors: {}", delta, deltaResult.errors
+                    context.response.status(500)
+                    def responseJson = deltaResultService.createDeltaResultWithErrors(delta, deltaResult.errors, startTime, endTime)
+                    storeResponse(delta, responseJson)
+                    context.render responseJson
+                } else {
+                    activity.info "finished {} with success", delta
+                    context.response.status(200)
 
-                def responseJson = deltaResultService.createDeltaResultInvalid(delta, delta.errors)
-                responseStorage.store(
-                        delta.processId.id,
-                        ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
-                        JsonOutput.toJson(responseJson.object)
-                )
-                render responseJson
-            } else {
-                def startTime = new DateTime()
-                deltaService.process(delta).finallyDo({
-                    def endTime = new DateTime()
-                    if (delta.errors) {
-                        activity.error "finished {} with errors: {}", delta, delta.errors
-                        response.status(500)
-
-                        def responseJson = deltaResultService.createDeltaResultWithErrors(delta, delta.errors, startTime, endTime)
-
-                        responseStorage.store(
-                                delta.processId.id,
-                                ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
-                                JsonOutput.toJson(responseJson.object)
-                        )
-                        render responseJson
-                    } else {
-                        activity.info "finished {} with success", delta
-                        response.status(200)
-
-                        def responseJson = deltaResultService.createDeltaResult(delta, createDeltaResult(delta, productResults), startTime, endTime)
-
-                        responseStorage.store(
-                                delta.processId.id,
-                                ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
-                                JsonOutput.toJson(responseJson.object)
-                        )
-                        render responseJson
-                    }
-                }).subscribe({
-                    productResults << it
-                    activity.debug "delta flow emitted: {}", it
-                }, { e ->
-                    delta.errors << HandlerUtil.getErrorMessage(e)
-                    activity.error "error in $delta", e
-                })
-            }
+                    enhanceDeltaResult(deltaResult, productResults)
+                    def responseJson = deltaResultService.createDeltaResult(delta, deltaResult, startTime, endTime)
+                    storeResponse(delta, responseJson)
+                    context.render responseJson
+                }
+            }).subscribe({
+                productResults << it
+                activity.debug "delta flow emitted: {}", it
+            }, { e ->
+                deltaResult.errors << HandlerUtil.getErrorMessage(e)
+                activity.error "error in $delta", e
+            })
         }
     }
 
-    DeltaResult createDeltaResult(CadcDelta delta, List<ProductResult> productResults) {
-        Map productErrors = [:]
+    def enhanceDeltaResult(DeltaResult deltaResult, List<ProductResult> productResults) {
+        Map pErrors = [:]
         productResults.findAll({ !it.success }).each { ProductResult serviceResult ->
             serviceResult.errors.each { error ->
-                if (productErrors[error] == null) productErrors[error] = []
-                productErrors[error] << serviceResult.inputUrl
+                if (pErrors[error] == null) pErrors[error] = []
+                pErrors[error] << serviceResult.inputUrl
             }
         }
-
-        def successfulUrns = productResults.findAll({ it.success }).collect({ it.inputUrl })
-        def unsuccessfulUrns = productResults.findAll({ !it.success }).collect({ it.inputUrl })
-
-        def outputUrls = productResults.findAll({ it.success }).collect({ it.outputUrl })
-
-        new DeltaResult(
-                productErrors: productErrors,
-                deltaUrns: delta.urlList,
-                successfulUrns: successfulUrns,
-                unsuccessfulUrns: unsuccessfulUrns,
-                other: [
-                        outputUrls: outputUrls
-                ]
-
-        )
-
+        deltaResult.with {
+            productErrors = pErrors
+            deltaUrns = deltaResult.deltaUrls
+            successfulUrns = productResults.findAll({ it.success }).collect({ it.inputUrl })
+            unsuccessfulUrns = productResults.findAll({ !it.success }).collect({ it.inputUrl })
+            other = [
+                    outputUrls: (productResults.findAll({ it.success }).collect({ it.outputUrl }))
+            ]
+        }
     }
 
 }
