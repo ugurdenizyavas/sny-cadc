@@ -133,7 +133,6 @@ Then(~"Delta for publication (.*) locale (.*) should get last modified date save
     assert json.delta.locale == locale
 
     assert json.errors == ["HTTP 500 error updating last modified date"]
-    assert !json.result
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get cadc delta service error") { String publication, String locale ->
@@ -144,7 +143,6 @@ Then(~"Delta for publication (.*) locale (.*) should get cadc delta service erro
     assert json.delta.locale == locale
 
     assert json.errors == ["HTTP 500 error getting delta from cadc"]
-    assert !json.result
 }
 
 
@@ -216,7 +214,6 @@ Then(~"Delta for publication (.*) locale (.*) should get parse delta error") { S
     assert json.delta.locale == locale
 
     assert json.errors == ["error parsing delta"]
-    assert !json.result
 }
 
 

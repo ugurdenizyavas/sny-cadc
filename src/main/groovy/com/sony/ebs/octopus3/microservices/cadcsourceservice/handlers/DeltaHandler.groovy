@@ -63,22 +63,18 @@ class DeltaHandler extends GroovyHandler {
             DeltaResult deltaResult = new DeltaResult()
             List<ProductResult> productResults = []
             deltaService.processDelta(delta, deltaResult).finallyDo({
-                def endTime = new DateTime()
                 if (deltaResult.errors) {
                     activity.error "finished {} with errors: {}", delta, deltaResult.errors
                     context.response.status(500)
-                    def responseJson = deltaResultService.createDeltaResultWithErrors(delta, deltaResult.errors, startTime, endTime)
-                    storeResponse(delta, responseJson)
-                    context.render responseJson
                 } else {
                     activity.info "finished {} with success", delta
                     context.response.status(200)
-
                     enhanceDeltaResult(deltaResult, productResults)
-                    def responseJson = deltaResultService.createDeltaResult(delta, deltaResult, startTime, endTime)
-                    storeResponse(delta, responseJson)
-                    context.render responseJson
                 }
+                def endTime = new DateTime()
+                def responseJson = deltaResultService.createDeltaResult(delta, deltaResult, startTime, endTime)
+                storeResponse(delta, responseJson)
+                context.render responseJson
             }).subscribe({
                 productResults << it
                 activity.debug "delta flow emitted: {}", it

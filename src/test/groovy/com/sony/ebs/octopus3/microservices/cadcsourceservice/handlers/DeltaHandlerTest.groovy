@@ -1,6 +1,5 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
-import com.sony.ebs.octopus3.commons.flows.Delta
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaResult
@@ -54,7 +53,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { Delta delta, String st2 ->
+            store(1) { delta, json ->
                 true
             }
         }
@@ -97,7 +96,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { Delta delta, String st2 ->
+            store(1) { delta, json ->
                 true
             }
         }
@@ -134,7 +133,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { Delta delta, String st2 ->
+            store(1) { delta, json ->
                 true
             }
         }
@@ -154,7 +153,6 @@ class DeltaHandlerTest {
             assert ren.delta.publication == "SCORE"
             assert ren.delta.locale == "en_GB"
             assert ren.errors == ["error in delta flow"]
-            assert !ren.result
         }
     }
 
@@ -172,7 +170,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { Delta delta, String st2 ->
+            store(1) { delta, json ->
                 true
             }
         }
@@ -192,7 +190,6 @@ class DeltaHandlerTest {
             assert ren.delta.publication == "SCORE"
             assert ren.delta.locale == "en_GB"
             assert ren.errors == ["exp in delta flow"]
-            assert !ren.result
         }
     }
 }
