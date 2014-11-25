@@ -2,7 +2,8 @@ package com.sony.ebs.octopus3.microservices.cadcsourceservice.spring.config
 
 import com.sony.ebs.octopus3.commons.ratpack.file.FileAttributesProvider
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaResultService
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,7 +15,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
 import ratpack.exec.ExecControl
-import ratpack.launch.LaunchConfig
 
 @Configuration
 @ComponentScan(value = "com.sony.ebs.octopus3.microservices.cadcsourceservice")
@@ -33,7 +33,7 @@ class SpringConfig {
     @Autowired
     @Qualifier("localHttpClient")
     @org.springframework.context.annotation.Lazy
-    NingHttpClient localHttpClient
+    Oct3HttpClient localHttpClient
 
     @Bean
     public RequestValidator requestValidator() {
@@ -71,9 +71,15 @@ class SpringConfig {
     public ResponseStorage responseStorage(
             @Value('${octopus3.sourceservice.repositoryFileServiceUrl}') String saveUrl) {
         new ResponseStorage(
-                ningHttpClient: localHttpClient,
+                httpClient: localHttpClient,
                 saveUrl: saveUrl
         )
+    }
+
+    @Bean
+    @org.springframework.context.annotation.Lazy
+    public DeltaResultService deltaResultService() {
+        new DeltaResultService()
     }
 
 }

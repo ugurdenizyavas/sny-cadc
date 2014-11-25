@@ -114,15 +114,15 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.delta.publication == publication
     assert json.delta.locale == locale
     assert json.delta.cadcUrl == "http://localhost:12306/delta"
-    assert json.delta.finalSince == "2014-08-27T09:31:17.000+02:00"
-    assert json.delta.finalCadcUrl == "http://localhost:12306/delta/changes/$locale?since=2014-08-27T09%3A31%3A17.000%2B02%3A00"
 
     assert json.result.stats."number of delta products" == 4
-    assert json.result.stats."number of success" == 4
-    assert json.result.stats."number of errors" == 0
+    assert json.result.stats."number of successful" == 4
+    assert json.result.stats."number of unsuccessful" == 0
+    assert json.result.finalStartDate == "2014-08-27T09:31:17.000+02:00"
+    assert json.result.finalDeltaUrl == "http://localhost:12306/delta/changes/$locale?since=2014-08-27T09%3A31%3A17.000%2B02%3A00"
 
     def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
+    assert json.result.other.outputUrls?.sort() == [getRepoUrl("a"), getRepoUrl("b"), getRepoUrl("c"), getRepoUrl("d")]
 }
 
 Then(~"Delta for publication (.*) locale (.*) should get last modified date save error") { String publication, String locale ->
@@ -191,17 +191,17 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
     assert json.delta.locale == locale
 
     assert json.result.stats."number of delta products" == 7
-    assert json.result.stats."number of success" == 2
-    assert json.result.stats."number of errors" == 5
+    assert json.result.stats."number of successful" == 2
+    assert json.result.stats."number of unsuccessful" == 5
 
     def getCadcUrl = { "http://localhost:12306/$it".toString() }
     def getRepoUrl = { "http://localhost:12306/repository/file/urn:global_sku:$values:$it".toString() }
-    assert json.result.success?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
+    assert json.result.other.outputUrls?.sort() == [getRepoUrl("a"), getRepoUrl("c")]
 
-    assert json.result.errors?.size() == 3
-    assert json.result.errors."HTTP 500 error saving sheet to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
-    assert json.result.errors."HTTP 404 error getting sheet from cadc"?.sort() == [getCadcUrl("d"), getCadcUrl("g")]
-    assert json.result.errors."HTTP 500 error getting sheet from cadc" == [getCadcUrl("f")]
+    assert json.result.productErrors?.size() == 3
+    assert json.result.productErrors."HTTP 500 error saving product to repo"?.sort() == [getCadcUrl("b"), getCadcUrl("e")]
+    assert json.result.productErrors."HTTP 404 error getting product from cadc"?.sort() == [getCadcUrl("d"), getCadcUrl("g")]
+    assert json.result.productErrors."HTTP 500 error getting product from cadc" == [getCadcUrl("f")]
 }
 
 Given(~"Cadc services for locale (.*) with parse delta error") { String locale ->
@@ -237,11 +237,11 @@ Then(~"Import should give (.*) parameter error") { paramName ->
 }
 
 /*
-* ******************** SHEET SERVICE *************************************************************
+* ******************** PRODUCT SERVICE *************************************************************
 * */
 
-Given(~"Cadc sheet (.*)") { name ->
-    server.request(by(uri("/cadc/sheet/$name"))).response(createProductServiceResponse(name))
+Given(~"Cadc product (.*)") { name ->
+    server.request(by(uri("/cadc/product/$name"))).response(createProductServiceResponse(name))
 }
 
 Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String publication, String locale, String sku ->
@@ -252,11 +252,11 @@ Given(~"Repo save service for publication (.*) locale (.*) sku (.*)") { String p
     server.post(by(uri("/repository/file/urn:global_sku:$values"))).response(status(200))
 }
 
-When(~"I import sheet with publication (.*) locale (.*) sku (.*) correctly") { String publication, String locale, String sku ->
-    get("cadcsource/sheet/publication/$publication/locale/$locale?url=http://localhost:12306/cadc/sheet/$sku")
+When(~"I import product with publication (.*) locale (.*) sku (.*) correctly") { String publication, String locale, String sku ->
+    get("cadcsource/product/publication/$publication/locale/$locale?url=http://localhost:12306/cadc/product/$sku")
 }
 
-Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported successful") { String publication, String locale, String sku ->
+Then(~"Product with publication (.*) locale (.*) sku (.*) should be imported successful") { String publication, String locale, String sku ->
     def publicationLC = publication.toLowerCase()
     def localeLC = locale.toLowerCase()
     def skuLC = sku.toLowerCase()
@@ -265,21 +265,23 @@ Then(~"Sheet with publication (.*) locale (.*) sku (.*) should be imported succe
     assert response.statusCode == 200
     def json = parseJson(response)
     assert json.status == 200
-    assert json?.product?.materialName.equalsIgnoreCase(sku)
-    assert json?.product?.url == "http://localhost:12306/cadc/sheet/$sku"
+    assert json?.product?.url == "http://localhost:12306/cadc/product/$sku"
     assert json?.product?.publication == publication
     assert json?.product?.locale == locale
-    assert json?.result?.urn == skuUrn
-    assert json?.result?.repoUrl == "http://localhost:12306/repository/file/$skuUrn"
+
+    assert json?.result?.sku.equalsIgnoreCase(sku)
+    assert json?.result?.inputUrl == "http://localhost:12306/cadc/product/$sku"
+    assert json?.result?.outputUrn == skuUrn
+    assert json?.result?.outputUrl == "http://localhost:12306/repository/file/$skuUrn"
 }
 
-When(~"I import sheet with invalid (.*) parameter") { paramName ->
+When(~"I import product with invalid (.*) parameter") { paramName ->
     if (paramName == "publication") {
-        get("cadcsource/sheet/publication/,,/locale/en_GB?url=http://sheet/a")
+        get("cadcsource/product/publication/,,/locale/en_GB?url=http://product/a")
     } else if (paramName == "locale") {
-        get("cadcsource/sheet/publication/SCORE/locale/--?url=http://sheet/a")
+        get("cadcsource/product/publication/SCORE/locale/--?url=http://product/a")
     } else if (paramName == "url") {
-        get("cadcsource/sheet/publication/SCORE/locale/en_GB?url=/sheet/a")
+        get("cadcsource/product/publication/SCORE/locale/en_GB?url=/product/a")
     }
 }
 

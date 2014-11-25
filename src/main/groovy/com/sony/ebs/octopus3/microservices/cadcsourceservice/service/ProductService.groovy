@@ -1,15 +1,15 @@
-package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
+package com.sony.ebs.octopus3.microservices.cadcsourceservice.service
 
-import com.ning.http.client.Response
 import com.sony.ebs.octopus3.commons.ratpack.encoding.EncodingUtil
 import com.sony.ebs.octopus3.commons.ratpack.encoding.MaterialNameEncoder
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import org.apache.http.client.utils.URIBuilder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -31,11 +31,11 @@ class ProductService {
 
     @Autowired
     @Qualifier("localHttpClient")
-    NingHttpClient localHttpClient
+    Oct3HttpClient localHttpClient
 
     @Autowired
     @Qualifier("cadcHttpClient")
-    NingHttpClient cadcHttpClient
+    Oct3HttpClient cadcHttpClient
 
     @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
     String repositoryFileServiceUrl
@@ -43,44 +43,41 @@ class ProductService {
     @Value('${octopus3.sourceservice.repositoryCopyServiceUrl}')
     String repositoryCopyServiceUrl
 
-    String getMaterialName(byte[] jsonBytes) throws Exception {
+    String createSku(byte[] jsonBytes) throws Exception {
         try {
             def json = jsonSlurper.parse(new ByteArrayInputStream(jsonBytes), EncodingUtil.CHARSET_STR)
             def skuName = json.skuName
-            MaterialNameEncoder.encode(skuName)
+            MaterialNameEncoder.encode(skuName)?.toLowerCase()
         } catch (JsonException e) {
             throw new Exception("error parsing delta", e)
         }
     }
 
-    def getUrlWithProcessId(String url, String processId) {
-        def urlBuilder = new URIBuilder(url)
-        if (processId) {
-            urlBuilder.addParameter("processId", processId)
-        }
-        urlBuilder.toString()
-    }
-
-    rx.Observable<String> process(CadcProduct product) {
+    rx.Observable<String> processProduct(CadcProduct product, ProductResult productResult) {
         byte[] jsonBytes
-        String repoUrl
+        String outputUrn, outputUrl
         rx.Observable.just("starting").flatMap({
+            productResult.inputUrl = product.url
             cadcHttpClient.doGet(product.url)
-        }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "getting sheet from cadc", product.errors)
-        }).flatMap({ Response response ->
+        }).filter({ Oct3HttpResponse response ->
+            response.isSuccessful("getting product from cadc", productResult.errors)
+        }).flatMap({ Oct3HttpResponse response ->
             observe(execControl.blocking({
-                jsonBytes = response.responseBodyAsBytes
-                product.materialName = getMaterialName(jsonBytes)
+                jsonBytes = response.bodyAsBytes
+                productResult.sku = createSku(jsonBytes)
+                outputUrn = product.getOutputUrn(productResult.sku).toString()
+                outputUrl = repositoryFileServiceUrl.replace(":urn", outputUrn)
+                HandlerUtil.addProcessId(outputUrl, product.processId)
             }))
-        }).flatMap({
-            repoUrl = repositoryFileServiceUrl.replace(":urn", product.urn?.toString())
-            localHttpClient.doPost(getUrlWithProcessId(repoUrl, product.processId), jsonBytes)
-        }).filter({ Response response ->
-            NingHttpClient.isSuccess(response, "saving sheet to repo", product.errors)
+        }).flatMap({ url ->
+            localHttpClient.doPost(url, jsonBytes)
+        }).filter({ Oct3HttpResponse response ->
+            response.isSuccessful("saving product to repo", productResult.errors)
         }).map({
+            productResult.outputUrn = outputUrn
+            productResult.outputUrl = outputUrl
             log.info "{} finished successfully", product
-            [urn: product.urn?.toString(), repoUrl: repoUrl]
+            "success"
         })
     }
 
