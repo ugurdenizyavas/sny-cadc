@@ -1,6 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.flows.FlowTypeEnum
 import com.sony.ebs.octopus3.commons.flows.RepoValue
+import com.sony.ebs.octopus3.commons.flows.ServiceTypeEnum
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.handlers.HandlerUtil
@@ -42,11 +44,13 @@ class DeltaHandler extends GroovyHandler {
     @Override
     protected void handle(GroovyContext context) {
         CadcDelta delta = new CadcDelta(
+                flow : FlowTypeEnum.CADC,
+                service : ServiceTypeEnum.DELTA,
                 type: RepoValue.global_sku,
                 processId: new ProcessIdImpl(),
                 publication: context.pathTokens.publication,
                 locale: context.pathTokens.locale,
-                since: context.request.queryParams.since,
+                sdate: context.request.queryParams.sdate,
                 cadcUrl: context.request.queryParams.cadcUrl
         )
         activity.info "starting {}", delta

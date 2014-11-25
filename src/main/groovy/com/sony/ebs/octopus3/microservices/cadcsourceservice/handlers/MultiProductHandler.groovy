@@ -26,7 +26,7 @@ class MultiProductHandler extends GroovyHandler {
             List productServiceResults = []
             rx.Observable.from(pathTokens.locales?.split(",") as List).flatMap({
                 deltaService.doProduct(new CadcDelta(type: RepoValue.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
-                        locale: it.toString(), since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl))
+                        locale: it.toString(), sdate: request.queryParams.sdate, cadcUrl: request.queryParams.cadcUrl))
             }).finallyDo({
                 render json(result: productServiceResults)
             }).subscribe({

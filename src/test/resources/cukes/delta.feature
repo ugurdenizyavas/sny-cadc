@@ -42,7 +42,7 @@ Feature: Delta Service
     When I import delta with invalid cadcUrl parameter
     Then Import should give cadcUrl parameter error
 
-  Scenario: Delta flow invalid since parameter
-    When I import delta with invalid since parameter
-    Then Import should give since parameter error
+  Scenario: Delta flow invalid sdate parameter
+    When I import delta with invalid sdate parameter
+    Then Import should give sdate parameter error
 

@@ -41,7 +41,7 @@ class DeltaHandlerTest {
                 assert delta.processId != null
                 assert delta.publication == "SCORE"
                 assert delta.locale == "en_GB"
-                assert delta.since == "2014"
+                assert delta.sdate == "2014"
                 assert delta.cadcUrl == "http://cadc/skus"
                 dr.deltaUrls = ["/a", "/b", "/c", "/d"]
                 rx.Observable.from([productResultC, productResultA, productResultD, productResultB])
@@ -65,14 +65,14 @@ class DeltaHandlerTest {
                 deltaResultService: deltaResultService
         ), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
-            uri "/?cadcUrl=http://cadc/skus&since=2014"
+            uri "/?cadcUrl=http://cadc/skus&sdate=2014"
         }).with {
             assert status.code == 200
             def ren = rendered(DefaultJsonRender).object
             assert ren.status == 200
             assert ren.delta.publication == "SCORE"
             assert ren.delta.locale == "en_GB"
-            assert ren.delta.since == "2014"
+            assert ren.delta.sdate == "2014"
             assert ren.delta.cadcUrl == "http://cadc/skus"
             assert ren.delta.processId != null
 
@@ -145,7 +145,7 @@ class DeltaHandlerTest {
                 deltaResultService: deltaResultService
         ), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
-            uri "/?cadcUrl=http://cadc/skus&since=2014"
+            uri "/?cadcUrl=http://cadc/skus&sdate=2014"
         }).with {
             assert status.code == 500
             def ren = rendered(DefaultJsonRender).object
@@ -182,7 +182,7 @@ class DeltaHandlerTest {
                 deltaResultService: deltaResultService
         ), {
             pathBinding([publication: "SCORE", locale: "en_GB"])
-            uri "/?cadcUrl=http://cadc/skus&since=2014"
+            uri "/?cadcUrl=http://cadc/skus&sdate=2014"
         }).with {
             assert status.code == 500
             def ren = rendered(DefaultJsonRender).object

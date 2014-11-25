@@ -71,7 +71,6 @@ def createProductServiceResponse(sku) {
 Given(~"Cadc services for locale (.*) with no errors") { String locale ->
     def deltaFeed = '{"skus":{"' + locale + '":["http://localhost:12306/a", "http://localhost:12306/c", "http://localhost:12306/b", "http://localhost:12306/d"]}}'
 
-    //server.get(and(by(uri("/delta/changes/$locale")), eq(query("since"), "2014-08-27T09%3A31%3A17.000%2B02%3A00"))).response(deltaFeed)
     server.get(by(uri("/delta/changes/$locale"))).response(deltaFeed)
     server.get(by(uri("/a"))).response(createProductServiceResponse("a"))
     server.get(by(uri("/b"))).response(createProductServiceResponse("b"))
@@ -224,8 +223,8 @@ When(~"I import delta with invalid (.*) parameter") { paramName ->
         get("cadcsource/delta/publication/SCORE/locale/tr_?cadcUrl=//host/skus")
     } else if (paramName == "cadcUrl") {
         get("cadcsource/delta/publication/SCORE/locale/en_GB?cadcUrl=/host/skus")
-    } else if (paramName == "since") {
-        get("cadcsource/delta/publication/SCORE/locale/en_GB?cadcUrl=http://host/skus&since=s1")
+    } else if (paramName == "sdate") {
+        get("cadcsource/delta/publication/SCORE/locale/en_GB?cadcUrl=http://host/skus&sdate=s1")
     }
 }
 

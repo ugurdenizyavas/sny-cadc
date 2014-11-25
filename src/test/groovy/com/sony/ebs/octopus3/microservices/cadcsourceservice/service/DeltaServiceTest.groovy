@@ -54,7 +54,7 @@ class DeltaServiceTest {
         mockCadcHttpClient = new StubFor(Oct3HttpClient)
         mockLocalHttpClient = new StubFor(Oct3HttpClient)
 
-        delta = new CadcDelta(type: RepoValue.global_sku, publication: "SCORE", locale: "en_GB", since: "2014", cadcUrl: "http://cadc")
+        delta = new CadcDelta(type: RepoValue.global_sku, publication: "SCORE", locale: "en_GB", sdate: "2014", cadcUrl: "http://cadc")
         deltaResult = new DeltaResult()
     }
 
@@ -110,13 +110,13 @@ class DeltaServiceTest {
     @Test
     void "success"() {
         mockDeltaUrlHelper.demand.with {
-            createSinceValue(1) { since, lastModifiedUrn ->
+            createStartDate(1) { sdate, lastModifiedUrn ->
                 rx.Observable.just(START_DATE)
             }
-            createCadcDeltaUrl(1) { cadcUrl, locale, since ->
+            createCadcDeltaUrl(1) { cadcUrl, locale, sdate ->
                 assert cadcUrl == "http://cadc"
                 assert locale == "en_GB"
-                assert since == START_DATE
+                assert sdate == START_DATE
                 rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->
@@ -153,10 +153,10 @@ class DeltaServiceTest {
     @Test
     void "no products to import"() {
         mockDeltaUrlHelper.demand.with {
-            createSinceValue(1) { since, lastModifiedUrn ->
+            createStartDate(1) { sdate, lastModifiedUrn ->
                 rx.Observable.just(START_DATE)
             }
-            createCadcDeltaUrl(1) { cadcUrl, locale, since ->
+            createCadcDeltaUrl(1) { cadcUrl, locale, sdate ->
                 rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->
@@ -179,10 +179,10 @@ class DeltaServiceTest {
     @Test
     void "error getting delta"() {
         mockDeltaUrlHelper.demand.with {
-            createSinceValue(1) { since, lastModifiedUrn ->
+            createStartDate(1) { sdate, lastModifiedUrn ->
                 rx.Observable.just(START_DATE)
             }
-            createCadcDeltaUrl(1) { cadcUrl, locale, since ->
+            createCadcDeltaUrl(1) { cadcUrl, locale, sdate ->
                 rx.Observable.just(DELTA_URL)
             }
         }
@@ -202,10 +202,10 @@ class DeltaServiceTest {
     @Test
     void "error parsing delta"() {
         mockDeltaUrlHelper.demand.with {
-            createSinceValue(1) { since, lastModifiedUrn ->
+            createStartDate(1) { sdate, lastModifiedUrn ->
                 rx.Observable.just(START_DATE)
             }
-            createCadcDeltaUrl(1) { cadcUrl, locale, since ->
+            createCadcDeltaUrl(1) { cadcUrl, locale, sdate ->
                 rx.Observable.just(DELTA_URL)
             }
         }
@@ -226,10 +226,10 @@ class DeltaServiceTest {
     @Test
     void "error updating last modified date"() {
         mockDeltaUrlHelper.demand.with {
-            createSinceValue(1) { since, lastModifiedUrn ->
+            createStartDate(1) { sdate, lastModifiedUrn ->
                 rx.Observable.just(START_DATE)
             }
-            createCadcDeltaUrl(1) { cadcUrl, locale, since ->
+            createCadcDeltaUrl(1) { cadcUrl, locale, sdate ->
                 rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->
@@ -256,10 +256,10 @@ class DeltaServiceTest {
     @Test
     void "one delta item is not imported"() {
         mockDeltaUrlHelper.demand.with {
-            createSinceValue(1) { since, lastModifiedUrn ->
+            createStartDate(1) { sdate, lastModifiedUrn ->
                 rx.Observable.just(START_DATE)
             }
-            createCadcDeltaUrl(1) { cadcUrl, locale, since ->
+            createCadcDeltaUrl(1) { cadcUrl, locale, sdate ->
                 rx.Observable.just(DELTA_URL)
             }
             updateLastModified(1) { lastModifiedUrn, errors ->

@@ -109,10 +109,10 @@ class DeltaService {
     rx.Observable<Object> processDelta(CadcDelta delta, DeltaResult deltaResult) {
         def lastModifiedUrn = delta.lastModifiedUrn
         rx.Observable.just("starting").flatMap({
-            deltaUrlHelper.createSinceValue(delta.since, lastModifiedUrn)
-        }).flatMap({ String since ->
-            deltaResult.finalStartDate = since
-            deltaUrlHelper.createCadcDeltaUrl(delta.cadcUrl, delta.locale, since)
+            deltaUrlHelper.createStartDate(delta.sdate, lastModifiedUrn)
+        }).flatMap({ String sdate ->
+            deltaResult.finalStartDate = sdate
+            deltaUrlHelper.createCadcDeltaUrl(delta.cadcUrl, delta.locale, sdate)
         }).flatMap({ String deltaUrl ->
             deltaResult.finalDeltaUrl = deltaUrl
             cadcHttpClient.doGet(deltaUrl)

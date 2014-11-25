@@ -27,7 +27,7 @@ class MultiDeltaHandler extends GroovyHandler {
             List deltaServiceResults = []
             rx.Observable.from(pathTokens.locales?.split(",") as List).flatMap({
                 multiDeltaService.doDelta(new CadcDelta(type: RepoValue.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
-                        locale: it.toString(), since: request.queryParams.since, cadcUrl: request.queryParams.cadcUrl))
+                        locale: it.toString(), sdate: request.queryParams.sdate, cadcUrl: request.queryParams.cadcUrl))
             }).finallyDo({
                 render json(result: deltaServiceResults)
             }).subscribe({
