@@ -46,10 +46,7 @@ class DeltaHandler extends GroovyHandler {
                 response.status(400)
 
                 def responseJson = json(status: 400, errors: errors, delta: delta)
-                responseStorage.store(
-                        delta.processId.id,
-                        ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
-                        JsonOutput.toJson(responseJson.object)
+                responseStorage.store(delta, JsonOutput.toJson(responseJson.object)
                 )
                 render responseJson
             } else {
@@ -63,11 +60,7 @@ class DeltaHandler extends GroovyHandler {
 
                         def responseJson = json(status: 500, timeStats: timeStats, errors: delta.errors, delta: delta)
 
-                        responseStorage.store(
-                                delta.processId.id,
-                                ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
-                                JsonOutput.toJson(responseJson.object)
-                        )
+                        responseStorage.store(delta, JsonOutput.toJson(responseJson.object))
                         render responseJson
                     } else {
                         activity.info "finished {} with success", delta
@@ -75,11 +68,7 @@ class DeltaHandler extends GroovyHandler {
 
                         def responseJson = json(status: 200, timeStats: timeStats, result: createDeltaResult(delta, productServiceResults), delta: delta)
 
-                        responseStorage.store(
-                                delta.processId.id,
-                                ["cadc", "delta", delta.publication, delta.locale, delta.processId.id],
-                                JsonOutput.toJson(responseJson.object)
-                        )
+                        responseStorage.store(delta, JsonOutput.toJson(responseJson.object))
                         render responseJson
                     }
                 }).subscribe({

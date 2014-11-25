@@ -1,5 +1,6 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.flows.Delta
 import com.sony.ebs.octopus3.commons.ratpack.file.ResponseStorage
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.validator.RequestValidator
@@ -47,7 +48,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { String st1, List list1, String st2 ->
+            store(1) { Delta delta, String st2 ->
                 true
             }
         }
@@ -85,7 +86,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { String st1, List list1, String st2 ->
+            store(1) { Delta delta, String st2 ->
                 true
             }
         }
@@ -117,7 +118,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { String st1, List list1, String st2 ->
+            store(1) { Delta delta, String st2 ->
                 true
             }
         }
@@ -150,7 +151,7 @@ class DeltaHandlerTest {
         }
 
         mockResponseStorage.demand.with {
-            store(1) { String st1, List list1, String st2 ->
+            store(1) { Delta delta, String st2 ->
                 true
             }
         }
