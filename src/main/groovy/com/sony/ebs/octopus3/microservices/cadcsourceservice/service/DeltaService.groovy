@@ -11,7 +11,7 @@ import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrl
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import org.apache.http.client.utils.URIBuilder
+import groovyx.net.http.URIBuilder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -40,9 +40,6 @@ class DeltaService {
 
     @Value('${octopus3.sourceservice.cadcsourceProductServiceUrl}')
     String cadcsourceProductServiceUrl
-
-    @Value('${octopus3.sourceservice.repositoryFileServiceUrl}')
-    String repositoryFileServiceUrl
 
     @Autowired
     DeltaUrlHelper deltaUrlHelper
@@ -76,9 +73,9 @@ class DeltaService {
     def createProductServiceUrl(CadcDelta delta, String inputUrl) {
         def initialUrl = cadcsourceProductServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
         new URIBuilder(initialUrl).with {
-            addParameter("url", inputUrl)
+            addQueryParam("url", inputUrl)
             if (delta.processId?.id) {
-                addParameter("processId", delta.processId?.id)
+                addQueryParam("processId", delta.processId?.id)
             }
             it.toString()
         }

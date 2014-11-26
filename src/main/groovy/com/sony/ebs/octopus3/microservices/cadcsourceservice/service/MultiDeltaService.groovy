@@ -6,7 +6,7 @@ import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import groovy.util.logging.Slf4j
-import org.apache.http.client.utils.URIBuilder
+import groovyx.net.http.URIBuilder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -41,9 +41,9 @@ class MultiDeltaService {
         rx.Observable.just("starting").flatMap({
             def deltaHandlerUrl = cadcsourceDeltaServiceUrl.replace(":publication", delta.publication).replace(":locale", delta.locale)
             def urlBuilder = new URIBuilder(deltaHandlerUrl)
-            urlBuilder.addParameter("cadcUrl", delta.cadcUrl)
+            urlBuilder.addQueryParam("cadcUrl", delta.cadcUrl)
             if (delta.processId?.id) {
-                urlBuilder.addParameter("processId", delta.processId?.id)
+                urlBuilder.addQueryParam("processId", delta.processId?.id)
             }
             localHttpClient.doGet(urlBuilder.toString())
         }).flatMap({ Oct3HttpResponse response ->

@@ -10,7 +10,7 @@ import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductRes
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.service.DeltaUrlHelper
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
-import org.apache.http.client.utils.URIBuilder
+import groovyx.net.http.URIBuilder
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
@@ -47,8 +47,7 @@ class DeltaServiceTest {
     void before() {
         deltaService = new DeltaService(
                 execControl: execController.control,
-                cadcsourceProductServiceUrl: "http://cadcsource/product/publication/:publication/locale/:locale",
-                repositoryFileServiceUrl: "/repo/file/:urn"
+                cadcsourceProductServiceUrl: "http://cadcsource/product/publication/:publication/locale/:locale"
         )
         mockDeltaUrlHelper = new StubFor(DeltaUrlHelper)
         mockCadcHttpClient = new StubFor(Oct3HttpClient)
@@ -95,14 +94,14 @@ class DeltaServiceTest {
             "result" : {
                 "inputUrl" : "http://cadc/${sku}",
                 "outputUrn" : "urn:global_sku:score:en_gb:${sku}",
-                "outputUrl" : "/file/urn:global_sku:score:en_gb:${sku}"
+                "outputUrl" : "//repo/file/urn:global_sku:score:en_gb:${sku}"
             }
          }'
         """
     }
 
     String getSkuFromUrl(url) {
-        def importUrl = new URIBuilder(url).queryParams[0].value
+        String importUrl = new URIBuilder(url).query.url
         def sku = importUrl.substring(importUrl.size() - 1)
         sku
     }
@@ -138,12 +137,30 @@ class DeltaServiceTest {
         }
 
         delta.processId = new ProcessIdImpl("123")
-        List<ProductResult> result = runFlow().sort()
+        List<ProductResult> result = runFlow().sort({ it.inputUrl })
         assert result.size() == 3
 
-        assert result[0] == new ProductResult(inputUrl: "http://cadc/a", outputUrn: "urn:global_sku:score:en_gb:a", outputUrl: "/repo/file/urn:global_sku:score:en_gb:a", success: true, statusCode: 200)
-        assert result[1] == new ProductResult(inputUrl: "http://cadc/b", outputUrn: "urn:global_sku:score:en_gb:b", outputUrl: "/repo/file/urn:global_sku:score:en_gb:b", success: true, statusCode: 200)
-        assert result[2] == new ProductResult(inputUrl: "http://cadc/c", outputUrn: "urn:global_sku:score:en_gb:c", outputUrl: "/repo/file/urn:global_sku:score:en_gb:c", success: true, statusCode: 200)
+        result[0].with {
+            assert inputUrl == "http://cadc/a"
+            assert outputUrn == "urn:global_sku:score:en_gb:a"
+            assert outputUrl == "//repo/file/urn:global_sku:score:en_gb:a"
+            assert success
+            assert statusCode == 200
+        }
+        result[1].with {
+            assert inputUrl == "http://cadc/b"
+            assert outputUrn == "urn:global_sku:score:en_gb:b"
+            assert outputUrl == "//repo/file/urn:global_sku:score:en_gb:b"
+            assert success
+            assert statusCode == 200
+        }
+        result[2].with {
+            assert inputUrl == "http://cadc/c"
+            assert outputUrn == "urn:global_sku:score:en_gb:c"
+            assert outputUrl == "//repo/file/urn:global_sku:score:en_gb:c"
+            assert success
+            assert statusCode == 200
+        }
 
         assert deltaResult.deltaUrls == ["http://cadc/a", "http://cadc/c", "http://cadc/b"]
         assert deltaResult.finalDeltaUrl == DELTA_URL
@@ -283,11 +300,30 @@ class DeltaServiceTest {
                 }
             }
         }
-        def result = runFlow().sort()
+        List<ProductResult> result = runFlow().sort({ it.inputUrl })
         assert result.size() == 3
-        assert result[0] == new ProductResult(inputUrl: "http://cadc/a", success: true, statusCode: 200, outputUrn: "urn:global_sku:score:en_gb:a", outputUrl: "/repo/file/urn:global_sku:score:en_gb:a")
-        assert result[1] == new ProductResult(inputUrl: "http://cadc/b", success: false, statusCode: 500, errors: ["err1", "err2"])
-        assert result[2] == new ProductResult(inputUrl: "http://cadc/c", success: true, statusCode: 200, outputUrn: "urn:global_sku:score:en_gb:c", outputUrl: "/repo/file//urn:global_sku:score:en_gb:c")
+        result[0].with {
+            assert inputUrl == "http://cadc/a"
+            assert outputUrn == "urn:global_sku:score:en_gb:a"
+            assert outputUrl == "//repo/file/urn:global_sku:score:en_gb:a"
+            assert success
+            assert statusCode == 200
+        }
+        result[1].with {
+            assert inputUrl == "http://cadc/b"
+            assert !outputUrn
+            assert !outputUrl
+            assert !success
+            assert statusCode == 500
+            assert errors == ["err1", "err2"]
+        }
+        result[2].with {
+            assert inputUrl == "http://cadc/c"
+            assert outputUrn == "urn:global_sku:score:en_gb:c"
+            assert outputUrl == "//repo/file/urn:global_sku:score:en_gb:c"
+            assert success
+            assert statusCode == 200
+        }
 
         assert deltaResult.deltaUrls == ["http://cadc/a", "http://cadc/c", "http://cadc/b"]
         assert deltaResult.errors == []
