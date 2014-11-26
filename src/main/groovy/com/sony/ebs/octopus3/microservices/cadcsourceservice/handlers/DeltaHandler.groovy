@@ -90,15 +90,14 @@ class DeltaHandler extends GroovyHandler {
     }
 
     def enhanceDeltaResult(DeltaResult deltaResult, List<ProductResult> productResults) {
-        Map pErrors = [:]
-        productResults.findAll({ !it.success }).each { ProductResult serviceResult ->
-            serviceResult.errors.each { error ->
-                if (pErrors[error] == null) pErrors[error] = []
-                pErrors[error] << serviceResult.inputUrl
-            }
-        }
         deltaResult.with {
-            productErrors = pErrors
+            productErrors = productResults.findAll({ !it.success }).inject([:]) { map, ProductResult productResult ->
+                productResult.errors.each { error ->
+                    if (map[error] == null) map[error] = []
+                    map[error] << productResult.inputUrl
+                }
+                map
+            }
             deltaUrns = deltaResult.deltaUrls
             successfulUrns = productResults.findAll({ it.success }).collect({ it.inputUrl })
             unsuccessfulUrns = productResults.findAll({ !it.success }).collect({ it.inputUrl })
