@@ -1,6 +1,8 @@
 package com.sony.ebs.octopus3.microservices.cadcsourceservice.handlers
 
+import com.sony.ebs.octopus3.commons.flows.FlowTypeEnum
 import com.sony.ebs.octopus3.commons.flows.RepoValue
+import com.sony.ebs.octopus3.commons.flows.ServiceTypeEnum
 import com.sony.ebs.octopus3.commons.process.ProcessIdImpl
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcDelta
 import com.sony.ebs.octopus3.microservices.cadcsourceservice.service.DeltaService
@@ -22,19 +24,25 @@ class MultiProductHandler extends GroovyHandler {
 
     @Override
     protected void handle(GroovyContext context) {
-        context.with {
-            List productServiceResults = []
-            rx.Observable.from(pathTokens.locales?.split(",") as List).flatMap({
-                deltaService.doProduct(new CadcDelta(type: RepoValue.global_sku, processId: new ProcessIdImpl(), publication: pathTokens.publication,
-                        locale: it.toString(), sdate: request.queryParams.sdate, cadcUrl: request.queryParams.cadcUrl))
-            }).finallyDo({
-                render json(result: productServiceResults)
-            }).subscribe({
-                productServiceResults << it
-                activity.debug "multi product flow emitted: {}", it
-            }, { e ->
-                activity.error "error in multi product handler", e
-            })
-        }
+        List productServiceResults = []
+        rx.Observable.from(context.pathTokens.locales?.split(",") as List).flatMap({ locale ->
+            def delta = new CadcDelta(
+                    flow: FlowTypeEnum.CADC,
+                    service: ServiceTypeEnum.DELTA,
+                    type: RepoValue.global_sku,
+                    processId: new ProcessIdImpl(),
+                    publication: context.pathTokens.publication,
+                    locale: locale
+            )
+            def inputUrl = context.request.queryParams.url
+            deltaService.doProduct(delta, inputUrl)
+        }).finallyDo({
+            context.render json(result: productServiceResults)
+        }).subscribe({
+            productServiceResults << it
+            activity.debug "multi product flow emitted: {}", it
+        }, { e ->
+            activity.error "error in multi product handler", e
+        })
     }
 }

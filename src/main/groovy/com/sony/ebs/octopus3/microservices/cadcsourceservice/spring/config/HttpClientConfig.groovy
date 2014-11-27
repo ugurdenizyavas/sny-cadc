@@ -83,5 +83,15 @@ class HttpClientConfig {
                 8000, 30000)
     }
 
+    @Bean
+    @Qualifier("longLocalHttpClient")
+    public Oct3HttpClient longLocalHttpClient() {
+        oct3HttpClientFactory().createHttpClient(launchConfig, httpClientType,
+                localProxyHost, localProxyPort,
+                localProxyUser, localProxyPassword, localNonProxyHosts,
+                '', '',
+                8000, 180000)
+    }
+
 }
 
