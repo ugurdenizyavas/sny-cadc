@@ -1,6 +1,6 @@
 # language: en
 Feature: Delta Service
-  Tests the delta service which gets the delta from CADC starts the import of changed sheets from CADC to Octopus3
+  Tests the delta service which gets the delta from CADC starts the import of changed products from CADC to Octopus3
 
   Scenario: Delta flow successful
     Given Cadc services for locale en_GB with no errors
@@ -42,7 +42,7 @@ Feature: Delta Service
     When I import delta with invalid cadcUrl parameter
     Then Import should give cadcUrl parameter error
 
-  Scenario: Delta flow invalid since parameter
-    When I import delta with invalid since parameter
-    Then Import should give since parameter error
+  Scenario: Delta flow invalid sdate parameter
+    When I import delta with invalid sdate parameter
+    Then Import should give sdate parameter error
 

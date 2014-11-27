@@ -1,9 +1,10 @@
-package com.sony.ebs.octopus3.microservices.cadcsourceservice.delta
+package com.sony.ebs.octopus3.microservices.cadcsourceservice.service
 
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.MockNingResponse
-import com.sony.ebs.octopus3.commons.ratpack.http.ning.NingHttpClient
+import com.sony.ebs.octopus3.commons.flows.RepoValue
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpClient
+import com.sony.ebs.octopus3.commons.ratpack.http.Oct3HttpResponse
 import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.CadcProduct
-import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.DeltaType
+import com.sony.ebs.octopus3.commons.ratpack.product.cadc.delta.model.ProductResult
 import groovy.mock.interceptor.StubFor
 import groovy.util.logging.Slf4j
 import org.junit.AfterClass
@@ -20,6 +21,7 @@ class ProductServiceTest {
     ProductService productService
     StubFor mockLocalHttpClient, mockCadcHttpClient
     CadcProduct product
+    ProductResult productResult
 
     static ExecController execController
 
@@ -39,9 +41,10 @@ class ProductServiceTest {
                 repositoryFileServiceUrl: "http://repo/:urn",
                 repositoryCopyServiceUrl: "http://repo/copy/source/:source/destination/:destination"
         )
-        mockLocalHttpClient = new StubFor(NingHttpClient)
-        mockCadcHttpClient = new StubFor(NingHttpClient)
-        product = new CadcProduct(type: DeltaType.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
+        mockLocalHttpClient = new StubFor(Oct3HttpClient)
+        mockCadcHttpClient = new StubFor(Oct3HttpClient)
+        product = new CadcProduct(type: RepoValue.global_sku, publication: "SCORE", locale: "en_GB", url: "http://cadc/p", processId: "123")
+        productResult = new ProductResult()
     }
 
     def runFlow() {
@@ -51,7 +54,7 @@ class ProductServiceTest {
         def result = new BlockingVariable(5)
         boolean valueSet = false
         execController.start {
-            productService.process(product).subscribe({
+            productService.processProduct(product, productResult).subscribe({
                 valueSet = true
                 result.set(it)
             }, {
@@ -69,27 +72,36 @@ class ProductServiceTest {
         {
             "skuName" : "$sku"
         }
-        """
+        """.bytes
     }
 
     @Test
     void "success"() {
-        def sku = "p+p/p.ceh"
-        def productServiceResponse = createProductServiceResponse(sku)
+        def productServiceResponse = createProductServiceResponse("p+p/p.ceh")
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: productServiceResponse))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: productServiceResponse))
             }
         }
         mockLocalHttpClient.demand.with {
             doPost(1) { url, data ->
                 assert url == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh?processId=123"
-                assert data == productServiceResponse?.getBytes("UTF-8")
-                rx.Observable.from(new MockNingResponse(_statusCode: 200))
+                assert data == productServiceResponse
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200))
             }
         }
-        assert runFlow() == [urn: "urn:global_sku:score:en_gb:p_2bp_2fp.ceh", repoUrl: "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"]
+
+        runFlow() == "success"
+
+        productResult.with {
+            assert !inputUrn
+            assert inputUrl == "http://cadc/p"
+            assert sku == "p_2bp_2fp.ceh"
+            assert !errors
+            assert outputUrn == "urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
+            assert outputUrl == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh"
+        }
     }
 
     @Test
@@ -97,31 +109,48 @@ class ProductServiceTest {
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 404))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 404))
             }
         }
         assert runFlow() == "outOfFlow"
-        assert product.errors == ["HTTP 404 error getting sheet from cadc"]
+
+        productResult.with {
+            assert !inputUrn
+            assert inputUrl == "http://cadc/p"
+            assert !sku
+            assert errors == ["HTTP 404 error getting product from cadc"]
+            assert !outputUrn
+            assert !outputUrl
+        }
     }
 
     @Test
     void "delta item could not be saved"() {
-        def productServiceResponse = createProductServiceResponse("p")
+        def productServiceResponse = createProductServiceResponse("p+p/p.ceh")
         mockCadcHttpClient.demand.with {
             doGet(1) {
                 assert it == "http://cadc/p"
-                rx.Observable.from(new MockNingResponse(_statusCode: 200, _responseBody: productServiceResponse))
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 200, bodyAsBytes: productServiceResponse))
             }
         }
         mockLocalHttpClient.demand.with {
             doPost(1) { url, data ->
-                assert url == "http://repo/urn:global_sku:score:en_gb:p?processId=123"
-                assert data == productServiceResponse?.getBytes("UTF-8")
-                rx.Observable.from(new MockNingResponse(_statusCode: 500))
+                assert url == "http://repo/urn:global_sku:score:en_gb:p_2bp_2fp.ceh?processId=123"
+                assert data == productServiceResponse
+                rx.Observable.from(new Oct3HttpResponse(statusCode: 500))
             }
         }
         assert runFlow() == "outOfFlow"
-        assert product.errors == ["HTTP 500 error saving sheet to repo"]
+
+        productResult.with {
+            assert !inputUrn
+            assert inputUrl == "http://cadc/p"
+            assert sku == "p_2bp_2fp.ceh"
+            assert errors ==  ["HTTP 500 error saving product to repo"]
+            assert !outputUrn
+            assert !outputUrl
+        }
+
     }
 
 }

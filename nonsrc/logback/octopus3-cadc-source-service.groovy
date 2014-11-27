@@ -6,6 +6,7 @@ import ch.qos.logback.classic.AsyncAppender
 import ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy
 import ch.qos.logback.classic.filter.ThresholdFilter
 import ch.qos.logback.core.filter.EvaluatorFilter
+//import ch.qos.logback.classic.boolex.JaninoEventEvaluator
 import ch.qos.logback.classic.boolex.GEventEvaluator
 
 import static ch.qos.logback.classic.Level.*
