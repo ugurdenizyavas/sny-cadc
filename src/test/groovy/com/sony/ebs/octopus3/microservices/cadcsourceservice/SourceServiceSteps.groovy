@@ -112,6 +112,7 @@ Then(~"Delta for publication (.*) locale (.*) should be imported successfully") 
     assert json.status == 200
     assert json.delta.publication == publication
     assert json.delta.locale == locale
+    assert json.delta.upload
     assert json.delta.cadcUrl == "http://localhost:12306/delta"
 
     assert json.result.stats."number of delta products" == 4
@@ -130,6 +131,7 @@ Then(~"Delta for publication (.*) locale (.*) should get last modified date save
     assert json.status == 500
     assert json.delta.publication == publication
     assert json.delta.locale == locale
+    assert json.delta.upload
 
     assert json.errors == ["HTTP 500 error updating last modified date"]
 }
@@ -140,6 +142,7 @@ Then(~"Delta for publication (.*) locale (.*) should get cadc delta service erro
     assert json.status == 500
     assert json.delta.publication == publication
     assert json.delta.locale == locale
+    assert json.delta.upload
 
     assert json.errors == ["HTTP 500 error getting delta from cadc"]
 }
@@ -186,6 +189,7 @@ Then(~"Delta for publication (.*) locale (.*) should get save errors") { String 
     assert json.status == 200
     assert json.delta.publication == publication
     assert json.delta.locale == locale
+    assert json.delta.upload
 
     assert json.result.stats."number of delta products" == 7
     assert json.result.stats."number of successful" == 2
@@ -211,6 +215,7 @@ Then(~"Delta for publication (.*) locale (.*) should get parse delta error") { S
     assert json.status == 500
     assert json.delta.publication == publication
     assert json.delta.locale == locale
+    assert json.delta.upload
 
     assert json.errors == ["error parsing delta"]
 }

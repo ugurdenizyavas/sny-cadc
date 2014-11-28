@@ -34,7 +34,8 @@ class MultiDeltaHandler extends GroovyHandler {
                     publication: context.pathTokens.publication,
                     locale: locale,
                     sdate: context.request.queryParams.sdate,
-                    cadcUrl: context.request.queryParams.cadcUrl
+                    cadcUrl: context.request.queryParams.cadcUrl,
+                    upload: true
             )
             multiDeltaService.doDelta(delta)
         }).finallyDo({

@@ -51,7 +51,8 @@ class DeltaHandler extends GroovyHandler {
                 publication: context.pathTokens.publication,
                 locale: context.pathTokens.locale,
                 sdate: context.request.queryParams.sdate,
-                cadcUrl: context.request.queryParams.cadcUrl
+                cadcUrl: context.request.queryParams.cadcUrl,
+                upload: true
         )
         activity.info "starting {}", delta
 

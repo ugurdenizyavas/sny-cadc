@@ -75,6 +75,7 @@ class DeltaHandlerTest {
             assert ren.delta.sdate == "2014"
             assert ren.delta.cadcUrl == "http://cadc/skus"
             assert ren.delta.processId != null
+            assert ren.delta.upload
 
             assert ren.result.other.outputUrls?.sort() == ["//repo/file/a", "//repo/file/c"]
 
@@ -115,6 +116,7 @@ class DeltaHandlerTest {
             assert ren.status == 400
             assert ren.errors == ["error"]
             assert ren.delta != null
+            assert ren.delta.upload
         }
     }
 
@@ -152,6 +154,7 @@ class DeltaHandlerTest {
             assert ren.status == 500
             assert ren.delta.publication == "SCORE"
             assert ren.delta.locale == "en_GB"
+            assert ren.delta.upload
             assert ren.errors == ["error in delta flow"]
         }
     }
@@ -189,6 +192,7 @@ class DeltaHandlerTest {
             assert ren.status == 500
             assert ren.delta.publication == "SCORE"
             assert ren.delta.locale == "en_GB"
+            assert ren.delta.upload
             assert ren.errors == ["exp in delta flow"]
         }
     }

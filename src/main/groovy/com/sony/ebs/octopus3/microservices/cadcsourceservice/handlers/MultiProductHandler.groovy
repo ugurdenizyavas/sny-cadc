@@ -32,7 +32,8 @@ class MultiProductHandler extends GroovyHandler {
                     type: RepoValue.global_sku,
                     processId: new ProcessIdImpl(),
                     publication: context.pathTokens.publication,
-                    locale: locale
+                    locale: locale,
+                    upload: true
             )
             def inputUrl = context.request.queryParams.url
             deltaService.doProduct(delta, inputUrl)
